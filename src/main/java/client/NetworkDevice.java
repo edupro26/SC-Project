@@ -2,7 +2,7 @@ package client;
 
 import java.net.Socket;
 
-public class NetworkClient {
+public class NetworkDevice {
 
     private final String address;
     private final int port;
@@ -10,7 +10,7 @@ public class NetworkClient {
     // Socket connection to the server
     private Socket socket;
 
-    public NetworkClient(String address, int port) {
+    public NetworkDevice(String address, int port) {
         this.address = address;
         this.port = port;
     }
