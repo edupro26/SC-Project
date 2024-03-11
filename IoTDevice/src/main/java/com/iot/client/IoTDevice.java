@@ -1,4 +1,4 @@
-package client;
+package com.iot.client;
 
 import java.util.Scanner;
 
