@@ -31,4 +31,21 @@ public class NetworkDevice {
             System.out.println(e.getMessage());
         }
     }
+
+
+    public String SendReceive(String msg) {
+        try {
+            ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
+            ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
+
+            output.writeObject(msg);
+
+            return (String) input.readObject();
+
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+
+        return null;
+    }
 }
