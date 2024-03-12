@@ -41,7 +41,7 @@ public class NetworkDevice {
     }
 
 
-    public String SendReceive(String msg) {
+    public String sendReceive(String msg) {
         try {
 
             this.output.writeObject(msg);
