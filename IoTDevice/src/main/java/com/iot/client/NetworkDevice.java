@@ -9,6 +9,9 @@ public class NetworkDevice {
     private final String address;
     private final int port;
 
+    private ObjectOutputStream output;
+    private ObjectInputStream input;
+
     // Socket connection to the server
     private Socket socket;
 
@@ -21,6 +24,9 @@ public class NetworkDevice {
         try {
             socket = new Socket(address, port);
             System.out.println("Connected to server: " + address + ":" + port);
+
+            this.output = new ObjectOutputStream(socket.getOutputStream());
+            this.input = new ObjectInputStream(socket.getInputStream());
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
@@ -37,12 +43,10 @@ public class NetworkDevice {
 
     public String SendReceive(String msg) {
         try {
-            ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
-            ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
 
-            output.writeObject(msg);
+            this.output.writeObject(msg);
 
-            return (String) input.readObject();
+            return (String) this.input.readObject();
 
         } catch (Exception e) {
             System.out.println(e.getMessage());
