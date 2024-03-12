@@ -45,6 +45,9 @@ public class NetworkServer {
             NetworkConnection connection = new NetworkConnection(input, output, connections);
             connection.handler();
 
+            // Remove the connection from the list after the client disconnects
+            connections.remove(connection);
+
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
