@@ -20,8 +20,7 @@ public class IoTDevice {
         NetworkDevice client = new NetworkDevice(server[0], Integer.parseInt(server[1]));
         client.connect();
 
-        // TODO
-        //deviceLogIn(client, userId, devId);
+        deviceLogIn(client, userId, devId);
         printMenu();
 
         Scanner scanner = new Scanner(System.in);
@@ -39,20 +38,21 @@ public class IoTDevice {
     private static void deviceLogIn(NetworkDevice client, String userId, String devId) {
         Scanner scanner = new Scanner(System.in);
         while (true) {
-            System.out.println("Password: ");
-            // TODO send user to server
-            String pw = client.sendReceive(scanner.nextLine());
-            System.out.println("Response: " + pw);
-            if (pw.equals("OK-USER") || pw.equals("OK-NEW-USER")){
+            System.out.print("Password: ");
+            String pw = scanner.nextLine();
+            String logIn = client.sendReceive(userId + "," + pw);
+            System.out.println("Response: " + logIn);
+            if (logIn.equals("OK-USER") || logIn.equals("OK-NEW-USER")){
                 while (true) {
                     System.out.println("Sending device ID to the server...");
                     String id = client.sendReceive(devId);
-                    System.out.println("Response: " + id);
+                    System.out.println("Response: " + id + "\n");
                     if(id.equals("NOK-DEVID")) {
                         System.out.println("Enter new ID: ");
                         devId = scanner.nextLine();
                     }
                     if(id.equals("OK-DEVID")){
+                        //TODO NOK-TESTED AND OK-TESTED
                         return;
                     }
                 }
