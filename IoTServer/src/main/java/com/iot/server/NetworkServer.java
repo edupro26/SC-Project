@@ -4,9 +4,12 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 
 public class NetworkServer {
     private final int port;
+
+    private ArrayList<NetworkConnection> connections = new ArrayList<>();
 
     // Server socket
     private ServerSocket server;
@@ -35,19 +38,12 @@ public class NetworkServer {
     private void handleClient(Socket clientSocket) {
         System.out.println("Client connected: " + clientSocket.getInetAddress().getHostAddress());
 
-        // Wait for the client to send a message and then send a response
         try {
             ObjectInputStream input = new ObjectInputStream(clientSocket.getInputStream());
             ObjectOutputStream output = new ObjectOutputStream(clientSocket.getOutputStream());
 
-            while (true) {
-                String msg = (String) input.readObject();
-                System.out.println("Received: " + msg);
-
-                // Handle the message
-
-                output.writeObject("OK");
-            }
+            NetworkConnection connection = new NetworkConnection(input, output, connections);
+            connection.handler();
 
         } catch (Exception e) {
             System.out.println(e.getMessage());
