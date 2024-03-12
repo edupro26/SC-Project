@@ -10,7 +10,9 @@ public class NetworkConnection {
     private String devId;
     private Boolean isAuth = false;
 
-    private List<NetworkConnection> connections;
+    private User user;
+
+    private final List<NetworkConnection> connections;
 
     ObjectInputStream input;
     ObjectOutputStream output;
@@ -27,8 +29,8 @@ public class NetworkConnection {
             String password = parts[1];
 
 
-
-            if (!findUser(userId)) {
+            this.user = findUser(userId);
+            if (this.user == null) {
                 registerUser(password);
                 output.writeObject("OK-NEW-USER");
 
@@ -51,20 +53,17 @@ public class NetworkConnection {
 
     }
 
-    public Boolean findUser(String userId) {
-        // TODO: Implement findUser
+    public User findUser(String userId) {
+        return User.findUser(userId);
 
-        return true;
     }
 
     public void registerUser(String password) {
-        // TODO: Implement registerUser
+       this.user = new User(userId, password);
     }
 
     public Boolean authenticate(String password) {
-        // TODO: Implement authenticate
-
-        return true;
+       return this.user.getPassword().equals(password);
     }
 
     public void handler() {
@@ -92,7 +91,7 @@ public class NetworkConnection {
                 String msg = (String) input.readObject();
                 boolean found = false;
                 for (NetworkConnection connection : connections) {
-                    if (connection.getDevId().equals(msg)) {
+                    if (connection.getDevId().equals(msg) && connection.getAuth()) {
                         output.writeObject("NOK-DEVID");
                         found = true;
                         break;
@@ -103,6 +102,7 @@ public class NetworkConnection {
                     this.devId = msg;
                     output.writeObject("OK-DEVID");
                     isAuth = true;
+                    connections.add(this);
                 }
             }
         } catch (Exception e) {
