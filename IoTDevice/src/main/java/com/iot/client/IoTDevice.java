@@ -48,7 +48,7 @@ public class IoTDevice {
                     String id = client.sendReceive(devId);
                     System.out.println("Response: " + id + "\n");
                     if(id.equals("NOK-DEVID")) {
-                        System.out.println("Enter new ID: ");
+                        System.out.print("Enter new ID: ");
                         devId = scanner.nextLine();
                     }
                     if(id.equals("OK-DEVID")){

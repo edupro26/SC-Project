@@ -4,24 +4,23 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
 
 public class NetworkServer {
 
     private final int port;
-    private List<DeviceConnection> connections;
+    private final ServerStorage srvStorage;
 
     public NetworkServer(int port) {
         this.port = port;
-        this.connections = new ArrayList<>();
+        this.srvStorage = new ServerStorage();
     }
 
     public void start() {
         System.out.println("Server started on port " + port);
+        this.srvStorage.start();
+
         System.out.println("Waiting for clients...");
         ServerSocket srvSocket = null;
-
         try {
             srvSocket = new ServerSocket(port);
             while (true) {
@@ -56,11 +55,17 @@ public class NetworkServer {
                 ObjectInputStream input = new ObjectInputStream(cliSocket.getInputStream());
                 ObjectOutputStream output = new ObjectOutputStream(cliSocket.getOutputStream());
 
-                DeviceConnection connection = new DeviceConnection(input, output, connections);
-                connection.handler();
+                ServerConnection connection = new ServerConnection(input, output);
+
+                connection.validateDevID(srvStorage.getConnections());
+                srvStorage.addConnection(connection);
+                connection.handleRequests();
 
                 // Remove the connection from the list after the client disconnects
-                connections.remove(connection);
+                srvStorage.removeConnection(connection);
+
+                output.close();
+                input.close();
                 cliSocket.close();
             } catch (Exception e) {
                 System.out.println(e.getMessage());
