@@ -1,8 +1,11 @@
 package com.iot.client;
 
+import java.io.File;
 import java.util.Scanner;
 
 public class IoTDevice {
+
+    private static final String EXEC = "IoTDevice-1.0-SNAPSHOT.jar";
 
     private IoTDevice() {}
 
@@ -52,7 +55,19 @@ public class IoTDevice {
                         devId = scanner.nextLine();
                     }
                     if(id.equals("OK-DEVID")){
-                        //TODO NOK-TESTED AND OK-TESTED
+                        System.out.println("Sending application size to the server...");
+//                        File exec = new File(EXEC);
+//                        String res = null;
+//                        if (exec.exists() && exec.isFile()) {
+//                            res = client.sendReceive(exec.getName() + "," + exec.length());
+//                        }
+//                        if (res.equals("NOK-TESTED")) {
+//                            System.err.println("Application name or size incorrect.");
+//                            System.exit(1);
+//                        }
+//                        if (res.equals("OK-TESTED")) {
+//                            return;
+//                        }
                         return;
                     }
                 }

@@ -6,7 +6,8 @@ import java.util.List;
 
 public class ServerStorage {
 
-    public static final String USERS = "users.csv";
+    private static final String USERS = "users.csv";
+    private static final String SIZE = "client_size";
     private final List<ServerConnection> connections;
 
     public ServerStorage() {

@@ -1,5 +1,6 @@
 package com.iot.server;
 
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.List;
@@ -45,6 +46,19 @@ public class ServerConnection {
         }
     }
 
+    protected void validateSize() {
+        try {
+            String in = (String) input.readObject();
+            String[] info = in.split(",");
+            String name = info[0];
+            String size = info[1];
+
+            // TODO finish name and size validation
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
     protected void handleRequests() {
         try {
             while (true) {
@@ -52,7 +66,7 @@ public class ServerConnection {
                 String msg = (String) input.readObject();
                 System.out.println("Received: " + msg);
 
-                // Handle the message
+                // TODO Handle the message
 
                 output.writeObject("OK");
             }
