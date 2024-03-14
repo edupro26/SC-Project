@@ -1,6 +1,5 @@
 package com.iot.server;
 
-import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.List;
@@ -46,29 +45,17 @@ public class ServerConnection {
         }
     }
 
-    protected void validateSize() {
+    protected void validateDeviceInfo() {
         try {
-            String in = (String) input.readObject();
-            String[] info = in.split(",");
-            String name = info[0];
-            String size = info[1];
-
-            // TODO finish name and size validation
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-        }
-    }
-
-    protected void handleRequests() {
-        try {
-            while (true) {
-
-                String msg = (String) input.readObject();
-                System.out.println("Received: " + msg);
-
-                // TODO Handle the message
-
-                output.writeObject("OK");
+            String[] in = ((String) input.readObject()).split(",");
+            String name = in[0];
+            String size = in[1];
+            boolean tested = ServerStorage.checkDeviceInfo(name, size);
+            if (tested) {
+                output.writeObject("OK-TESTED");
+            }
+            else {
+                output.writeObject("NOK-TESTED");
             }
         } catch (Exception e) {
             System.out.println(e.getMessage());
@@ -93,6 +80,22 @@ public class ServerConnection {
                     output.writeObject("OK-DEVID");
                     hasValidDevId = true;
                 }
+            }
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    protected void handleRequests() {
+        try {
+            while (true) {
+
+                String msg = (String) input.readObject();
+                System.out.println("Received: " + msg);
+
+                // TODO Handle the message
+
+                output.writeObject("OK");
             }
         } catch (Exception e) {
             System.out.println(e.getMessage());

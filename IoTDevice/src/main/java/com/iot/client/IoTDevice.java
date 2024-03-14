@@ -49,25 +49,25 @@ public class IoTDevice {
                 while (true) {
                     System.out.println("Sending device ID to the server...");
                     String id = client.sendReceive(devId);
-                    System.out.println("Response: " + id + "\n");
+                    System.out.println("Response: " + id);
                     if(id.equals("NOK-DEVID")) {
                         System.out.print("Enter new ID: ");
                         devId = scanner.nextLine();
                     }
                     if(id.equals("OK-DEVID")){
                         System.out.println("Sending application size to the server...");
-//                        File exec = new File(EXEC);
-//                        String res = null;
-//                        if (exec.exists() && exec.isFile()) {
-//                            res = client.sendReceive(exec.getName() + "," + exec.length());
-//                        }
-//                        if (res.equals("NOK-TESTED")) {
-//                            System.err.println("Application name or size incorrect.");
-//                            System.exit(1);
-//                        }
-//                        if (res.equals("OK-TESTED")) {
-//                            return;
-//                        }
+                        File exec = new File(EXEC);
+                        String res;
+                        if (exec.exists() && exec.isFile()) {
+                            res = client.sendReceive(exec.getName() + "," + exec.length());
+                            System.out.println("Response: " + res + "\n");
+                            if (res.equals("NOK-TESTED")) {
+                                System.exit(1);
+                            }
+                            if (res.equals("OK-TESTED")) {
+                                return;
+                            }
+                        }
                         return;
                     }
                 }

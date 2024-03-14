@@ -17,9 +17,8 @@ public class NetworkServer {
 
     public void start() {
         System.out.println("Server started on port " + port);
-        this.srvStorage.start();
-
         System.out.println("Waiting for clients...");
+
         ServerSocket srvSocket = null;
         try {
             srvSocket = new ServerSocket(port);
@@ -42,9 +41,10 @@ public class NetworkServer {
     }
 
     private class ServerThread extends Thread {
+
         private final Socket cliSocket;
 
-        ServerThread (Socket cliSocket) {
+        public ServerThread (Socket cliSocket) {
             this.cliSocket = cliSocket;
         }
 
@@ -58,6 +58,7 @@ public class NetworkServer {
                 ServerConnection connection = new ServerConnection(input, output);
 
                 connection.validateDevID(srvStorage.getConnections());
+                connection.validateDeviceInfo();
                 srvStorage.addConnection(connection);
                 connection.handleRequests();
 
@@ -72,4 +73,5 @@ public class NetworkServer {
             }
         }
     }
+
 }
