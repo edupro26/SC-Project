@@ -35,9 +35,8 @@ public class ServerConnection {
             }
             else {
                 while (!password.equals(user[1])) {
-                    // TODO FIX WRONG-PWD NOT WORKING
                     output.writeObject("WRONG-PWD");
-                    password = (String) input.readObject();
+                    password = ((String) input.readObject()).split(",")[1];
                 }
                 output.writeObject("OK-USER");
             }
