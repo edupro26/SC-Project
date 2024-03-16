@@ -90,22 +90,23 @@ public class IoTDevice {
 
 
     private static void handleCommand(NetworkDevice client, String input) {
-        String[] args = input.split(" ");
-        String command = args[0];
+        String[] parsedCommand = input.split(" ");
+        String command = parsedCommand[0];
 
-        // Remove the command from the args array
-        args = Arrays.copyOfRange(args, 1, args.length);
+        String[] args = Arrays.copyOfRange(parsedCommand, 1, parsedCommand.length);
 
         switch (command) {
             case "CREATE" -> {
-                if (args.length != 2) {
+                if (args.length != 1) {
                     System.out.println("Usage: CREATE <dm>");
                     return;
                 }
 
                 String msg = parseCommandToSend(command, args);
 
-                if (msg.equals(OK_RESPONSE)) {
+                String res = client.sendReceive(msg);
+
+                if (res.equals(OK_RESPONSE)) {
                     System.out.println("Domain created successfully");
                 } else {
                     System.out.println("Error creating domain");
@@ -113,49 +114,55 @@ public class IoTDevice {
 
             }
             case "ADD" -> {
-                if (args.length != 3) {
+                if (args.length != 2) {
                     System.out.println("Usage: ADD <user1> <dm>");
                     return;
                 }
 
                 String msg = parseCommandToSend(command, args);
 
-                if (msg.equals(OK_RESPONSE)) {
+                String res = client.sendReceive(msg);
+
+                if (res.equals(OK_RESPONSE)) {
                     System.out.println("User added successfully");
                 } else {
                     System.out.println("Error adding user");
                 }
             }
             case "RD" -> {
-                if (args.length != 2) {
+                if (args.length != 1) {
                     System.out.println("Usage: RD <dm>");
                     return;
                 }
 
                 String msg = parseCommandToSend(command, args);
 
-                if (msg.equals(OK_RESPONSE)) {
+                String res = client.sendReceive(msg);
+
+                if (res.equals(OK_RESPONSE)) {
                     System.out.println("Device registered successfully");
                 } else {
                     System.out.println("Error registering device");
                 }
             }
             case "ET" -> {
-                if (args.length != 2) {
+                if (args.length != 1) {
                     System.out.println("Usage: ET <float>");
                     return;
                 }
 
                 String msg = parseCommandToSend(command, args);
 
-                if (msg.equals(OK_RESPONSE)) {
+                String res = client.sendReceive(msg);
+
+                if (res.equals(OK_RESPONSE)) {
                     System.out.println("Temperature sent successfully");
                 } else {
                     System.out.println("Error sending temperature");
                 }
             }
             case "EI" -> {
-                if (args.length != 2) {
+                if (args.length != 1) {
                     System.out.println("Usage: EI <filename.jpg>");
                     return;
                 }
@@ -163,14 +170,14 @@ public class IoTDevice {
                 // TODO Send the file to the server
 
                 /*
-                if (msg.equals(OK_RESPONSE)) {
+                if (res.equals(OK_RESPONSE)) {
                     System.out.println("Image sent successfully");
                 } else {
                     System.out.println("Error sending image");
                  */
             }
             case "RT" -> {
-                if (args.length != 2) {
+                if (args.length != 1) {
                     System.out.println("Usage: RT <dm>");
                     return;
                 }
@@ -179,7 +186,7 @@ public class IoTDevice {
                 // TODO Print the temperature values received from the server
             }
             case "RI" -> {
-                if (args.length != 2) {
+                if (args.length != 1) {
                     System.out.println("Usage: RI <user-id>:<dev_id>");
                     return;
                 }
@@ -193,8 +200,6 @@ public class IoTDevice {
 
     private static String parseCommandToSend(String command, String[] args) {
         StringBuilder sb = new StringBuilder(command);
-
-        sb.append(command);
 
         for (String arg : args) {
             sb.append(";").append(arg);
