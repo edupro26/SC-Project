@@ -1,17 +1,17 @@
-package com.iot.client;
+package client;
 
 import java.io.File;
 import java.util.Scanner;
 
 public class IoTDevice {
 
-    private static final String EXEC = "IoTDevice-1.0-SNAPSHOT.jar";
+    private static final String EXEC = "IoTDevice-grupo6.jar";
 
     private IoTDevice() {}
 
     public static void main(String[] args) {
         if (args.length < 3) {
-            System.out.println("Usage: java -jar IoTDevice.jar <serverAddress> <dev-id> <user-id>");
+            System.out.println("Usage: java -jar IoTDevice-grupo6.jar <serverAddress> <dev-id> <user-id>");
             return;
         }
 

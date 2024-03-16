@@ -1,4 +1,4 @@
-package com.iot.server;
+package server;
 
 public class IoTServer {
 

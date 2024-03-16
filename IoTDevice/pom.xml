@@ -7,7 +7,7 @@
     <parent>
         <groupId>pt.ulisboa.ciencias.di.sc.grupo6</groupId>
         <artifactId>SC_Projeto</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>grupo6</version>
     </parent>
 
     <artifactId>IoTDevice</artifactId>
@@ -33,7 +33,7 @@
                         <manifest>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>lib/</classpathPrefix>
-                            <mainClass>com.iot.client.IoTDevice</mainClass>
+                            <mainClass>client.IoTDevice</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

@@ -1,4 +1,4 @@
-package com.iot.server;
+package server;
 
 import java.io.*;
 import java.util.ArrayList;

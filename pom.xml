@@ -6,7 +6,7 @@
 
     <groupId>pt.ulisboa.ciencias.di.sc.grupo6</groupId>
     <artifactId>SC_Projeto</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>grupo6</version>
 
     <name>Client-Server IoT System</name>
 
