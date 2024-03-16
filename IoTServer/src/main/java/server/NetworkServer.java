@@ -56,10 +56,17 @@ public class NetworkServer {
                 ObjectOutputStream output = new ObjectOutputStream(cliSocket.getOutputStream());
 
                 ServerConnection connection = new ServerConnection(input, output);
-
+                System.out.println("Validating device ID...");
                 connection.validateDevID(srvStorage.getConnections());
-                connection.validateDeviceInfo();
+                System.out.println("Validating device info...");
+
+                // TODO - Enable validation of device info after doing client side implementation
+
+                //connection.validateDeviceInfo();
+                //System.out.println("Device ID and info validated");
+
                 srvStorage.addConnection(connection);
+                System.out.println("Waiting for requests...");
                 connection.handleRequests();
 
                 // Remove the connection from the list after the client disconnects
