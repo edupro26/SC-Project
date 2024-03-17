@@ -61,8 +61,10 @@ public class NetworkServer {
                 System.out.print("Validating device ID... ");
                 connection.validateDevID(srvStorage.getConnections());
 
-                System.out.print("Validating device info...");
-                connection.validateDeviceInfo();
+                // FIXME Enable when client app is finished and
+                //  don't forget to update size in device_info.csv
+//                System.out.print("Validating device info...");
+//                connection.validateDeviceInfo();
 
                 srvStorage.addConnection(connection);
                 System.out.println("Handling requests from client: " + clientAddress);

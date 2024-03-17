@@ -66,19 +66,21 @@ public class IoTDevice {
                         }
                     }
                     if(id.equals("OK-DEVID")){
-                        System.out.println("Sending application size to the server...");
-                        File exec = new File(EXEC);
-                        String res;
-                        if (exec.exists() && exec.isFile()) {
-                            res = client.sendReceive(exec.getName() + "," + exec.length());
-                            System.out.println("Response: " + res + "\n");
-                            if (res.equals("NOK-TESTED")) {
-                                System.exit(1);
-                            }
-                            if (res.equals("OK-TESTED")) {
-                                return;
-                            }
-                        }
+                        // FIXME Enable when client app is finished and
+                        //  don't forget to update size in device_info.csv
+//                        System.out.println("Sending application size to the server...");
+//                        File exec = new File(EXEC);
+//                        String res;
+//                        if (exec.exists() && exec.isFile()) {
+//                            res = client.sendReceive(exec.getName() + "," + exec.length());
+//                            System.out.println("Response: " + res + "\n");
+//                            if (res.equals("NOK-TESTED")) {
+//                                System.exit(1);
+//                            }
+//                            if (res.equals("OK-TESTED")) {
+//                                return;
+//                            }
+//                        }
                         return;
                     }
                 }
