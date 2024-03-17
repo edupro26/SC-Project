@@ -9,7 +9,7 @@ public class ServerConnection {
     private final String clientAddress;
 
     private String userId;
-    private String devId;
+    private int devId;
     private Boolean hasValidDevId;
 
     private final ObjectInputStream input;
@@ -31,13 +31,13 @@ public class ServerConnection {
             userId = logIn[0];
             String password = logIn[1];
 
-            String[] user = ServerStorage.searchUser(userId);
+            User user = ServerStorage.searchUser(userId);
             if (user == null) {
-                ServerStorage.saveUser(userId, password);
+                ServerStorage.saveUser(new User(userId, password));
                 output.writeObject("OK-NEW-USER");
             }
             else {
-                while (!password.equals(user[1])) {
+                while (!password.equals(user.getPassword())) {
                     output.writeObject("WRONG-PWD");
                     password = ((String) input.readObject()).split(",")[1];
                 }
@@ -54,7 +54,7 @@ public class ServerConnection {
                 String msg = (String) input.readObject();
                 boolean validId = true;
                 for (ServerConnection connection : connections) {
-                    if (connection.getDevId().equals(msg) && connection.getUserId().equals(this.userId)) {
+                    if (connection.getDevId() == Integer.parseInt(msg) && connection.getUserId().equals(this.userId)) {
                         output.writeObject("NOK-DEVID");
                         validId = false;
                         break;
@@ -62,7 +62,7 @@ public class ServerConnection {
                 }
 
                 if (validId) {
-                    this.devId = msg;
+                    this.devId = Integer.parseInt(msg);
                     output.writeObject("OK-DEVID");
                     hasValidDevId = true;
                 }
@@ -112,7 +112,7 @@ public class ServerConnection {
         return this.userId;
     }
 
-    protected String getDevId() {
+    protected int getDevId() {
         return this.devId;
     }
 }
