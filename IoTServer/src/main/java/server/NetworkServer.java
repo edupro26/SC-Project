@@ -48,25 +48,24 @@ public class NetworkServer {
             this.cliSocket = cliSocket;
         }
 
-        public void run() {
-            System.out.println("Client connected: " + cliSocket.getInetAddress().getHostAddress());
+        public synchronized void run() {
+            String clientAddress = cliSocket.getInetAddress().getHostAddress();
+            System.out.println("Client connected (" + clientAddress + ")");
 
             try {
                 ObjectInputStream input = new ObjectInputStream(cliSocket.getInputStream());
                 ObjectOutputStream output = new ObjectOutputStream(cliSocket.getOutputStream());
 
-                ServerConnection connection = new ServerConnection(input, output);
-                System.out.println("Validating device ID...");
+                ServerConnection connection = new ServerConnection(input, output, clientAddress);
+
+                System.out.print("Validating device ID... ");
                 connection.validateDevID(srvStorage.getConnections());
-                System.out.println("Validating device info...");
 
-                // TODO - Enable validation of device info after doing client side implementation
-
-                //connection.validateDeviceInfo();
-                //System.out.println("Device ID and info validated");
+                System.out.print("Validating device info...");
+                connection.validateDeviceInfo();
 
                 srvStorage.addConnection(connection);
-                System.out.println("Waiting for requests...");
+                System.out.println("Handling requests from client: " + clientAddress);
                 connection.handleRequests();
 
                 // Remove the connection from the list after the client disconnects

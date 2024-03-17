@@ -6,6 +6,8 @@ import java.net.Socket;
 
 public class NetworkDevice {
 
+    private static final String OK_RESPONSE = "OK";
+
     private final String address;
     private final int port;
 
@@ -29,29 +31,132 @@ public class NetworkDevice {
             this.input = new ObjectInputStream(socket.getInputStream());
         } catch (Exception e) {
             System.out.println(e.getMessage());
+            System.exit(1);
         }
     }
 
     public void disconnect() {
         try {
+            output.close();
+            input.close();
             socket.close();
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
     }
 
-
     public String sendReceive(String msg) {
         try {
-
             this.output.writeObject(msg);
 
             return (String) this.input.readObject();
-
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
 
         return null;
+    }
+
+    public void sendReceiveCREATE(String[] args, String command) {
+        if (args.length != 1) {
+            System.out.println("Usage: CREATE <dm>");
+            return;
+        }
+
+        String msg = parseCommandToSend(command, args);
+        String res = this.sendReceive(msg);
+        if (res.equals(OK_RESPONSE)) {
+            System.out.println("Response: " + OK_RESPONSE
+                    + " # Domain created successfully");
+        } else {
+            System.out.println("Error creating domain");
+        }
+    }
+
+    public void sendReceiveADD(String[] args, String command) {
+        if (args.length != 2) {
+            System.out.println("Usage: ADD <user1> <dm>");
+            return;
+        }
+
+        String msg = parseCommandToSend(command, args);
+        String res = this.sendReceive(msg);
+        if (res.equals(OK_RESPONSE)) {
+            System.out.println("Response: " + OK_RESPONSE +
+                    " # User added successfully");
+        } else {
+            System.out.println("Error adding user");
+        }
+    }
+
+    public void sendReceiveRD(String[] args, String command) {
+        if (args.length != 1) {
+            System.out.println("Usage: RD <dm>");
+            return;
+        }
+
+        String msg = parseCommandToSend(command, args);
+        String res = this.sendReceive(msg);
+        if (res.equals(OK_RESPONSE)) {
+            System.out.println("Response: " + OK_RESPONSE +
+                    " # Device registered successfully");
+        } else {
+            System.out.println("Error registering device");
+        }
+    }
+
+    public void sendReceiveET(String[] args, String command) {
+        if (args.length != 1) {
+            System.out.println("Usage: ET <float>");
+            return;
+        }
+
+        String msg = parseCommandToSend(command, args);
+        String res = this.sendReceive(msg);
+        if (res.equals(OK_RESPONSE)) {
+            System.out.println("Response: " + OK_RESPONSE +
+                    " # Temperature sent successfully");
+        } else {
+            System.out.println("Error sending temperature");
+        }
+    }
+
+    public void sendReceiveEI(String[] args, String command) {
+        if (args.length != 1) {
+            System.out.println("Usage: EI <filename.jpg>");
+            return;
+        }
+        // TODO Send the file to the server/*
+//        if (res.equals(OK_RESPONSE)) {
+//            System.out.println("Image sent successfully");
+//        } else {
+//            System.out.println("Error sending image");
+//            }
+    }
+
+    public void sendReceiveRT(String[] args, String command) {
+        if (args.length != 1) {
+            System.out.println("Usage: RT <dm>");
+            return;
+        }
+        // TODO Print the temperature values received from the server
+    }
+
+    public void sendReceiveRI(String[] args, String command) {
+        if (args.length != 1) {
+            System.out.println("Usage: RI <user-id>:<dev_id>");
+            return;
+        }
+        // TODO Receive the image from the server
+    }
+
+    private String parseCommandToSend(String command, String[] args) {
+        StringBuilder sb = new StringBuilder(command);
+
+        for (String arg : args) {
+            sb.append(";").append(arg);
+        }
+
+        return sb.toString();
     }
 }

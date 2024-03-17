@@ -8,14 +8,13 @@ public class IoTDevice {
 
     private static final String EXEC = "IoTDevice-grupo6.jar";
 
-    private static final String OK_RESPONSE = "OK";
-
     private IoTDevice() {}
 
     public static void main(String[] args) {
-        if (args.length < 3) {
-            System.out.println("Usage: java -jar IoTDevice-grupo6.jar <serverAddress> <dev-id> <user-id>");
-            return;
+        String checkArgs = checkArgs(args);
+        if (checkArgs != null) {
+            System.out.println(checkArgs);
+            System.exit(1);
         }
 
         String serverAddress = args[0];
@@ -24,18 +23,23 @@ public class IoTDevice {
         String[] server = serverAddress.split(":");
 
         NetworkDevice client = new NetworkDevice(server[0], Integer.parseInt(server[1]));
-        client.connect();
+        try {
+            client.connect();
+            deviceLogIn(client, userId, devId);
+            printMenu();
 
-        deviceLogIn(client, userId, devId);
-        printMenu();
+            Scanner scanner = new Scanner(System.in);
 
-        Scanner scanner = new Scanner(System.in);
-        while (true) {
-            // Ask user for input
-            System.out.print("Command: ");
-            String msg = scanner.nextLine();
+            while (true) {
+                // Ask user for input
+                System.out.print("Command: ");
 
-            handleCommand(client, msg);
+                String msg = scanner.nextLine();
+                handleCommand(client, msg);
+            }
+        } catch (Exception e) {
+            System.out.println("\nExited IoTDevice ");
+            client.disconnect();
         }
     }
 
@@ -52,8 +56,14 @@ public class IoTDevice {
                     String id = client.sendReceive(devId);
                     System.out.println("Response: " + id);
                     if(id.equals("NOK-DEVID")) {
-                        System.out.print("Enter new ID: ");
-                        devId = scanner.nextLine();
+                        try {
+                            System.out.print("Enter new ID: ");
+                            devId = scanner.nextLine();
+                            Integer.parseInt(devId);
+                        } catch (Exception e) {
+                            System.out.println("Error: <dev-id> must be an Integer");
+                            System.exit(1);
+                        }
                     }
                     if(id.equals("OK-DEVID")){
                         System.out.println("Sending application size to the server...");
@@ -76,6 +86,41 @@ public class IoTDevice {
         }
     }
 
+    private static String checkArgs(String[] args) {
+        if (args.length < 3) {
+            return "Usage: java -jar IoTDevice-grupo6.jar <serverAddress> <dev-id> <user-id>";
+        }
+
+        try {
+            String[] address = args[0].split(":");
+            if (address.length == 2) {
+                try {
+                    Integer.parseInt(address[1]);
+                } catch (Exception e) {
+                    return "Error: <IP/hostname>[:Port] Port must be an Integer";
+                }
+            }
+            else {
+                return "Error: <serverAddress> must be in the format <IP/hostname>[:Port]";
+            }
+
+            try {
+                Integer.parseInt(args[1]);
+            } catch (Exception e) {
+                return "Error: <dev-id> must be an Integer";
+            }
+
+            try {
+                Integer.parseInt(args[2]);
+                return "Error: <user-id> can't be a Integer";
+            } catch (Exception e) {
+                return null;
+            }
+        } catch (Exception e) {
+            return "Error: <serverAddress> must be in the format <IP/hostname>[:Port]";
+        }
+    }
+
     private static void printMenu() {
         System.out.println("""
                 CREATE <dm>
@@ -88,123 +133,20 @@ public class IoTDevice {
                 \s""");
     }
 
-
     private static void handleCommand(NetworkDevice client, String input) {
         String[] parsedCommand = input.split(" ");
         String command = parsedCommand[0];
-
         String[] args = Arrays.copyOfRange(parsedCommand, 1, parsedCommand.length);
 
         switch (command) {
-            case "CREATE" -> {
-                if (args.length != 1) {
-                    System.out.println("Usage: CREATE <dm>");
-                    return;
-                }
-
-                String msg = parseCommandToSend(command, args);
-
-                String res = client.sendReceive(msg);
-
-                if (res.equals(OK_RESPONSE)) {
-                    System.out.println("Domain created successfully");
-                } else {
-                    System.out.println("Error creating domain");
-                }
-
-            }
-            case "ADD" -> {
-                if (args.length != 2) {
-                    System.out.println("Usage: ADD <user1> <dm>");
-                    return;
-                }
-
-                String msg = parseCommandToSend(command, args);
-
-                String res = client.sendReceive(msg);
-
-                if (res.equals(OK_RESPONSE)) {
-                    System.out.println("User added successfully");
-                } else {
-                    System.out.println("Error adding user");
-                }
-            }
-            case "RD" -> {
-                if (args.length != 1) {
-                    System.out.println("Usage: RD <dm>");
-                    return;
-                }
-
-                String msg = parseCommandToSend(command, args);
-
-                String res = client.sendReceive(msg);
-
-                if (res.equals(OK_RESPONSE)) {
-                    System.out.println("Device registered successfully");
-                } else {
-                    System.out.println("Error registering device");
-                }
-            }
-            case "ET" -> {
-                if (args.length != 1) {
-                    System.out.println("Usage: ET <float>");
-                    return;
-                }
-
-                String msg = parseCommandToSend(command, args);
-
-                String res = client.sendReceive(msg);
-
-                if (res.equals(OK_RESPONSE)) {
-                    System.out.println("Temperature sent successfully");
-                } else {
-                    System.out.println("Error sending temperature");
-                }
-            }
-            case "EI" -> {
-                if (args.length != 1) {
-                    System.out.println("Usage: EI <filename.jpg>");
-                    return;
-                }
-
-                // TODO Send the file to the server
-
-                /*
-                if (res.equals(OK_RESPONSE)) {
-                    System.out.println("Image sent successfully");
-                } else {
-                    System.out.println("Error sending image");
-                 */
-            }
-            case "RT" -> {
-                if (args.length != 1) {
-                    System.out.println("Usage: RT <dm>");
-                    return;
-                }
-                String msg = parseCommandToSend(command, args);
-
-                // TODO Print the temperature values received from the server
-            }
-            case "RI" -> {
-                if (args.length != 1) {
-                    System.out.println("Usage: RI <user-id>:<dev_id>");
-                    return;
-                }
-
-                // TODO Receive the image from the server
-
-            }
+            case "CREATE" -> client.sendReceiveCREATE(args, command);
+            case "ADD" -> client.sendReceiveADD(args, command);
+            case "RD" -> client.sendReceiveRD(args, command);
+            case "ET" -> client.sendReceiveET(args, command);
+            case "EI" -> client.sendReceiveEI(args, command);
+            case "RT" -> client.sendReceiveRT(args, command);
+            case "RI" -> client.sendReceiveRI(args, command);
             default -> System.out.println("Invalid command");
         }
-    }
-
-    private static String parseCommandToSend(String command, String[] args) {
-        StringBuilder sb = new StringBuilder(command);
-
-        for (String arg : args) {
-            sb.append(";").append(arg);
-        }
-
-        return sb.toString();
     }
 }

@@ -6,6 +6,8 @@ import java.util.List;
 
 public class ServerConnection {
 
+    private final String clientAddress;
+
     private String userId;
     private String devId;
     private Boolean hasValidDevId;
@@ -13,9 +15,10 @@ public class ServerConnection {
     private final ObjectInputStream input;
     private final ObjectOutputStream output;
 
-    public ServerConnection(ObjectInputStream input, ObjectOutputStream output) {
+    public ServerConnection(ObjectInputStream input, ObjectOutputStream output, String clientAddress) {
         this.input = input;
         this.output = output;
+        this.clientAddress = clientAddress;
         hasValidDevId = false;
 
         userAuthentication();
@@ -41,24 +44,7 @@ public class ServerConnection {
                 output.writeObject("OK-USER");
             }
         } catch (Exception e) {
-            System.out.println(e.getMessage());
-        }
-    }
-
-    protected void validateDeviceInfo() {
-        try {
-            String[] in = ((String) input.readObject()).split(",");
-            String name = in[0];
-            String size = in[1];
-            boolean tested = ServerStorage.checkDeviceInfo(name, size);
-            if (tested) {
-                output.writeObject("OK-TESTED");
-            }
-            else {
-                output.writeObject("NOK-TESTED");
-            }
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
+            System.out.println("Error receiving user password!");
         }
     }
 
@@ -81,8 +67,28 @@ public class ServerConnection {
                     hasValidDevId = true;
                 }
             }
+            System.out.println("Device ID validated!");
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            System.out.println("Something went wrong!");
+        }
+    }
+
+    protected void validateDeviceInfo() {
+        try {
+            String[] in = ((String) input.readObject()).split(",");
+            String name = in[0];
+            String size = in[1];
+            boolean tested = ServerStorage.checkDeviceInfo(name, size);
+            if (tested) {
+                output.writeObject("OK-TESTED");
+                System.out.println("Device info validated!");
+            }
+            else {
+                output.writeObject("NOK-TESTED");
+                System.out.println("Device info not validated!");
+            }
+        } catch (Exception e) {
+            System.out.println("Something went wrong!");
         }
     }
 
@@ -91,14 +97,14 @@ public class ServerConnection {
             while (true) {
 
                 String msg = (String) input.readObject();
-                System.out.println("Received: " + msg);
+                System.out.println("Received: " + msg + " from -> " + clientAddress);
 
                 // TODO Handle the message
 
                 output.writeObject("OK");
             }
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            System.out.println("Client disconnected (" + this.clientAddress + ")");
         }
     }
 
