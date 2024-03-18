@@ -6,7 +6,7 @@ import java.util.List;
 public class User {
 
     private final String username;
-    private final String password;
+    private String password;
 
     public User(String name, String password) {
         this.username = name;
@@ -21,8 +21,8 @@ public class User {
         return password;
     }
 
-    public String toString() {
-        return this.username + "," + this.password;
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public boolean equals(Object obj) {
@@ -34,4 +34,9 @@ public class User {
         }
         return user.getUsername().equals(this.username);
     }
+
+    public String toString() {
+        return this.username + "," + this.password;
+    }
+
 }
