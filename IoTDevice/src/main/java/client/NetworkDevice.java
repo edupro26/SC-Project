@@ -1,5 +1,7 @@
 package client;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
@@ -126,12 +128,22 @@ public class NetworkDevice {
             System.out.println("Usage: EI <filename.jpg>");
             return;
         }
-        // TODO Send the file to the server/*
-//        if (res.equals(OK_RESPONSE)) {
-//            System.out.println("Image sent successfully");
-//        } else {
-//            System.out.println("Error sending image");
-//            }
+
+        // Send command to server with the file size
+        File file = new File(args[0]);
+        String msg = parseCommandToSend(command, new String[]{String.valueOf(file.length())});
+
+        // Send the command to the server to warn it will receive a file
+        this.sendReceive(msg);
+
+        // Send the file to the server
+        String res = sendFileToServer(file);
+
+        if (res != null && res.equals(OK_RESPONSE)) {
+            System.out.println("Image sent successfully");
+        } else {
+            System.out.println("Error sending image");
+        }
     }
 
     public void sendReceiveRT(String[] args, String command) {
@@ -158,5 +170,29 @@ public class NetworkDevice {
         }
 
         return sb.toString();
+    }
+
+    private String sendFileToServer(File file) {
+        try {
+
+            FileInputStream fis = new FileInputStream(file);
+
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+
+            while ((bytesRead = fis.read(buffer)) != -1) {
+                output.write(buffer, 0, bytesRead);
+            }
+
+            fis.close();
+
+            return (String) input.readObject();
+
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+
+        return null;
+
     }
 }
