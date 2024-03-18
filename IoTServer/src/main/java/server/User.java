@@ -24,4 +24,14 @@ public class User {
     public String toString() {
         return this.username + "," + this.password;
     }
+
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        }
+        if (!(obj instanceof User user)) {
+            return false;
+        }
+        return user.getUsername().equals(this.username);
+    }
 }
