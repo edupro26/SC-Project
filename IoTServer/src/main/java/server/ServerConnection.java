@@ -118,9 +118,9 @@ public class ServerConnection {
                 switch (command) {
                     case "CREATE" -> {
                         result = ServerStorage.createDomain(parsedMsg[1], devUser);
-                        System.out.println("Result: " + result);
                         output.writeObject(result);
-                        System.out.println("Domain created!");
+                        if (result.equals("OK"))
+                            System.out.println("Domain created!");
                     }
                     case "ADD" -> {
                         //TODO finish add command

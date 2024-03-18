@@ -75,7 +75,6 @@ public class ServerStorage {
             while ((line = in.readLine()) != null) {
                 domains.add(new ServerDomain(line));
             }
-            System.out.println(domains.toString());
             return true;
         } catch (Exception e) {
             System.out.println(e.getMessage());
