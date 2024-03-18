@@ -104,45 +104,32 @@ public class ServerConnection {
     protected void handleRequests() {
         try {
             while (true) {
-
                 String msg = (String) input.readObject();
                 System.out.println("Received: " + msg + " from -> " + clientIP);
 
                 String[] parsedMsg = msg.split(";");
-
                 String command = parsedMsg[0];
 
-                System.out.println("Command: " + command);
-
                 String result;
-
                 switch (command) {
-                    case "CREATE":
-                        System.out.println("Here");
-                         result = srvStorage.createDomain(parsedMsg[1], this.userId);
-
-                         System.out.println("Result: " + result);
-                         output.writeObject(result);
-                         System.out.println("Domain created!");
-
-                    case "ADD":
+                    case "CREATE" -> {
+                        result = srvStorage.createDomain(parsedMsg[1], this.userId);
+                        System.out.println("Result: " + result);
+                        output.writeObject(result);
+                        System.out.println("Domain created!");
+                    }
+                    case "ADD" -> {
                         result = srvStorage.addUserToDomain(srvStorage.searchDomain(parsedMsg[1]), srvStorage.searchUser(this.userId), srvStorage.searchUser(parsedMsg[2]));
 
                         output.writeObject(result);
-                        /*
+                    }
                     case "RD" -> output.writeObject("Not implemented");
                     case "ET" -> output.writeObject("Not implemented");
                     case "EI" -> output.writeObject("Not implemented");
                     case "RT" -> output.writeObject("Not implemented");
                     case "RI" -> output.writeObject("Not implemented");
-                    */
-                    default:
-                        output.writeObject("NOK");
-
-
+                    default -> output.writeObject("NOK");
                 }
-
-
             }
         } catch (Exception e) {
             System.out.println("Client disconnected (" + this.clientIP + ")");

@@ -12,11 +12,12 @@ public class ServerStorage {
 
     private static List<User> users;
     private final List<ServerConnection> connections;
-    private List<ServerDomain> domains;
+    private final List<ServerDomain> domains;
 
     public ServerStorage() {
         users = new ArrayList<>();
         connections = new ArrayList<>();
+        domains = new ArrayList<>();
 
         this.start();
     }
@@ -113,7 +114,6 @@ public class ServerStorage {
 
                 return "OK";
             }
-
             return "NOK";
         }
         return "NOK";
