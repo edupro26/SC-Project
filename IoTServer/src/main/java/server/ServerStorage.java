@@ -92,12 +92,43 @@ public class ServerStorage {
         return null;
     }
 
-    protected void createDomain(String username) {
-        // TODO create and save the domain in domains.csv
+    protected ServerDomain searchDomain(String name) {
+        for (ServerDomain domain : domains) {
+            if (name.equals(domain.getName())){
+                return domain;
+            }
+        }
+        return null;
     }
 
-    protected void addUserToDomain(ServerDomain domain, User user) {
-        // TODO add a user to a domain and save in domains.csv
+    protected String createDomain(String name, String ownerId) {
+        User owner = searchUser(ownerId);
+        if (owner != null) {
+            ServerDomain alreadyExists = searchDomain(name);
+            if (alreadyExists == null) {
+                ServerDomain domain = new ServerDomain(name, owner);
+                domains.add(domain);
+
+                // TODO Save to file
+
+                return "OK";
+            }
+
+            return "NOK";
+        }
+        return "NOK";
+    }
+
+    protected String addUserToDomain(ServerDomain domain, User user, User userToAdd) {
+        if (domain == null) return "NODM";
+        if (userToAdd == null) return "NOUSER";
+        if (!domain.getOwner().equals(user)) return "NOPERM";
+
+        domain.addUser(userToAdd);
+
+        // TODO Save to file
+
+        return "OK";
     }
 
     protected void addDeviceToDomain(ServerDomain domain, ServerConnection device) {
