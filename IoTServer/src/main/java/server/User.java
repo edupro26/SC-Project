@@ -1,8 +1,5 @@
 package server;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class User {
 
     private final String username;

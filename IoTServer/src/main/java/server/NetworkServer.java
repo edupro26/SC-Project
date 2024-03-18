@@ -8,11 +8,10 @@ import java.net.Socket;
 public class NetworkServer {
 
     private final int port;
-    private final ServerStorage srvStorage;
 
     public NetworkServer(int port) {
         this.port = port;
-        this.srvStorage = new ServerStorage();
+        new ServerStorage();
     }
 
     public void start() {
@@ -40,7 +39,7 @@ public class NetworkServer {
         }
     }
 
-    private class ServerThread extends Thread {
+    private static class ServerThread extends Thread {
 
         private final Socket cliSocket;
 
