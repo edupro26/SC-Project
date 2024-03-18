@@ -110,26 +110,39 @@ public class ServerConnection {
 
                 String[] parsedMsg = msg.split(";");
 
-                switch (parsedMsg[0]) {
-                    case "CREATE" -> {
-                         String result = srvStorage.createDomain(parsedMsg[1], this.userId);
+                String command = parsedMsg[0];
 
+                System.out.println("Command: " + command);
+
+                String result;
+
+                switch (command) {
+                    case "CREATE":
+                        System.out.println("Here");
+                         result = srvStorage.createDomain(parsedMsg[1], this.userId);
+
+                         System.out.println("Result: " + result);
                          output.writeObject(result);
-                    }
-                    case "ADD" -> {
-                        String result = srvStorage.addUserToDomain(srvStorage.searchDomain(parsedMsg[1]), srvStorage.searchUser(this.userId), srvStorage.searchUser(parsedMsg[2]);
+                         System.out.println("Domain created!");
+
+                    case "ADD":
+                        result = srvStorage.addUserToDomain(srvStorage.searchDomain(parsedMsg[1]), srvStorage.searchUser(this.userId), srvStorage.searchUser(parsedMsg[2]));
 
                         output.writeObject(result);
-                    }
+                        /*
                     case "RD" -> output.writeObject("Not implemented");
                     case "ET" -> output.writeObject("Not implemented");
                     case "EI" -> output.writeObject("Not implemented");
                     case "RT" -> output.writeObject("Not implemented");
                     case "RI" -> output.writeObject("Not implemented");
+                    */
+                    default:
+                        output.writeObject("NOK");
+
+
                 }
 
 
-                output.writeObject("OK");
             }
         } catch (Exception e) {
             System.out.println("Client disconnected (" + this.clientIP + ")");
