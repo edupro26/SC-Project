@@ -50,7 +50,7 @@ public class NetworkServer {
 
         public synchronized void run() {
             String clientAddress = cliSocket.getInetAddress().getHostAddress();
-            System.out.println("Client connected (" + clientAddress + ")");
+            System.out.println("Connection request received (" + clientAddress + ")");
 
             try {
                 ObjectInputStream input = new ObjectInputStream(cliSocket.getInputStream());
@@ -59,19 +59,24 @@ public class NetworkServer {
                 ServerConnection connection = new ServerConnection(input, output, clientAddress);
 
                 System.out.print("Validating device ID... ");
-                connection.validateDevID(srvStorage.getConnections());
+                boolean validID = connection.validateDevID(srvStorage.getConnections());
 
                 // FIXME Enable when client app is finished and
                 //  don't forget to update size in device_info.csv
 //                System.out.print("Validating device info...");
-//                connection.validateDeviceInfo();
+//                boolean validInfo = connection.validateDeviceInfo();
 
-                srvStorage.addConnection(connection);
-                System.out.println("Handling requests from client: " + clientAddress);
-                connection.handleRequests();
+                if (validID /*&& validInfo*/) {
+                    System.out.println("Client connected (" + clientAddress + ")");
+                    srvStorage.addConnection(connection);
+                    System.out.println("Active connections: " + srvStorage.getConnections().size());
 
-                // Remove the connection from the list after the client disconnects
-                srvStorage.removeConnection(connection);
+                    connection.handleRequests();
+
+                    // Remove the connection from the list after the client disconnects
+                    srvStorage.removeConnection(connection);
+                    System.out.println("Active connections: " + srvStorage.getConnections().size());
+                }
 
                 output.close();
                 input.close();

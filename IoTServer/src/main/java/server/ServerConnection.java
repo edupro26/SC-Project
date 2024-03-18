@@ -48,7 +48,7 @@ public class ServerConnection {
         }
     }
 
-    protected void validateDevID(List<ServerConnection> connections) {
+    protected boolean validateDevID(List<ServerConnection> connections) {
         try {
             while (!hasValidDevId) {
                 String msg = (String) input.readObject();
@@ -60,20 +60,26 @@ public class ServerConnection {
                         break;
                     }
                 }
+                if (Integer.parseInt(msg) < 0) {
+                    output.writeObject("NOK-DEVID");
+                    validId = false;
+                }
 
                 if (validId) {
                     this.devId = Integer.parseInt(msg);
                     output.writeObject("OK-DEVID");
                     hasValidDevId = true;
+                    System.out.println("Device ID validated!");
+                    return true;
                 }
             }
-            System.out.println("Device ID validated!");
         } catch (Exception e) {
             System.out.println("Something went wrong!");
         }
+        return false;
     }
 
-    protected void validateDeviceInfo() {
+    protected boolean validateDeviceInfo() {
         try {
             String[] in = ((String) input.readObject()).split(",");
             String name = in[0];
@@ -82,6 +88,7 @@ public class ServerConnection {
             if (tested) {
                 output.writeObject("OK-TESTED");
                 System.out.println("Device info validated!");
+                return true;
             }
             else {
                 output.writeObject("NOK-TESTED");
@@ -90,6 +97,7 @@ public class ServerConnection {
         } catch (Exception e) {
             System.out.println("Something went wrong!");
         }
+        return false;
     }
 
     protected void handleRequests() {
