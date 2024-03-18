@@ -1,9 +1,6 @@
 package client;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.net.Socket;
 
 public class NetworkDevice {
@@ -119,7 +116,8 @@ public class NetworkDevice {
             System.out.println("Response: " + OK_RESPONSE +
                     " # Temperature sent successfully");
         } else {
-            System.out.println("Error sending temperature");
+            System.out.println("Response: " + res +
+                    " # Error sending temperature");
         }
     }
 
@@ -151,7 +149,35 @@ public class NetworkDevice {
             System.out.println("Usage: RT <dm>");
             return;
         }
-        // TODO Print the temperature values received from the server
+
+        String msg = parseCommandToSend(command, args);
+        String res = this.sendReceive(msg);
+        if (res.equals(OK_RESPONSE)) {
+            try {
+                Long fileSize = Long.parseLong((String) input.readObject());
+                byte[] buffer = new byte[1024];
+                int bytesRead;
+                File file = new File("temperatures.txt");
+                file.createNewFile();
+                FileOutputStream fos = new FileOutputStream(file);
+
+                while (fileSize > 0 && (bytesRead = input.read(buffer, 0, (int) Math.min(buffer.length, fileSize))) != -1) {
+                    fos.write(buffer, 0, bytesRead);
+                    fileSize -= bytesRead;
+                }
+
+                fos.close();
+                // Resposta: OK, 45 (long), seguido de 45 bytes de dados.
+                System.out.println("Resposta: " + OK_RESPONSE + ", " + fileSize + " (long), seguido de " + fileSize + " bytes de dados.");
+
+            } catch (Exception e) {
+                System.out.println("Error receiving temperatures");
+            }
+        } else {
+            System.out.println("Response: " + res +
+                    " # Error receiving temperatures");
+        }
+
     }
 
     public void sendReceiveRI(String[] args, String command) {

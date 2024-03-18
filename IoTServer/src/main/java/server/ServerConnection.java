@@ -2,6 +2,7 @@ package server;
 
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class ServerConnection {
@@ -140,7 +141,36 @@ public class ServerConnection {
                         }
                     }
                     case "EI" -> output.writeObject("Not implemented");
-                    case "RT" -> output.writeObject("Not implemented");
+                    case "RT" -> {
+                        ServerDomain domain = srvStorage.searchDomain(parsedMsg[1]);
+                        if (domain == null) {
+                            output.writeObject("NODM");
+                        } else if (!domain.getCanRead().contains(devUser) && !domain.getOwner().equals(devUser)) {
+                            output.writeObject("NOPERM");
+                        }
+                        else {
+                            String[] temperatures = domain.getDomainTemperatures();
+                            if (temperatures.length == 0) {
+                                output.writeObject("NODATA");
+                            }
+                            else {
+                                // Form a txt file with the temperatures, send the data size and then the file
+                                output.writeObject("OK");
+                                StringBuilder data = new StringBuilder();
+                                for (String temperature : temperatures) {
+                                    data.append(temperature).append("\n");
+                                }
+
+                                byte[] dataBytes = data.toString().getBytes(StandardCharsets.UTF_8);
+
+                                output.writeLong(dataBytes.length);
+                                output.write(dataBytes);
+
+                                output.flush();
+
+                            }
+                        }
+                    }
                     case "RI" -> output.writeObject("Not implemented");
                     default -> output.writeObject("NOK");
                 }
@@ -150,7 +180,15 @@ public class ServerConnection {
         }
     }
 
+    protected Float getLastTemperature() {
+        return this.lastTemperature;
+    }
+
     protected int getDevId() {
         return this.devId;
+    }
+
+    public String toString() {
+        return devUser.getUsername() + ":" + devId;
     }
 }
