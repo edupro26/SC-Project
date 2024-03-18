@@ -15,6 +15,8 @@ public class ServerConnection {
     private int devId;
     private Boolean hasValidDevId;
 
+    private Float lastTemperature;
+
     public ServerConnection(ObjectInputStream input, ObjectOutputStream output, String clientIP, ServerStorage srvStorage) {
         this.input = input;
         this.output = output;
@@ -124,7 +126,14 @@ public class ServerConnection {
                         output.writeObject(result);
                     }
                     case "RD" -> output.writeObject("Not implemented");
-                    case "ET" -> output.writeObject("Not implemented");
+                    case "ET" -> {
+                        try {
+                            lastTemperature = Float.parseFloat(parsedMsg[1]);
+                            output.writeObject("OK");
+                        } catch (Exception e) {
+                            output.writeObject("NOK");
+                        }
+                    }
                     case "EI" -> output.writeObject("Not implemented");
                     case "RT" -> output.writeObject("Not implemented");
                     case "RI" -> output.writeObject("Not implemented");
