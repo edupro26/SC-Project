@@ -72,7 +72,7 @@ public class ServerStorage {
         return false;
     }
 
-    protected static void saveUser(User user) {
+    protected void saveUser(User user) {
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter(USERS, true));
             writer.write(user.toString() + "\n");
@@ -83,7 +83,7 @@ public class ServerStorage {
         }
     }
 
-    protected static User searchUser(String username) {
+    protected User searchUser(String username) {
         for (User user : users) {
             if (username.equals(user.getUsername())){
                 return user;
@@ -92,19 +92,19 @@ public class ServerStorage {
         return null;
     }
 
-    protected static void createDomain(String username) {
+    protected void createDomain(String username) {
         // TODO create and save the domain in domains.csv
     }
 
-    protected static void addUserToDomain(ServerDomain domain, User user) {
+    protected void addUserToDomain(ServerDomain domain, User user) {
         // TODO add a user to a domain and save in domains.csv
     }
 
-    protected static void addDeviceToDomain(ServerDomain domain, ServerConnection device) {
+    protected void addDeviceToDomain(ServerDomain domain, ServerConnection device) {
         // TODO add a device to a domain and save in domains.csv
     }
 
-    protected static boolean checkDeviceInfo(String name, String size) {
+    protected boolean checkDeviceInfo(String name, String size) {
         InputStream in = ServerStorage.class.getClassLoader().getResourceAsStream(INFO);
 
         if (in != null) {

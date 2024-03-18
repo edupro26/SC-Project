@@ -56,7 +56,7 @@ public class NetworkServer {
                 ObjectInputStream input = new ObjectInputStream(cliSocket.getInputStream());
                 ObjectOutputStream output = new ObjectOutputStream(cliSocket.getOutputStream());
 
-                ServerConnection connection = new ServerConnection(input, output, clientAddress);
+                ServerConnection connection = new ServerConnection(input, output, clientAddress, srvStorage);
 
                 System.out.print("Validating device ID... ");
                 boolean validID = connection.validateDevID(srvStorage.getConnections());

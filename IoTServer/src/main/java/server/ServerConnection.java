@@ -6,19 +6,20 @@ import java.util.List;
 
 public class ServerConnection {
 
-    private final String clientAddress;
+    private final String clientIP;
+    private final ObjectInputStream input;
+    private final ObjectOutputStream output;
+    private final ServerStorage srvStorage;
 
     private String userId;
     private int devId;
     private Boolean hasValidDevId;
 
-    private final ObjectInputStream input;
-    private final ObjectOutputStream output;
-
-    public ServerConnection(ObjectInputStream input, ObjectOutputStream output, String clientAddress) {
+    public ServerConnection(ObjectInputStream input, ObjectOutputStream output, String clientIP, ServerStorage srvStorage) {
         this.input = input;
         this.output = output;
-        this.clientAddress = clientAddress;
+        this.clientIP = clientIP;
+        this.srvStorage = srvStorage;
         hasValidDevId = false;
 
         userAuthentication();
@@ -31,9 +32,9 @@ public class ServerConnection {
             userId = logIn[0];
             String password = logIn[1];
 
-            User user = ServerStorage.searchUser(userId);
+            User user = srvStorage.searchUser(userId);
             if (user == null) {
-                ServerStorage.saveUser(new User(userId, password));
+                srvStorage.saveUser(new User(userId, password));
                 output.writeObject("OK-NEW-USER");
             }
             else {
@@ -84,7 +85,7 @@ public class ServerConnection {
             String[] in = ((String) input.readObject()).split(",");
             String name = in[0];
             String size = in[1];
-            boolean tested = ServerStorage.checkDeviceInfo(name, size);
+            boolean tested = srvStorage.checkDeviceInfo(name, size);
             if (tested) {
                 output.writeObject("OK-TESTED");
                 System.out.println("Device info validated!");
@@ -105,14 +106,14 @@ public class ServerConnection {
             while (true) {
 
                 String msg = (String) input.readObject();
-                System.out.println("Received: " + msg + " from -> " + clientAddress);
+                System.out.println("Received: " + msg + " from -> " + clientIP);
 
                 // TODO Handle the message
 
                 output.writeObject("OK");
             }
         } catch (Exception e) {
-            System.out.println("Client disconnected (" + this.clientAddress + ")");
+            System.out.println("Client disconnected (" + this.clientIP + ")");
         }
     }
 
