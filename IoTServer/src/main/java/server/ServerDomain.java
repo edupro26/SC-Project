@@ -10,7 +10,7 @@ public class ServerDomain {
     private final List<User> canRead;
     private final List<ServerConnection> devices;
 
-    public ServerDomain(String name, User owner) {
+    protected ServerDomain(String name, User owner) {
         this.name = name;
         this.owner = owner;
         this.canRead = new ArrayList<>();
@@ -18,27 +18,27 @@ public class ServerDomain {
         this.devices = new ArrayList<>();
     }
 
-    public String getName() {
+    protected String getName() {
         return name;
     }
 
-    public User getOwner() {
+    protected User getOwner() {
         return owner;
     }
 
-    public List<User> getCanRead() {
+    protected List<User> getCanRead() {
         return canRead;
     }
 
-    public List<ServerConnection> getDevices() {
+    protected List<ServerConnection> getDevices() {
         return devices;
     }
 
-    public void addUser(User user) {
+    protected void addUser(User user) {
         canRead.add(user);
     }
 
-    public void addDevice(ServerConnection device) {
+    protected void addDevice(ServerConnection device) {
         devices.add(device);
     }
 
