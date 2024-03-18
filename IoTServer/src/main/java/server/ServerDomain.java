@@ -42,6 +42,14 @@ public class ServerDomain {
         devices.add(device);
     }
 
+    protected String[] getDomainTemperatures() {
+        String[] temperatures = new String[devices.size()];
+        for (int i = 0; i < devices.size(); i++) {
+            temperatures[i] = devices.get(i) + "->" + devices.get(i).getLastTemperature();
+        }
+        return temperatures;
+    }
+
     @Override
     public String toString() {
         // TODO get usernames and implement a
