@@ -11,8 +11,8 @@ public class ServerStorage {
     private static final String INFO = "device_info.csv";
 
     private static List<User> users;
-    private final List<ServerConnection> connections;
-    private final List<ServerDomain> domains;
+    private static List<ServerDomain> domains;
+    private static List<ServerConnection> connections;
 
     public ServerStorage() {
         users = new ArrayList<>();
@@ -69,14 +69,23 @@ public class ServerStorage {
     }
 
     private boolean loadDomains() {
-        //TODO load domains from domains.csv
-        return false;
+        try {
+            BufferedReader in = new BufferedReader(new FileReader(DOMAINS));
+            String line;
+            while ((line = in.readLine()) != null) {
+                domains.add(new ServerDomain(line));
+            }
+            return true;
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return false;
+        }
     }
 
-    protected void saveUser(User user) {
+    protected static void saveUser(User user) {
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter(USERS, true));
-            writer.write(user.toString() + "\n");
+            writer.write(user + "\n");
             writer.close();
             users.add(user);
         } catch (IOException e) {
@@ -84,7 +93,7 @@ public class ServerStorage {
         }
     }
 
-    protected User searchUser(String username) {
+    protected static User searchUser(String username) {
         for (User user : users) {
             if (username.equals(user.getUsername())){
                 return user;
@@ -93,7 +102,7 @@ public class ServerStorage {
         return null;
     }
 
-    protected ServerDomain searchDomain(String name) {
+    protected static ServerDomain searchDomain(String name) {
         for (ServerDomain domain : domains) {
             if (name.equals(domain.getName())){
                 return domain;
@@ -102,16 +111,19 @@ public class ServerStorage {
         return null;
     }
 
-    protected String createDomain(String name, String ownerId) {
-        User owner = searchUser(ownerId);
+    protected static String createDomain(String name, User owner) {
         if (owner != null) {
             ServerDomain alreadyExists = searchDomain(name);
             if (alreadyExists == null) {
                 ServerDomain domain = new ServerDomain(name, owner);
                 domains.add(domain);
-
-                // TODO Save to file
-
+                try {
+                    BufferedWriter writer = new BufferedWriter(new FileWriter(DOMAINS, true));
+                    writer.write(domain + "\n");
+                    writer.close();
+                } catch (IOException e) {
+                    System.out.println(e.getMessage());
+                }
                 return "OK";
             }
             return "NOK";
@@ -119,7 +131,7 @@ public class ServerStorage {
         return "NOK";
     }
 
-    protected String addUserToDomain(User user, User userToAdd, ServerDomain domain) {
+    protected static String addUserToDomain(User user, User userToAdd, ServerDomain domain) {
         if (domain == null) return "NODM";
         if (userToAdd == null) return "NOUSER";
         if (!domain.getOwner().equals(user)) return "NOPERM";
@@ -131,11 +143,11 @@ public class ServerStorage {
         return "OK";
     }
 
-    protected void addDeviceToDomain(ServerDomain domain, ServerConnection device) {
+    protected static void addDeviceToDomain(ServerDomain domain, ServerConnection device) {
         // TODO add a device to a domain and save in domains.csv
     }
 
-    protected boolean checkDeviceInfo(String name, String size) {
+    protected static boolean checkDeviceInfo(String name, String size) {
         InputStream in = ServerStorage.class.getClassLoader().getResourceAsStream(INFO);
 
         if (in != null) {
@@ -154,16 +166,26 @@ public class ServerStorage {
         return false;
     }
 
-    protected void addConnection(ServerConnection connection) {
-        this.connections.add(connection);
+    protected static ServerConnection searchDevice(String user, int id) {
+        for (ServerConnection device : connections) {
+            if(user.equals(device.getDevUser().getUsername())
+                    && id == device.getDevId()){
+                return device;
+            }
+        }
+        return null;
     }
 
-    protected void removeConnection(ServerConnection connection){
-        this.connections.remove(connection);
+    protected static void addConnection(ServerConnection connection) {
+        connections.add(connection);
     }
 
-    protected List<ServerConnection> getConnections() {
-        return this.connections;
+    protected static void removeConnection(ServerConnection connection){
+        connections.remove(connection);
+    }
+
+    protected static List<ServerConnection> getConnections() {
+        return connections;
     }
 
 }

@@ -1,8 +1,5 @@
 package server;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class User {
 
     private final String username;
@@ -35,6 +32,7 @@ public class User {
         return user.getUsername().equals(this.username);
     }
 
+    @Override
     public String toString() {
         return this.username + "," + this.password;
     }

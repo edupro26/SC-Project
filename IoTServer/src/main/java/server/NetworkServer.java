@@ -8,11 +8,10 @@ import java.net.Socket;
 public class NetworkServer {
 
     private final int port;
-    private final ServerStorage srvStorage;
 
     public NetworkServer(int port) {
         this.port = port;
-        this.srvStorage = new ServerStorage();
+        new ServerStorage();
     }
 
     public void start() {
@@ -40,7 +39,7 @@ public class NetworkServer {
         }
     }
 
-    private class ServerThread extends Thread {
+    private static class ServerThread extends Thread {
 
         private final Socket cliSocket;
 
@@ -56,10 +55,10 @@ public class NetworkServer {
                 ObjectInputStream input = new ObjectInputStream(cliSocket.getInputStream());
                 ObjectOutputStream output = new ObjectOutputStream(cliSocket.getOutputStream());
 
-                ServerConnection connection = new ServerConnection(input, output, clientAddress, srvStorage);
+                ServerConnection connection = new ServerConnection(input, output, clientAddress);
 
                 System.out.print("Validating device ID... ");
-                boolean validID = connection.validateDevID(srvStorage.getConnections());
+                boolean validID = connection.validateDevID(ServerStorage.getConnections());
 
                 // FIXME Enable when client app is finished and
                 //  don't forget to update size in device_info.csv
@@ -68,14 +67,14 @@ public class NetworkServer {
 
                 if (validID /*&& validInfo*/) {
                     System.out.println("Client connected (" + clientAddress + ")");
-                    srvStorage.addConnection(connection);
-                    System.out.println("Active connections: " + srvStorage.getConnections().size());
+                    ServerStorage.addConnection(connection);
+                    System.out.println("Active connections: " + ServerStorage.getConnections().size());
 
                     connection.handleRequests();
 
                     // Remove the connection from the list after the client disconnects
-                    srvStorage.removeConnection(connection);
-                    System.out.println("Active connections: " + srvStorage.getConnections().size());
+                    ServerStorage.removeConnection(connection);
+                    System.out.println("Active connections: " + ServerStorage.getConnections().size());
                 }
 
                 output.close();
