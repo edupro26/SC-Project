@@ -9,7 +9,6 @@ public class ServerConnection {
     private final String clientIP;
     private final ObjectInputStream input;
     private final ObjectOutputStream output;
-    private final ServerStorage srvStorage;
 
     private User devUser;
     private int devId;
@@ -17,11 +16,11 @@ public class ServerConnection {
 
     private Float lastTemperature;
 
-    public ServerConnection(ObjectInputStream input, ObjectOutputStream output, String clientIP, ServerStorage srvStorage) {
+    public ServerConnection(ObjectInputStream input, ObjectOutputStream output, String clientIP) {
         this.input = input;
         this.output = output;
         this.clientIP = clientIP;
-        this.srvStorage = srvStorage;
+        //this.srvStorage = srvStorage;
         this.devUser = null;
         hasValidDevId = false;
 
@@ -34,9 +33,9 @@ public class ServerConnection {
             String[] logIn = in.split(",");
             User temp = new User(logIn[0], logIn[1]);
 
-            this.devUser = srvStorage.searchUser(temp.getUsername());
+            this.devUser = ServerStorage.searchUser(temp.getUsername());
             if (this.devUser == null) {
-                srvStorage.saveUser(temp);
+                ServerStorage.saveUser(temp);
                 output.writeObject("OK-NEW-USER");
                 this.devUser = temp;
             }
@@ -90,7 +89,7 @@ public class ServerConnection {
             String[] in = ((String) input.readObject()).split(",");
             String name = in[0];
             String size = in[1];
-            boolean tested = srvStorage.checkDeviceInfo(name, size);
+            boolean tested = ServerStorage.checkDeviceInfo(name, size);
             if (tested) {
                 output.writeObject("OK-TESTED");
                 System.out.println("Device info validated!");
@@ -118,15 +117,15 @@ public class ServerConnection {
                 String result;
                 switch (command) {
                     case "CREATE" -> {
-                        result = srvStorage.createDomain(parsedMsg[1], devUser.getUsername());
+                        result = ServerStorage.createDomain(parsedMsg[1], devUser);
                         System.out.println("Result: " + result);
                         output.writeObject(result);
                         System.out.println("Domain created!");
                     }
                     case "ADD" -> {
                         //TODO finish add command
-                        result = srvStorage.addUserToDomain(this.devUser, srvStorage.searchUser(parsedMsg[1]),
-                                srvStorage.searchDomain(parsedMsg[2]));
+                        result = ServerStorage.addUserToDomain(this.devUser, ServerStorage.searchUser(parsedMsg[1]),
+                                ServerStorage.searchDomain(parsedMsg[2]));
                         output.writeObject(result);
                     }
                     //TODO finish commands
@@ -150,7 +149,16 @@ public class ServerConnection {
         }
     }
 
+    protected User getDevUser() {
+        return devUser;
+    }
+
     protected int getDevId() {
         return this.devId;
+    }
+
+    @Override
+    public String toString() {
+        return devUser.getUsername() + ":" + devId;
     }
 }

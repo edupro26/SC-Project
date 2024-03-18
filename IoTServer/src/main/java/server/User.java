@@ -35,6 +35,7 @@ public class User {
         return user.getUsername().equals(this.username);
     }
 
+    @Override
     public String toString() {
         return this.username + "," + this.password;
     }

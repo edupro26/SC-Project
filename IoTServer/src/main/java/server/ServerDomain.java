@@ -18,6 +18,34 @@ public class ServerDomain {
         this.devices = new ArrayList<>();
     }
 
+    protected ServerDomain(String domain) {
+        String[] split = domain.split(",");
+        this.name = split[0];
+        this.owner = ServerStorage.searchUser(split[1]);
+        this.canRead = new ArrayList<>();
+        this.devices = new ArrayList<>();
+
+        StringBuilder users = new StringBuilder(split[2]);
+        users.deleteCharAt(split[2].indexOf("{"));
+        users.deleteCharAt(split[2].indexOf("}") - 1);
+        String[] temp = users.toString().split(";");
+        for (String user: temp)
+            this.canRead.add(ServerStorage.searchUser(user));
+
+        if(!split[3].equals("{}")){
+            StringBuilder devices = new StringBuilder(split[3]);
+            devices.deleteCharAt(split[2].indexOf("{"));
+            devices.deleteCharAt(split[2].indexOf("}") - 1);
+            temp = devices.toString().split(";");
+            for (String device : temp) {
+                split = device.split(":");
+                ServerConnection canRead = ServerStorage.searchDevice(split[0], Integer.parseInt(split[1]));
+                if (canRead != null)
+                    this.devices.add(canRead);
+            }
+        }
+    }
+
     protected String getName() {
         return name;
     }
@@ -44,10 +72,27 @@ public class ServerDomain {
 
     @Override
     public String toString() {
-        // TODO get usernames and implement a
-        //  toString() for ServerConnection
-        String users = null;
-        String devices = null;
-        return name + "," + owner.getUsername() + "," + users + "," + devices;
+        StringBuilder users = new StringBuilder();
+        users.append("{");
+        for (User user : this.canRead) {
+            users.append(user.getUsername()).append(";");
+        }
+        users.deleteCharAt(users.length() - 1);
+        users.append("}");
+
+        StringBuilder devices = new StringBuilder();
+        if (!this.devices.isEmpty()) {
+            devices.append("{");
+            for (ServerConnection device : this.devices){
+                devices.append(device.toString()).append(";");
+            }
+            devices.deleteCharAt(devices.length() - 1);
+            devices.append("}");
+            return name + "," + owner.getUsername() + "," + users + "," + devices;
+        }
+        else {
+            return name + "," + owner.getUsername() + "," + users + "," + "{}";
+        }
+
     }
 }
