@@ -185,7 +185,39 @@ public class NetworkDevice {
             System.out.println("Usage: RI <user-id>:<dev_id>");
             return;
         }
-        // TODO Receive the image from the server
+
+        String msg = parseCommandToSend(command, args);
+        String res = this.sendReceive(msg);
+
+        if (res.equals(OK_RESPONSE)) {
+            try {
+                Long imageSize = input.readLong();
+                byte[] buffer = new byte[1024];
+                int bytesRead;
+                File file = new File("image.jpg");
+                file.createNewFile();
+                FileOutputStream fos = new FileOutputStream(file);
+
+                while (imageSize > 0 && (bytesRead = input.read(buffer, 0, (int) Math.min(buffer.length, imageSize))) != -1) {
+                    fos.write(buffer, 0, bytesRead);
+                    imageSize -= bytesRead;
+                }
+
+                fos.close();
+
+                System.out.println("Resposta: " + OK_RESPONSE + ", " + imageSize + " (long), seguido de " + imageSize + " Bytes de dados.");
+            } catch (Exception e) {
+                System.out.println("Error receiving image");
+            }
+        } else if (res.equals("NODATA")) {
+            System.out.println("Resposta: " + res + " # esse device id não publicou dados");
+        } else if (res.equals("NOID")) {
+            System.out.println("Resposta: " + res + " # esse device id não existe");
+        } else if (res.equals("NOPERM")) {
+            System.out.println("Resposta: " + res + " # sem permissões de leitura");
+        } else {
+            System.out.println("Response: " + res + " # Error receiving image");
+        }
     }
 
     private String parseCommandToSend(String command, String[] args) {
