@@ -108,7 +108,26 @@ public class ServerConnection {
                 String msg = (String) input.readObject();
                 System.out.println("Received: " + msg + " from -> " + clientIP);
 
-                // TODO Handle the message
+                String[] parsedMsg = msg.split(";");
+
+                switch (parsedMsg[0]) {
+                    case "CREATE" -> {
+                         String result = srvStorage.createDomain(parsedMsg[1], this.userId);
+
+                         output.writeObject(result);
+                    }
+                    case "ADD" -> {
+                        String result = srvStorage.addUserToDomain(srvStorage.searchDomain(parsedMsg[1]), srvStorage.searchUser(this.userId), srvStorage.searchUser(parsedMsg[2]);
+
+                        output.writeObject(result);
+                    }
+                    case "RD" -> output.writeObject("Not implemented");
+                    case "ET" -> output.writeObject("Not implemented");
+                    case "EI" -> output.writeObject("Not implemented");
+                    case "RT" -> output.writeObject("Not implemented");
+                    case "RI" -> output.writeObject("Not implemented");
+                }
+
 
                 output.writeObject("OK");
             }
