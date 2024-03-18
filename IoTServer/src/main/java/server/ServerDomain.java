@@ -5,14 +5,21 @@ import java.util.List;
 
 public class ServerDomain {
 
+    private final String name;
     private final User owner;
     private final List<User> canRead;
     private final List<ServerConnection> devices;
 
-    public ServerDomain(User owner) {
+    public ServerDomain(String name, User owner) {
+        this.name = name;
         this.owner = owner;
         this.canRead = new ArrayList<>();
+        this.addUser(owner);
         this.devices = new ArrayList<>();
+    }
+
+    public String getName() {
+        return name;
     }
 
     public User getOwner() {
@@ -35,8 +42,12 @@ public class ServerDomain {
         devices.add(device);
     }
 
-    // TODO finish implementation
-    //  Create a file in ServerStorage to save domains like the file
-    //  created for users (não tenho a certeza se é isto que é pedido)
-
+    @Override
+    public String toString() {
+        // TODO get usernames and implement a
+        //  toString() for ServerConnection
+        String users = null;
+        String devices = null;
+        return name + "," + owner.getUsername() + "," + users + "," + devices;
+    }
 }

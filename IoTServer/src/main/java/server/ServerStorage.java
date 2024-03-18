@@ -7,6 +7,7 @@ import java.util.List;
 public class ServerStorage {
 
     private static final String USERS = "users.csv";
+    private static final String DOMAINS = "domains.csv";
     private static final String INFO = "device_info.csv";
 
     private static List<User> users;
@@ -21,25 +22,30 @@ public class ServerStorage {
     }
 
     private void start() {
-        File users = new File(USERS);
         try {
-            // TODO create domain file
-            // TODO load domain file
+            File users = new File(USERS);
+            File domains = new File(DOMAINS);
+            String result;
             if (!users.exists()) {
-                if(users.createNewFile()){
-                    System.out.println("Users text file created successfully");
-                }
-                else {
-                    System.err.println("Unable to create user text file");
-                }
+                result = users.createNewFile() ?
+                        "Users text file created successfully" : "Unable to create user text file";
+                System.out.println(result);
             }
             else {
-                if (loadUsers()) {
-                    System.out.println("Users text file loaded successfully");
-                }
-                else {
-                    System.out.println("Unable to load users text file");
-                }
+                result = loadUsers() ?
+                        "Users text file loaded successfully" : "Unable to load users text file";
+                System.out.println(result);
+            }
+
+            if (!domains.exists()) {
+                result = domains.createNewFile() ?
+                        "Domains text file created successfully" : "Unable to create domains text file";
+                System.out.println(result);
+            }
+            else {
+                result = loadDomains() ?
+                        "Domains text file loaded successfully" : "Unable to load domains text file";
+                System.out.println(result);
             }
         } catch (IOException e) {
             System.out.println(e.getMessage());
@@ -59,6 +65,11 @@ public class ServerStorage {
             System.out.println(e.getMessage());
             return false;
         }
+    }
+
+    private boolean loadDomains() {
+        //TODO load domains from domains.csv
+        return false;
     }
 
     protected static void saveUser(User user) {
@@ -82,7 +93,15 @@ public class ServerStorage {
     }
 
     protected static void createDomain(String username) {
-        // TODO
+        // TODO create and save the domain in domains.csv
+    }
+
+    protected static void addUserToDomain(ServerDomain domain, User user) {
+        // TODO add a user to a domain and save in domains.csv
+    }
+
+    protected static void addDeviceToDomain(ServerDomain domain, ServerConnection device) {
+        // TODO add a device to a domain and save in domains.csv
     }
 
     protected static boolean checkDeviceInfo(String name, String size) {
