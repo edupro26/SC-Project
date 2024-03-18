@@ -119,7 +119,7 @@ public class ServerStorage {
         return "NOK";
     }
 
-    protected String addUserToDomain(ServerDomain domain, User user, User userToAdd) {
+    protected String addUserToDomain(User user, User userToAdd, ServerDomain domain) {
         if (domain == null) return "NODM";
         if (userToAdd == null) return "NOUSER";
         if (!domain.getOwner().equals(user)) return "NOPERM";

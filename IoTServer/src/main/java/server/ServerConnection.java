@@ -11,7 +11,7 @@ public class ServerConnection {
     private final ObjectOutputStream output;
     private final ServerStorage srvStorage;
 
-    private String userId;
+    private User devUser;
     private int devId;
     private Boolean hasValidDevId;
 
@@ -22,6 +22,7 @@ public class ServerConnection {
         this.output = output;
         this.clientIP = clientIP;
         this.srvStorage = srvStorage;
+        this.devUser = null;
         hasValidDevId = false;
 
         userAuthentication();
@@ -31,18 +32,19 @@ public class ServerConnection {
         try {
             String in = (String) input.readObject();
             String[] logIn = in.split(",");
-            userId = logIn[0];
-            String password = logIn[1];
+            User temp = new User(logIn[0], logIn[1]);
 
-            User user = srvStorage.searchUser(userId);
-            if (user == null) {
-                srvStorage.saveUser(new User(userId, password));
+            this.devUser = srvStorage.searchUser(temp.getUsername());
+            if (this.devUser == null) {
+                srvStorage.saveUser(temp);
                 output.writeObject("OK-NEW-USER");
+                this.devUser = temp;
             }
             else {
-                while (!password.equals(user.getPassword())) {
+                while (!temp.getPassword().equals(devUser.getPassword())) {
                     output.writeObject("WRONG-PWD");
-                    password = ((String) input.readObject()).split(",")[1];
+                    String password = ((String) input.readObject()).split(",")[1];
+                    temp.setPassword(password);
                 }
                 output.writeObject("OK-USER");
             }
@@ -57,7 +59,8 @@ public class ServerConnection {
                 String msg = (String) input.readObject();
                 boolean validId = true;
                 for (ServerConnection connection : connections) {
-                    if (connection.getDevId() == Integer.parseInt(msg) && connection.getUserId().equals(this.userId)) {
+                    if (connection.getDevId() == Integer.parseInt(msg) &&
+                            connection.devUser.getUsername().equals(devUser.getUsername())) {
                         output.writeObject("NOK-DEVID");
                         validId = false;
                         break;
@@ -115,16 +118,18 @@ public class ServerConnection {
                 String result;
                 switch (command) {
                     case "CREATE" -> {
-                        result = srvStorage.createDomain(parsedMsg[1], this.userId);
+                        result = srvStorage.createDomain(parsedMsg[1], devUser.getUsername());
                         System.out.println("Result: " + result);
                         output.writeObject(result);
                         System.out.println("Domain created!");
                     }
                     case "ADD" -> {
-                        result = srvStorage.addUserToDomain(srvStorage.searchDomain(parsedMsg[1]), srvStorage.searchUser(this.userId), srvStorage.searchUser(parsedMsg[2]));
-
+                        //TODO finish add command
+                        result = srvStorage.addUserToDomain(this.devUser, srvStorage.searchUser(parsedMsg[1]),
+                                srvStorage.searchDomain(parsedMsg[2]));
                         output.writeObject(result);
                     }
+                    //TODO finish commands
                     case "RD" -> output.writeObject("Not implemented");
                     case "ET" -> {
                         try {
@@ -143,10 +148,6 @@ public class ServerConnection {
         } catch (Exception e) {
             System.out.println("Client disconnected (" + this.clientIP + ")");
         }
-    }
-
-    protected String getUserId() {
-        return this.userId;
     }
 
     protected int getDevId() {
