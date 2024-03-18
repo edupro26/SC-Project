@@ -140,7 +140,7 @@ public class ServerConnection {
                     }
                     case "EI" -> output.writeObject("Not implemented");
                     case "RT" -> {
-                        ServerDomain domain = srvStorage.searchDomain(parsedMsg[1]);
+                        ServerDomain domain = ServerStorage.searchDomain(parsedMsg[1]);
                         if (domain == null) {
                             output.writeObject("NODM");
                         } else if (!domain.getCanRead().contains(devUser) && !domain.getOwner().equals(devUser)) {
@@ -159,7 +159,7 @@ public class ServerConnection {
                                     data.append(temperature).append("\n");
                                 }
 
-                                byte[] dataBytes = data.toString().getBytes(StandardCharsets.UTF_8);
+                                byte[] dataBytes = data.toString().getBytes();
 
                                 output.writeLong(dataBytes.length);
                                 output.write(dataBytes);
