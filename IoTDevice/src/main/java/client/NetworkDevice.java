@@ -6,6 +6,11 @@ import java.net.Socket;
 public class NetworkDevice {
 
     private static final String OK_RESPONSE = "OK";
+    private static final String NODM = "NODM";
+    private static final String NOUSER = "NOUSER";
+    private static final String NOPERM = "NOPERM";
+
+    private static final String ERROR_RESPONSE = "NOK";
 
     private final String address;
     private final int port;
@@ -66,7 +71,7 @@ public class NetworkDevice {
         switch (res) {
             case OK_RESPONSE -> System.out.println("Response: "
                     + OK_RESPONSE + " # Domain created successfully");
-            case "NOK" -> System.out.println("Response: " + res
+            case ERROR_RESPONSE -> System.out.println("Response: " + res
                     + " # Domain already exists");
             default -> System.out.println("NOK # Error creating domain");
         }
@@ -82,11 +87,11 @@ public class NetworkDevice {
         switch (res) {
             case OK_RESPONSE -> System.out.println("Response: "
                     + OK_RESPONSE + " # User added successfully");
-            case "NODM" -> System.out.println("Response: " + res
+            case NODM -> System.out.println("Response: " + res
                     + " # Domain does not exist");
-            case "NOUSER" -> System.out.println("Response: " + res
+            case NOUSER -> System.out.println("Response: " + res
                     + " # User does not exist");
-            case "NOPERM" -> System.out.println("Response: " + res
+            case NOPERM -> System.out.println("Response: " + res
                     + " # This user does not have permissions");
             default -> System.out.println("NOK # Error adding user");
         }
@@ -103,9 +108,9 @@ public class NetworkDevice {
         switch (res) {
             case OK_RESPONSE -> System.out.println("Response: "
                     + OK_RESPONSE + " # Device registered successfully");
-            case "NODM" -> System.out.println("Response: " + res
+            case NODM -> System.out.println("Response: " + res
                     + " # Domain does not exist");
-            case "NOPERM" -> System.out.println("Response: " + res
+            case NOPERM -> System.out.println("Response: " + res
                     + " # This user does not have permissions");
             default -> System.out.println("NOK # Error registering device");
         }
