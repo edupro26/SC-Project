@@ -32,13 +32,16 @@ public class ServerDomain {
         for (String user: temp)
             this.canRead.add(ServerStorage.searchUser(user));
 
-        if(!split[3].equals("{}")){
+        if(!split[3].equals("{}")) {
             StringBuilder devices = new StringBuilder(split[3]);
-            devices.deleteCharAt(split[2].indexOf("{"));
-            devices.deleteCharAt(split[2].indexOf("}") - 1);
+            devices.deleteCharAt(split[3].indexOf("{"));
+            devices.deleteCharAt(split[3].indexOf("}") - 1);
             temp = devices.toString().split(";");
             for (String device : temp) {
                 split = device.split(":");
+                // FIXME searchDevice is not working here, because when
+                //  the server restarts there are no ServerConnections active
+                //  I think this is also causing an error with the temp_domains.csv
                 ServerConnection canRead = ServerStorage.searchDevice(split[0], Integer.parseInt(split[1]));
                 if (canRead != null)
                     this.devices.add(canRead);
