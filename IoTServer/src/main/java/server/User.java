@@ -22,6 +22,7 @@ public class User {
         this.password = password;
     }
 
+    @Override
     public boolean equals(Object obj) {
         if (obj == this) {
             return true;

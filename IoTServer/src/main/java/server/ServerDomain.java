@@ -96,11 +96,10 @@ public class ServerDomain {
             }
             devices.deleteCharAt(devices.length() - 1);
             devices.append("}");
-            return name + "," + owner.getUsername() + "," + users + "," + devices;
         }
         else {
-            return name + "," + owner.getUsername() + "," + users + "," + "{}";
+            devices.append("{}");
         }
-
+        return name + "," + owner.getUsername() + "," + users + "," + devices;
     }
 }

@@ -20,7 +20,6 @@ public class ServerConnection {
         this.input = input;
         this.output = output;
         this.clientIP = clientIP;
-        //this.srvStorage = srvStorage;
         this.devUser = null;
         hasValidDevId = false;
 
@@ -35,7 +34,7 @@ public class ServerConnection {
 
             this.devUser = ServerStorage.searchUser(temp.getUsername());
             if (this.devUser == null) {
-                ServerStorage.saveUser(temp);
+                ServerStorage.createUser(temp);
                 output.writeObject("OK-NEW-USER");
                 this.devUser = temp;
             }
@@ -119,14 +118,19 @@ public class ServerConnection {
                     case "CREATE" -> {
                         result = ServerStorage.createDomain(parsedMsg[1], devUser);
                         output.writeObject(result);
-                        if (result.equals("OK"))
-                            System.out.println("Domain created!");
+                        result = result.equals("OK") ?
+                                "Success: Domain created!" : "Error: Domain not created!";
+                        System.out.println(result);
                     }
                     case "ADD" -> {
-                        //TODO finish add command
-                        result = ServerStorage.addUserToDomain(this.devUser, ServerStorage.searchUser(parsedMsg[1]),
-                                ServerStorage.searchDomain(parsedMsg[2]));
+                        User user = ServerStorage.searchUser(parsedMsg[1]);
+                        ServerDomain domain = ServerStorage.searchDomain(parsedMsg[2]);
+                        // TODO verify if user is already in the domain
+                        result = ServerStorage.addUserToDomain(this.devUser, user, domain);
                         output.writeObject(result);
+                        result = result.equals("OK") ?
+                                "Success: User added!" : "Error: Domain not created!";
+                        System.out.println(result);
                     }
                     //TODO finish commands
                     case "RD" -> output.writeObject("Not implemented");
