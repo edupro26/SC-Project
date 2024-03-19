@@ -9,7 +9,6 @@ public class NetworkDevice {
     private static final String NODM = "NODM";
     private static final String NOUSER = "NOUSER";
     private static final String NOPERM = "NOPERM";
-
     private static final String ERROR_RESPONSE = "NOK";
 
     private final String address;
@@ -73,7 +72,7 @@ public class NetworkDevice {
                     + OK_RESPONSE + " # Domain created successfully");
             case ERROR_RESPONSE -> System.out.println("Response: " + res
                     + " # Domain already exists");
-            default -> System.out.println("NOK # Error creating domain");
+            default -> System.out.println("Response: NOK # Error creating domain");
         }
     }
 
@@ -93,7 +92,7 @@ public class NetworkDevice {
                     + " # User does not exist");
             case NOPERM -> System.out.println("Response: " + res
                     + " # This user does not have permissions");
-            default -> System.out.println("NOK # Error adding user");
+            default -> System.out.println("Response: NOK # Error adding user");
         }
     }
 
@@ -112,7 +111,7 @@ public class NetworkDevice {
                     + " # Domain does not exist");
             case NOPERM -> System.out.println("Response: " + res
                     + " # This user does not have permissions");
-            default -> System.out.println("NOK # Error registering device");
+            default -> System.out.println("Response: NOK # Error registering device");
         }
     }
 

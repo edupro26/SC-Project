@@ -127,7 +127,7 @@ public class ServerConnection {
                         result = ServerStorage.addUserToDomain(this.devUser, user, domain);
                         output.writeObject(result);
                         result = result.equals("OK") ?
-                                "Success: User added!" : "Error: Domain not created!";
+                                "Success: User added!" : "Error: Unable to add user!";
                         System.out.println(result);
                     }
                     //TODO finish RD
@@ -136,9 +136,8 @@ public class ServerConnection {
                         result =  ServerStorage.addDeviceToDomain(domain,this);
                         output.writeObject(result);
                         result = result.equals("OK") ?
-                                "Success: Device sucessfully registered!" : "Error: Device was not registered!";
+                                "Success: Device registered!" : "Error: Unable to register device!";
                         System.out.println(result);
-
                     }
                     case "ET" -> {
                         try {
