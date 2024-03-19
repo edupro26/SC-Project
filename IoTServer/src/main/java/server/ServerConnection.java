@@ -131,8 +131,15 @@ public class ServerConnection {
                         System.out.println(result);
                     }
                     //TODO finish RD
-                    case "RD" -> output.writeObject("Not implemented");
-                    // TODO needs testing
+                    case "RD" -> {
+                        ServerDomain domain = ServerStorage.searchDomain(parsedMsg[1]);
+                        result =  ServerStorage.addDeviceToDomain(domain,this);
+                        output.writeObject(result);
+                        result = result.equals("OK") ?
+                                "Success: Device sucessfully registered!" : "Error: Device was not registered!";
+                        System.out.println(result);
+
+                    }
                     case "ET" -> {
                         try {
                             lastTemperature = Float.parseFloat(parsedMsg[1]);
