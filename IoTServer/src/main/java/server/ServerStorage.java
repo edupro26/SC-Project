@@ -82,6 +82,30 @@ public class ServerStorage {
         }
     }
 
+    private static boolean updateDomain(User owner, ServerDomain domain) {
+        File domains = new File(DOMAINS);
+        File tempFile = new File("temp_domains.csv");
+        try {
+            BufferedReader in = new BufferedReader(new FileReader(domains));
+            BufferedWriter out = new BufferedWriter(new FileWriter(tempFile));
+            String line;
+            while ((line = in.readLine()) != null) {
+                String[] temp = line.split(",");
+                if (temp[0].equals(domain.getName()) && temp[1].equals(owner.getUsername()))
+                    line = domain.toString();
+                out.write(line + "\n");
+            }
+            out.close();
+            in.close();
+            if (!domains.delete()) return false;
+            if (!tempFile.renameTo(domains)) return false;
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+            return false;
+        }
+        return true;
+    }
+
     protected static void createUser(User user) {
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter(USERS, true));
@@ -145,29 +169,10 @@ public class ServerStorage {
         if (domain == null) return "NODM";
         if (userToAdd == null) return "NOUSER";
         if (!domain.getOwner().equals(user)) return "NOPERM";
-        try {
-            domain.addUser(userToAdd);
-            String newDomain = domain.toString();
-            File domains = new File(DOMAINS);
-            File tempFile = new File("temp_domains.csv");
+        if (domain.getCanRead().contains(userToAdd)) return "NOK";
 
-            BufferedReader in = new BufferedReader(new FileReader(domains));
-            BufferedWriter out = new BufferedWriter(new FileWriter(tempFile));
-            String line;
-            while ((line = in.readLine()) != null) {
-                String[] temp = line.split(",");
-                if (temp[0].equals(domain.getName()) && temp[1].equals(user.getUsername()))
-                    line = newDomain;
-                out.write(line + "\n");
-            }
-            out.close();
-            in.close();
-            if (!domains.delete()) return "NOK";
-            if (!tempFile.renameTo(domains)) return "NOK";
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
-        return "OK";
+        domain.addUser(userToAdd);
+        return updateDomain(user, domain) ? "OK" : "NOK";
     }
 
     protected static void addDeviceToDomain(ServerDomain domain, ServerConnection device) {
@@ -176,7 +181,6 @@ public class ServerStorage {
 
     protected static boolean checkDeviceInfo(String name, String size) {
         InputStream in = ServerStorage.class.getClassLoader().getResourceAsStream(INFO);
-
         if (in != null) {
             try (BufferedReader br = new BufferedReader(new InputStreamReader(in))) {
                 String line;
@@ -189,7 +193,6 @@ public class ServerStorage {
                 System.out.println(e.getMessage());
             }
         }
-
         return false;
     }
 

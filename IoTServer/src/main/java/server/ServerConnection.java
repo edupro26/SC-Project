@@ -109,7 +109,6 @@ public class ServerConnection {
             while (true) {
                 String msg = (String) input.readObject();
                 System.out.println("Received: " + msg + " from -> " + clientIP);
-
                 String[] parsedMsg = msg.split(";");
                 String command = parsedMsg[0];
 
@@ -125,15 +124,15 @@ public class ServerConnection {
                     case "ADD" -> {
                         User user = ServerStorage.searchUser(parsedMsg[1]);
                         ServerDomain domain = ServerStorage.searchDomain(parsedMsg[2]);
-                        // TODO verify if user is already in the domain
                         result = ServerStorage.addUserToDomain(this.devUser, user, domain);
                         output.writeObject(result);
                         result = result.equals("OK") ?
                                 "Success: User added!" : "Error: Domain not created!";
                         System.out.println(result);
                     }
-                    //TODO finish commands
+                    //TODO finish RD
                     case "RD" -> output.writeObject("Not implemented");
+                    // TODO needs testing
                     case "ET" -> {
                         try {
                             lastTemperature = Float.parseFloat(parsedMsg[1]);
@@ -142,7 +141,9 @@ public class ServerConnection {
                             output.writeObject("NOK");
                         }
                     }
+                    // TODO finish EI
                     case "EI" -> output.writeObject("Not implemented");
+                    // TODO needs testing
                     case "RT" -> {
                         ServerDomain domain = ServerStorage.searchDomain(parsedMsg[1]);
                         if (domain == null) {
@@ -173,6 +174,7 @@ public class ServerConnection {
                             }
                         }
                     }
+                    // TODO finish RI
                     case "RI" -> output.writeObject("Not implemented");
                     default -> output.writeObject("NOK");
                 }
@@ -198,6 +200,5 @@ public class ServerConnection {
     public String toString() {
         return devUser.getUsername() + ":" + devId;
     }
-
 
 }
