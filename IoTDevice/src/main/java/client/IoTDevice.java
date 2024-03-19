@@ -148,7 +148,7 @@ public class IoTDevice {
             case "EI" -> client.sendReceiveEI(args, command);
             case "RT" -> client.sendReceiveRT(args, command);
             case "RI" -> client.sendReceiveRI(args, command);
-            default -> System.out.println("Invalid command");
+            default -> System.out.println("Response: NOK # Invalid command");
         }
     }
 }
