@@ -64,14 +64,10 @@ public class NetworkDevice {
         String msg = parseCommandToSend(command, args);
         String res = this.sendReceive(msg);
         switch (res) {
-            case OK_RESPONSE -> {
-                System.out.println("Response: " + OK_RESPONSE
-                        + " # Domain created successfully");
-            }
-            case "NOK" -> {
-                System.out.println("Response: " + res
-                        + " # Domain already exists");
-            }
+            case OK_RESPONSE -> System.out.println("Response: "
+                    + OK_RESPONSE + " # Domain created successfully");
+            case "NOK" -> System.out.println("Response: " + res
+                    + " # Domain already exists");
             default -> System.out.println("NOK # Error creating domain");
         }
     }
@@ -84,22 +80,14 @@ public class NetworkDevice {
         String msg = parseCommandToSend(command, args);
         String res = this.sendReceive(msg);
         switch (res) {
-            case OK_RESPONSE -> {
-                System.out.println("Response: " + OK_RESPONSE +
-                        " # User added successfully");
-            }
-            case "NODM" -> {
-                System.out.println("Response: " + res +
-                        " # Domain does not exist");
-            }
-            case "NOUSER" -> {
-                System.out.println("Response: " + res +
-                        " # User does not exist");
-            }
-            case "NOPERM" -> {
-                System.out.println("Response: " + res +
-                        " # This user does not have permissions");
-            }
+            case OK_RESPONSE -> System.out.println("Response: "
+                    + OK_RESPONSE + " # User added successfully");
+            case "NODM" -> System.out.println("Response: " + res
+                    + " # Domain does not exist");
+            case "NOUSER" -> System.out.println("Response: " + res
+                    + " # User does not exist");
+            case "NOPERM" -> System.out.println("Response: " + res
+                    + " # This user does not have permissions");
             default -> System.out.println("NOK # Error adding user");
         }
     }
@@ -113,18 +101,12 @@ public class NetworkDevice {
         String msg = parseCommandToSend(command, args);
         String res = this.sendReceive(msg);
         switch (res) {
-            case OK_RESPONSE -> {
-                System.out.println("Response: " + OK_RESPONSE +
-                        " # Device registered successfully");
-            }
-            case "NODM" -> {
-                System.out.println("Response: " + res +
-                        " # Domain does not exist");
-            }
-            case "NOPERM" -> {
-                System.out.println("Response: " + res +
-                        " # This user does not have permissions");
-            }
+            case OK_RESPONSE -> System.out.println("Response: "
+                    + OK_RESPONSE + " # Device registered successfully");
+            case "NODM" -> System.out.println("Response: " + res
+                    + " # Domain does not exist");
+            case "NOPERM" -> System.out.println("Response: " + res
+                    + " # This user does not have permissions");
             default -> System.out.println("NOK # Error registering device");
         }
     }
