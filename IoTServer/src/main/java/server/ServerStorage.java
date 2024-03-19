@@ -175,9 +175,25 @@ public class ServerStorage {
         return updateDomain(user, domain) ? "OK" : "NOK";
     }
 
-    protected static void addDeviceToDomain(ServerDomain domain, ServerConnection device) {
-        // TODO add a device to a domain and save in domains.csv
+    protected static String addDeviceToDomain(ServerDomain domain, ServerConnection device) {
+
+        if(domain == null ) return "NODM # esse domínio não existe";
+
+        boolean isDeviceRegistered = domain.getDevices().contains(device);
+
+        User owner = domain.getOwner();
+        String user  = device.getDevUser().getUsername();
+
+        if(isDeviceRegistered) return "NOK # o dispositivo já está registado" ;
+        if(owner.getUsername().equals(user)
+                || domain.getCanRead().contains(device.getDevUser())) {
+            domain.addDevice(device);
+            updateDomain(owner, domain);
+            return "OK";
+        }
+        else{ return "NOPERM"; }
     }
+
 
     protected static boolean checkDeviceInfo(String name, String size) {
         InputStream in = ServerStorage.class.getClassLoader().getResourceAsStream(INFO);
