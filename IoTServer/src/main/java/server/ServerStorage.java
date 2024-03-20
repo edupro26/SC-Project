@@ -61,6 +61,7 @@ public class ServerStorage {
                 String[] data = line.split(",");
                 users.add(new User(data[0],data[1]));
             }
+            in.close();
             return true;
         } catch (IOException e) {
             System.out.println(e.getMessage());
@@ -75,6 +76,7 @@ public class ServerStorage {
             while ((line = in.readLine()) != null) {
                 domains.add(new ServerDomain(line));
             }
+            in.close();
             return true;
         } catch (IOException e) {
             System.out.println(e.getMessage());
