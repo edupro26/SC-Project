@@ -208,9 +208,9 @@ public class ServerConnection {
                                 }
 
                                 byte[] dataBytes = data.toString().getBytes();
-
                                 output.writeLong(dataBytes.length);
                                 output.write(dataBytes);
+
 
                                 output.flush();
 
@@ -218,7 +218,13 @@ public class ServerConnection {
                         }
                     }
                     // TODO finish RI
-                    case "RI" -> output.writeObject("Not implemented");
+                    case "RI" -> {
+                        String userDevice = parsedMsg[1];
+                        User user = ServerStorage.searchUser(userDevice);
+                        int devId = Integer.parseInt(parsedMsg[2]);
+
+
+                    }
                     default -> output.writeObject("NOK");
                 }
             }

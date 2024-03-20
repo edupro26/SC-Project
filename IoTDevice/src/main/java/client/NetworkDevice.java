@@ -170,23 +170,25 @@ public class NetworkDevice {
         String res = this.sendReceive(msg);
         if (res.equals(OK_RESPONSE)) {
             try {
-                Long fileSize = Long.parseLong((String) input.readObject());
+                Long fileSize = input.readLong();
                 byte[] buffer = new byte[1024];
                 int bytesRead;
                 File file = new File("temperatures.txt");
-                file.createNewFile();
+                if (!file.exists()) {
+                    file.createNewFile();
+                }
                 FileOutputStream fos = new FileOutputStream(file);
-
-                while (fileSize > 0 && (bytesRead = input.read(buffer, 0, (int) Math.min(buffer.length, fileSize))) != -1) {
+                long remainingBytes = fileSize;
+                while (remainingBytes > 0 && (bytesRead = input.read(buffer, 0, (int) Math.min(buffer.length, remainingBytes))) != -1) {
                     fos.write(buffer, 0, bytesRead);
-                    fileSize -= bytesRead;
+                    remainingBytes -= bytesRead;
                 }
 
                 fos.close();
-                // Resposta: OK, 45 (long), seguido de 45 bytes de dados.
                 System.out.println("Resposta: " + OK_RESPONSE + ", " + fileSize + " (long), seguido de " + fileSize + " bytes de dados.");
 
             } catch (Exception e) {
+                System.out.println(e.getMessage());
                 System.out.println("Error receiving temperatures");
             }
         } else {
