@@ -143,7 +143,12 @@ public class NetworkDevice {
         String msg = parseCommandToSend(command, new String[]{String.valueOf(file.length())});
 
         // Send the command to the server to warn it will receive a file
-        this.sendReceive(msg);
+        String firstRes = this.sendReceive(msg);
+
+        if (!firstRes.equals("Send image")) {
+            System.out.println("Error sending image size");
+            return;
+        }
 
         // Send the file to the server
         String res = sendFileToServer(file);
@@ -248,11 +253,11 @@ public class NetworkDevice {
 
             byte[] buffer = new byte[1024];
             int bytesRead;
-
             while ((bytesRead = fis.read(buffer)) != -1) {
                 output.write(buffer, 0, bytesRead);
             }
 
+            output.flush();
             fis.close();
 
             return (String) input.readObject();

@@ -1,5 +1,7 @@
 package server;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.List;
@@ -148,7 +150,42 @@ public class ServerConnection {
                         }
                     }
                     // TODO finish EI
-                    case "EI" -> output.writeObject("Not implemented");
+                    case "EI" -> {
+                        long imageSize = Long.parseLong(parsedMsg[1]);
+
+                        output.writeObject("Send image");
+
+                        System.out.println("Receiving image from " + devUser.getUsername() + ":" + devId + " with size " + imageSize + " bytes.");
+
+                        String imageName = "images/" + devUser.getUsername() + "_" + devId + ".jpg";
+
+                        File imageFile = new File(imageName);
+
+                        File parentDir = imageFile.getParentFile();
+                        if (!parentDir.exists()) {
+                            parentDir.mkdirs();
+                        }
+
+                        if (!imageFile.exists()) {
+                            imageFile.createNewFile();
+                        }
+
+                        FileOutputStream imageOutput = new FileOutputStream(imageFile);
+
+                        long remainingBytes = imageSize;
+                        int bytesRead;
+
+                        byte[] buffer = new byte[1024]; // Use a fixed-size buffer
+                        while (remainingBytes > 0 && (bytesRead = input.read(buffer, 0, (int) Math.min(buffer.length, remainingBytes))) != -1){
+                            imageOutput.write(buffer, 0, bytesRead);
+                            remainingBytes -= bytesRead;
+                        }
+
+                        imageOutput.flush();
+                        imageOutput.close();
+                        output.writeObject("OK");
+
+                    }
                     // TODO needs testing
                     case "RT" -> {
                         ServerDomain domain = ServerStorage.searchDomain(parsedMsg[1]);
