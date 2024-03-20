@@ -169,7 +169,7 @@ public class ServerStorage {
         if (domain == null) return "NODM";
         if (userToAdd == null) return "NOUSER";
         if (!domain.getOwner().equals(user)) return "NOPERM";
-        if (domain.getCanRead().contains(userToAdd)) return "NOK";
+        if (domain.getUsers().contains(userToAdd)) return "NOK";
 
         domain.addUser(userToAdd);
         return updateDomain(user, domain) ? "OK" : "NOK";
@@ -180,7 +180,7 @@ public class ServerStorage {
         if(domain.getDevices().contains(device)) return "NOK" ;
         User owner = domain.getOwner();
         String user  = device.getDevUser().getUsername();
-        if(!domain.getCanRead().contains(device.getDevUser())
+        if(!domain.getUsers().contains(device.getDevUser())
                 && !owner.getUsername().equals(user)) return "NOPERM";
 
         domain.addDevice(device);

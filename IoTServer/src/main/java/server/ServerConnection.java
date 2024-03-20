@@ -154,7 +154,7 @@ public class ServerConnection {
                         ServerDomain domain = ServerStorage.searchDomain(parsedMsg[1]);
                         if (domain == null) {
                             output.writeObject("NODM");
-                        } else if (!domain.getCanRead().contains(devUser) && !domain.getOwner().equals(devUser)) {
+                        } else if (!domain.getUsers().contains(devUser) && !domain.getOwner().equals(devUser)) {
                             output.writeObject("NOPERM");
                         }
                         else {

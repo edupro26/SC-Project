@@ -7,44 +7,40 @@ public class ServerDomain {
 
     private final String name;
     private final User owner;
-    private final List<User> canRead;
+    private final List<User> users;
     private final List<ServerConnection> devices;
 
     protected ServerDomain(String name, User owner) {
         this.name = name;
         this.owner = owner;
-        this.canRead = new ArrayList<>();
-        this.addUser(owner);
+        this.users = new ArrayList<>();
+        this.addUser(owner); //TODO decide whether to remove this or not
         this.devices = new ArrayList<>();
     }
 
     protected ServerDomain(String domain) {
-        String[] split = domain.split(",");
-        this.name = split[0];
-        this.owner = ServerStorage.searchUser(split[1]);
-        this.canRead = new ArrayList<>();
+        String[] domainParts = domain.split(",");
+        this.name = domainParts[0];
+        this.owner = ServerStorage.searchUser(domainParts[1]);
+        this.users = new ArrayList<>();
         this.devices = new ArrayList<>();
 
-        StringBuilder users = new StringBuilder(split[2]);
-        users.deleteCharAt(split[2].indexOf("{"));
-        users.deleteCharAt(split[2].indexOf("}") - 1);
-        String[] temp = users.toString().split(";");
-        for (String user: temp)
-            this.canRead.add(ServerStorage.searchUser(user));
+        String[] users = domainParts[2].substring(1, domainParts[2].length() - 1).split(";");
+        for (String user : users)
+            this.users.add(ServerStorage.searchUser(user));
 
-        if(!split[3].equals("{}")) {
-            StringBuilder devices = new StringBuilder(split[3]);
-            devices.deleteCharAt(split[3].indexOf("{"));
-            devices.deleteCharAt(split[3].indexOf("}") - 1);
-            temp = devices.toString().split(";");
-            for (String device : temp) {
-                split = device.split(":");
+        if (!domainParts[3].equals("{}")) {
+            String[] devices = domainParts[3].substring(1, domainParts[3].length() - 1).split(";");
+            for (String device : devices) {
+                String[] deviceParts = device.split(":");
                 // FIXME searchDevice is not working here, because when
                 //  the server restarts there are no ServerConnections active
                 //  I think this is also causing an error with the temp_domains.csv
-                ServerConnection canRead = ServerStorage.searchDevice(split[0], Integer.parseInt(split[1]));
-                if (canRead != null)
-                    this.devices.add(canRead);
+                ServerConnection domainDevice = ServerStorage.searchDevice(deviceParts[0],
+                        Integer.parseInt(deviceParts[1]));
+                if (domainDevice != null) {
+                    this.devices.add(domainDevice);
+                }
             }
         }
     }
@@ -57,8 +53,8 @@ public class ServerDomain {
         return owner;
     }
 
-    protected List<User> getCanRead() {
-        return canRead;
+    protected List<User> getUsers() {
+        return users;
     }
 
     protected List<ServerConnection> getDevices() {
@@ -66,7 +62,7 @@ public class ServerDomain {
     }
 
     protected void addUser(User user) {
-        canRead.add(user);
+        users.add(user);
     }
 
     protected void addDevice(ServerConnection device) {
@@ -85,7 +81,7 @@ public class ServerDomain {
     public String toString() {
         StringBuilder users = new StringBuilder();
         users.append("{");
-        for (User user : this.canRead) {
+        for (User user : this.users) {
             users.append(user.getUsername()).append(";");
         }
         users.deleteCharAt(users.length() - 1);
