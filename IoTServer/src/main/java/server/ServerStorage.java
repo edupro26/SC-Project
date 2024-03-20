@@ -12,6 +12,7 @@ public class ServerStorage {
 
     private static List<User> users;
     private static List<ServerDomain> domains;
+    private static List<Device> devices; // TODO
     private static List<ServerConnection> connections;
 
     public ServerStorage() {
@@ -182,8 +183,10 @@ public class ServerStorage {
         if(domain.getDevices().contains(device)) return "NOK" ;
         User owner = domain.getOwner();
         String user  = device.getDevUser().getUsername();
-        if(!domain.getUsers().contains(device.getDevUser())
-                && !owner.getUsername().equals(user)) return "NOPERM";
+        if(!domain.getUsers().contains(device.getDevUser())) {
+            if (!owner.getUsername().equals(user))
+                return "NOPERM";
+        }
 
         domain.addDevice(device);
         return updateDomain(owner, domain) ? "OK" : "NOK";
