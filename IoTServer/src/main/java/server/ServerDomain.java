@@ -2,6 +2,7 @@ package server;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringJoiner;
 
 public class ServerDomain {
 
@@ -79,26 +80,22 @@ public class ServerDomain {
 
     @Override
     public String toString() {
-        StringBuilder users = new StringBuilder();
-        users.append("{");
+        StringJoiner userJoiner = new StringJoiner(";");
         for (User user : this.users) {
-            users.append(user.getUsername()).append(";");
+            userJoiner.add(user.getUsername());
         }
-        users.deleteCharAt(users.length() - 1);
-        users.append("}");
-
-        StringBuilder devices = new StringBuilder();
+        String user = "{" + userJoiner + "}";
+        String devices;
         if (!this.devices.isEmpty()) {
-            devices.append("{");
-            for (ServerConnection device : this.devices){
-                devices.append(device.toString()).append(";");
+            StringJoiner deviceJoiner = new StringJoiner(";");
+            for (ServerConnection device : this.devices) {
+                deviceJoiner.add(device.toString());
             }
-            devices.deleteCharAt(devices.length() - 1);
-            devices.append("}");
+            devices = "{" + deviceJoiner + "}";
         }
         else {
-            devices.append("{}");
+            devices = "{}";
         }
-        return name + "," + owner.getUsername() + "," + users + "," + devices;
+        return name + "," + owner.getUsername() + "," + user + "," + devices;
     }
 }
