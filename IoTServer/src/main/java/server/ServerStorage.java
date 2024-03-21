@@ -2,6 +2,7 @@ package server;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class ServerStorage {
@@ -10,16 +11,16 @@ public class ServerStorage {
     private static final String DOMAINS = "domains.csv";
     private static final String INFO = "device_info.csv";
 
+    private static List<ServerConnection> connections;
     private static List<User> users;
     private static List<ServerDomain> domains;
-    private static List<Device> devices; // TODO
-    private static List<ServerConnection> connections;
+    private static HashMap<Device ,List<ServerDomain>> devices; // TODO
 
     public ServerStorage() {
         users = new ArrayList<>();
         connections = new ArrayList<>();
         domains = new ArrayList<>();
-
+        devices = new HashMap<>();
         this.start();
     }
 
@@ -77,6 +78,7 @@ public class ServerStorage {
             while ((line = in.readLine()) != null) {
                 domains.add(new ServerDomain(line));
             }
+            // TODO Fill the devices HashMap
             in.close();
             return true;
         } catch (IOException e) {
@@ -85,7 +87,7 @@ public class ServerStorage {
         }
     }
 
-    private static boolean updateDomain(User owner, ServerDomain domain) {
+    private static boolean updateDomainInFile(ServerDomain domain) {
         File domains = new File(DOMAINS);
         File tempFile = new File("temp_domains.csv");
         try {
@@ -94,7 +96,7 @@ public class ServerStorage {
             String line;
             while ((line = in.readLine()) != null) {
                 String[] temp = line.split(",");
-                if (temp[0].equals(domain.getName()) && temp[1].equals(owner.getUsername()))
+                if (temp[0].equals(domain.getName()))
                     line = domain.toString();
                 out.write(line + "\n");
             }
@@ -142,16 +144,23 @@ public class ServerStorage {
 
     protected static User searchUser(String username) {
         for (User user : users) {
-            if (username.equals(user.getUsername())){
+            if (username.equals(user.getName())){
                 return user;
             }
         }
         return null;
     }
 
-    protected static ServerConnection searchDevice(String user, int id) {
+    protected static Device searchDevice(Device device) {
+        // TODO with the HashMap
+        return null;
+    }
+
+    protected static ServerConnection searchDeviceOLD(String user, int id) {
+        // TODO this method will probably not be needed after
+        //  Device implementation
         for (ServerConnection device : connections) {
-            if(user.equals(device.getDevUser().getUsername())
+            if(user.equals(device.getDevUser().getName())
                     && id == device.getDevId()){
                 return device;
             }
@@ -175,23 +184,24 @@ public class ServerStorage {
         if (domain.getUsers().contains(userToAdd)) return "NOK";
 
         domain.addUser(userToAdd);
-        return updateDomain(user, domain) ? "OK" : "NOK";
+        return updateDomainInFile(domain) ? "OK" : "NOK";
     }
 
     protected static String addDeviceToDomain(ServerDomain domain, ServerConnection device) {
+        // TODO this will receive a Device and will need to update
+        //  the devices HashMap
         if(domain == null ) return "NODM";
         if(domain.getDevices().contains(device)) return "NOK" ;
         User owner = domain.getOwner();
-        String user  = device.getDevUser().getUsername();
+        String user  = device.getDevUser().getName();
         if(!domain.getUsers().contains(device.getDevUser())) {
-            if (!owner.getUsername().equals(user))
+            if (!owner.getName().equals(user))
                 return "NOPERM";
         }
 
         domain.addDevice(device);
-        return updateDomain(owner, domain) ? "OK" : "NOK";
+        return updateDomainInFile(domain) ? "OK" : "NOK";
     }
-
 
     protected static boolean checkDeviceInfo(String name, String size) {
         InputStream in = ServerStorage.class.getClassLoader().getResourceAsStream(INFO);

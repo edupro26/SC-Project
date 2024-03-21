@@ -9,6 +9,7 @@ public class ServerDomain {
     private final String name;
     private final User owner;
     private final List<User> users;
+    // TODO this will need to be List<Devices>
     private final List<ServerConnection> devices;
 
     protected ServerDomain(String name, User owner) {
@@ -33,11 +34,9 @@ public class ServerDomain {
         if (!domainParts[3].equals("{}")) {
             String[] devices = domainParts[3].substring(1, domainParts[3].length() - 1).split(";");
             for (String device : devices) {
+                // TODO the 2nd Device constructor will need to be used here
                 String[] deviceParts = device.split(":");
-                // FIXME searchDevice is not working here, because when
-                //  the server restarts there are no ServerConnections active
-                //  I think this is also causing an error with the temp_domains.csv
-                ServerConnection domainDevice = ServerStorage.searchDevice(deviceParts[0],
+                ServerConnection domainDevice = ServerStorage.searchDeviceOLD(deviceParts[0],
                         Integer.parseInt(deviceParts[1]));
                 if (domainDevice != null) {
                     this.devices.add(domainDevice);
@@ -71,6 +70,7 @@ public class ServerDomain {
     }
 
     protected String[] getDomainTemperatures() {
+        // TODO adapt with Device get() methods
         String[] temperatures = new String[devices.size()];
         for (int i = 0; i < devices.size(); i++) {
             temperatures[i] = devices.get(i) + "->" + devices.get(i).getLastTemperature();
@@ -82,7 +82,7 @@ public class ServerDomain {
     public String toString() {
         StringJoiner userJoiner = new StringJoiner(";");
         for (User user : this.users) {
-            userJoiner.add(user.getUsername());
+            userJoiner.add(user.getName());
         }
         String user = "{" + userJoiner + "}";
         String devices;
@@ -96,6 +96,6 @@ public class ServerDomain {
         else {
             devices = "{}";
         }
-        return name + "," + owner.getUsername() + "," + user + "," + devices;
+        return name + "," + owner.getName() + "," + user + "," + devices;
     }
 }

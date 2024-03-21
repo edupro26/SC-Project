@@ -2,16 +2,16 @@ package server;
 
 public class User {
 
-    private final String username;
+    private final String name;
     private String password;
 
     public User(String name, String password) {
-        this.username = name;
+        this.name = name;
         this.password = password;
     }
 
-    public String getUsername() {
-        return username;
+    public String getName() {
+        return name;
     }
 
     public String getPassword() {
@@ -30,12 +30,12 @@ public class User {
         if (!(obj instanceof User user)) {
             return false;
         }
-        return user.getUsername().equals(this.username);
+        return user.getName().equals(this.name);
     }
 
     @Override
     public String toString() {
-        return this.username + "," + this.password;
+        return this.name + "," + this.password;
     }
 
 }
