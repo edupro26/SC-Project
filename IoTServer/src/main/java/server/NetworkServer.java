@@ -8,9 +8,11 @@ import java.net.Socket;
 public class NetworkServer {
 
     private final int port;
+    private static int counter;
 
     public NetworkServer(int port) {
         this.port = port;
+        counter = 0;
         new ServerStorage();
     }
 
@@ -47,7 +49,7 @@ public class NetworkServer {
             this.cliSocket = cliSocket;
         }
 
-        public synchronized void run() {
+        public void run() {
             String clientAddress = cliSocket.getInetAddress().getHostAddress();
             System.out.println("Connection request received (" + clientAddress + ")");
 
@@ -58,7 +60,7 @@ public class NetworkServer {
                 ServerConnection connection = new ServerConnection(input, output, clientAddress);
 
                 System.out.print("Validating device ID... ");
-                boolean validID = connection.validateDevID(ServerStorage.getConnections());
+                boolean validID = connection.validateDevID();
 
                 // FIXME Enable when client app is finished and
                 //  don't forget to update size in device_info.csv
@@ -67,14 +69,10 @@ public class NetworkServer {
 
                 if (validID /*&& validInfo*/) {
                     System.out.println("Client connected (" + clientAddress + ")");
-                    ServerStorage.addConnection(connection);
-                    System.out.println("Active connections: " + ServerStorage.getConnections().size());
-
+                    System.out.println("Active connections: " + ++counter);
                     connection.handleRequests();
+                    System.out.println("Active connections: " + --counter);
 
-                    // Remove the connection from the list after the client disconnects
-                    ServerStorage.removeConnection(connection);
-                    System.out.println("Active connections: " + ServerStorage.getConnections().size());
                 }
 
                 output.close();

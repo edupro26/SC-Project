@@ -1,9 +1,11 @@
 package server;
 
+import java.util.Objects;
+
 public class Device {
 
     private final String user;
-    private final int id;
+    private int id;
     private boolean isConnected;
     private Float lastTemp;
 
@@ -42,18 +44,29 @@ public class Device {
         isConnected = connected;
     }
 
+    public void setId(int id) {
+        this.id = id;
+    }
+
     protected void setLastTemp(Float lastTemp) {
         this.lastTemp = lastTemp;
     }
 
     @Override
     public boolean equals(Object obj) {
-        // TODO
-        return false;
+        if (obj == this)
+            return true;
+        if (obj == null || getClass() != obj.getClass())
+            return false;
+
+        Device device = (Device) obj;
+        return Objects.equals(user, device.user)
+                && Objects.equals(id, device.id);
     }
 
     @Override
     public String toString() {
         return user + ":" + id;
     }
+
 }

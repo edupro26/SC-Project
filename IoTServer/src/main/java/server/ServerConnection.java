@@ -1,7 +1,10 @@
 package server;
 
 import java.io.*;
-import java.util.List;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 public class ServerConnection {
 
@@ -12,18 +15,12 @@ public class ServerConnection {
     private User devUser;
     private Device device;
 
-    // TODO delete when Device is implemented in the project
-    private int devId;
-    private Boolean hasValidDevId;
-    private Float lastTemperature;
-
     public ServerConnection(ObjectInputStream input, ObjectOutputStream output, String clientIP) {
         this.input = input;
         this.output = output;
         this.clientIP = clientIP;
         this.devUser = null;
-        hasValidDevId = false;
-
+        this.device = null;
         userAuthentication();
     }
 
@@ -33,9 +30,9 @@ public class ServerConnection {
             String[] userParts = in.split(",");
             User logIn = new User(userParts[0], userParts[1]);
 
-            devUser = ServerStorage.searchUser(logIn.getName());
+            devUser = ServerStorage.getUser(logIn.getName());
             if (devUser == null) {
-                ServerStorage.createUser(logIn);
+                ServerStorage.saveUser(logIn);
                 devUser = logIn;
                 output.writeObject("OK-NEW-USER");
             }
@@ -47,39 +44,39 @@ public class ServerConnection {
                 }
                 output.writeObject("OK-USER");
             }
+            this.device = new Device(devUser.getName(), -1);
         } catch (Exception e) {
             System.out.println("Error receiving user password!");
         }
     }
 
-    protected boolean validateDevID(List<ServerConnection> connections) {
-        // TODO remake to use Device. The method will need to receive
-        //  the HashMap with Devices and use it to validate the id
-        //  In the end the Device should be set to connected
+    protected boolean validateDevID() {
         try {
-            while (!hasValidDevId) {
+            while (device.getId() < 0) {
                 String msg = (String) input.readObject();
-                boolean validId = true;
-                for (ServerConnection connection : connections) {
-                    if (connection.getDevId() == Integer.parseInt(msg) &&
-                            connection.devUser.getName().equals(devUser.getName())) {
-                        output.writeObject("NOK-DEVID");
-                        validId = false;
-                        break;
+                int id = Integer.parseInt(msg);
+                if (id >= 0) {
+                    device.setId(id);
+                    Device exits = ServerStorage.getDevice(device);
+                    if (exits != null) {
+                        if (!exits.isConnected()) {
+                            device = exits;
+                            device.setConnected(true);
+                            output.writeObject("OK-DEVID");
+                            System.out.println("Device ID validated!");
+                            return true;
+                        }
+                    }
+                    else {
+                        device.setConnected(true);
+                        ServerStorage.saveDevice(device);
+                        output.writeObject("OK-DEVID");
+                        System.out.println("Device ID validated!");
+                        return true;
                     }
                 }
-                if (Integer.parseInt(msg) < 0) {
-                    output.writeObject("NOK-DEVID");
-                    validId = false;
-                }
-
-                if (validId) {
-                    this.devId = Integer.parseInt(msg);
-                    output.writeObject("OK-DEVID");
-                    hasValidDevId = true;
-                    System.out.println("Device ID validated!");
-                    return true;
-                }
+                output.writeObject("NOK-DEVID");
+                device.setId(-1);
             }
         } catch (Exception e) {
             System.out.println("Something went wrong!");
@@ -92,7 +89,7 @@ public class ServerConnection {
             String[] in = ((String) input.readObject()).split(",");
             String name = in[0];
             String size = in[1];
-            boolean tested = ServerStorage.checkDeviceInfo(name, size);
+            boolean tested = ServerStorage.checkConnectionInfo(name, size);
             if (tested) {
                 output.writeObject("OK-TESTED");
                 System.out.println("Device info validated!");
@@ -126,8 +123,8 @@ public class ServerConnection {
                         System.out.println(result);
                     }
                     case "ADD" -> {
-                        User user = ServerStorage.searchUser(parsedMsg[1]);
-                        ServerDomain domain = ServerStorage.searchDomain(parsedMsg[2]);
+                        User user = ServerStorage.getUser(parsedMsg[1]);
+                        ServerDomain domain = ServerStorage.getDomain(parsedMsg[2]);
                         result = ServerStorage.addUserToDomain(this.devUser, user, domain);
                         output.writeObject(result);
                         result = result.equals("OK") ?
@@ -135,9 +132,8 @@ public class ServerConnection {
                         System.out.println(result);
                     }
                     case "RD" -> {
-                        ServerDomain domain = ServerStorage.searchDomain(parsedMsg[1]);
-                        // TODO this method will receive a Device
-                        result =  ServerStorage.addDeviceToDomain(domain,this);
+                        ServerDomain domain = ServerStorage.getDomain(parsedMsg[1]);
+                        result =  ServerStorage.addDeviceToDomain(domain, device, devUser);
                         output.writeObject(result);
                         result = result.equals("OK") ?
                                 "Success: Device registered!" : "Error: Unable to register device!";
@@ -145,7 +141,7 @@ public class ServerConnection {
                     }
                     case "ET" -> {
                         try {
-                            lastTemperature = Float.parseFloat(parsedMsg[1]);
+                            device.setLastTemp(Float.parseFloat(parsedMsg[1]));
                             output.writeObject("OK");
                         } catch (Exception e) {
                             output.writeObject("NOK");
@@ -158,9 +154,9 @@ public class ServerConnection {
 
                         output.writeObject("Send image");
 
-                        System.out.println("Receiving image from " + devUser.getName() + ":" + devId + " with size " + imageSize + " bytes.");
+                        System.out.println("Receiving image from " + devUser.getName() + ":" + device.getId() + " with size " + imageSize + " bytes.");
 
-                        String imageName = "images/" + devUser.getName() + "_" + devId + ".jpg";
+                        String imageName = "images/" + devUser.getName() + "_" + device.getId() + ".jpg";
 
                         File imageFile = new File(imageName);
 
@@ -190,7 +186,7 @@ public class ServerConnection {
 
                     }
                     case "RT" -> {
-                        ServerDomain domain = ServerStorage.searchDomain(parsedMsg[1]);
+                        ServerDomain domain = ServerStorage.getDomain(parsedMsg[1]);
                         if (domain == null) {
                             output.writeObject("NODM");
                         } else if (!domain.getUsers().contains(devUser) && !domain.getOwner().equals(devUser)) {
@@ -222,7 +218,7 @@ public class ServerConnection {
                     // TODO implement command
                     case "RI" -> {
                         String userDevice = parsedMsg[1];
-                        User devUser = ServerStorage.searchUser(userDevice.split(":")[0]);
+                        User devUser = ServerStorage.getUser(userDevice.split(":")[0]);
                         int devId = Integer.parseInt(userDevice.split(":")[1]);
 
                         // TODO Verify if device exists
@@ -257,25 +253,9 @@ public class ServerConnection {
                 }
             }
         } catch (Exception e) {
+            this.device.setConnected(false);
             System.out.println("Client disconnected (" + this.clientIP + ")");
         }
-    }
-
-    protected User getDevUser() {
-        return devUser;
-    }
-
-    protected Float getLastTemperature() {
-        return this.lastTemperature;
-    }
-
-    protected int getDevId() {
-        return this.devId;
-    }
-
-    @Override
-    public String toString() {
-        return devUser.getName() + ":" + devId;
     }
 
 }

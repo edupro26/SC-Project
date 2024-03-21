@@ -9,8 +9,7 @@ public class ServerDomain {
     private final String name;
     private final User owner;
     private final List<User> users;
-    // TODO this will need to be List<Devices>
-    private final List<ServerConnection> devices;
+    private final List<Device> devices;
 
     protected ServerDomain(String name, User owner) {
         this.name = name;
@@ -23,26 +22,39 @@ public class ServerDomain {
     protected ServerDomain(String domain) {
         String[] domainParts = domain.split(",");
         this.name = domainParts[0];
-        this.owner = ServerStorage.searchUser(domainParts[1]);
+        this.owner = ServerStorage.getUser(domainParts[1]);
         this.users = new ArrayList<>();
         this.devices = new ArrayList<>();
 
         String[] users = domainParts[2].substring(1, domainParts[2].length() - 1).split(";");
         for (String user : users)
-            this.users.add(ServerStorage.searchUser(user));
+            this.users.add(ServerStorage.getUser(user));
 
         if (!domainParts[3].equals("{}")) {
             String[] devices = domainParts[3].substring(1, domainParts[3].length() - 1).split(";");
             for (String device : devices) {
-                // TODO the 2nd Device constructor will need to be used here
                 String[] deviceParts = device.split(":");
-                ServerConnection domainDevice = ServerStorage.searchDeviceOLD(deviceParts[0],
-                        Integer.parseInt(deviceParts[1]));
-                if (domainDevice != null) {
-                    this.devices.add(domainDevice);
-                }
+                Device newDev = new Device(deviceParts[0], Integer.parseInt(deviceParts[1]));
+                ServerStorage.getDevices().put(newDev, new ArrayList<>());
+                this.devices.add(newDev);
             }
         }
+    }
+
+    protected String[] getDomainTemperatures() {
+        String[] temperatures = new String[devices.size()];
+        for (int i = 0; i < devices.size(); i++) {
+            temperatures[i] = devices.get(i) + "->" + devices.get(i).getLastTemp();
+        }
+        return temperatures;
+    }
+
+    protected void addUser(User user) {
+        users.add(user);
+    }
+
+    protected void addDevice(Device device) {
+        devices.add(device);
     }
 
     protected String getName() {
@@ -57,25 +69,8 @@ public class ServerDomain {
         return users;
     }
 
-    protected List<ServerConnection> getDevices() {
+    protected List<Device> getDevices() {
         return devices;
-    }
-
-    protected void addUser(User user) {
-        users.add(user);
-    }
-
-    protected void addDevice(ServerConnection device) {
-        devices.add(device);
-    }
-
-    protected String[] getDomainTemperatures() {
-        // TODO adapt with Device get() methods
-        String[] temperatures = new String[devices.size()];
-        for (int i = 0; i < devices.size(); i++) {
-            temperatures[i] = devices.get(i) + "->" + devices.get(i).getLastTemperature();
-        }
-        return temperatures;
     }
 
     @Override
@@ -88,7 +83,7 @@ public class ServerDomain {
         String devices;
         if (!this.devices.isEmpty()) {
             StringJoiner deviceJoiner = new StringJoiner(";");
-            for (ServerConnection device : this.devices) {
+            for (Device device : this.devices) {
                 deviceJoiner.add(device.toString());
             }
             devices = "{" + deviceJoiner + "}";

@@ -1,9 +1,7 @@
 package server;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class ServerStorage {
 
@@ -11,14 +9,12 @@ public class ServerStorage {
     private static final String DOMAINS = "domains.csv";
     private static final String INFO = "device_info.csv";
 
-    private static List<ServerConnection> connections;
     private static List<User> users;
     private static List<ServerDomain> domains;
-    private static HashMap<Device ,List<ServerDomain>> devices; // TODO
+    private static HashMap<Device, List<ServerDomain>> devices;
 
     public ServerStorage() {
         users = new ArrayList<>();
-        connections = new ArrayList<>();
         domains = new ArrayList<>();
         devices = new HashMap<>();
         this.start();
@@ -78,7 +74,13 @@ public class ServerStorage {
             while ((line = in.readLine()) != null) {
                 domains.add(new ServerDomain(line));
             }
-            // TODO Fill the devices HashMap
+            for (ServerDomain domain : domains){
+                for(Device device: domain.getDevices()) {
+                    List<ServerDomain> domains = devices.get(device);
+                    domains.add(domain);
+                    devices.put(device, domains);
+                }
+            }
             in.close();
             return true;
         } catch (IOException e) {
@@ -111,7 +113,47 @@ public class ServerStorage {
         return true;
     }
 
-    protected static void createUser(User user) {
+    protected static String addUserToDomain(User user, User userToAdd, ServerDomain domain) {
+        if (domain == null) return "NODM";
+        if (userToAdd == null) return "NOUSER";
+        if (!domain.getOwner().equals(user)) return "NOPERM";
+        if (domain.getUsers().contains(userToAdd)) return "NOK";
+
+        domain.addUser(userToAdd);
+        return updateDomainInFile(domain) ? "OK" : "NOK";
+    }
+
+    protected static String addDeviceToDomain(ServerDomain domain, Device device, User user) {
+        if(domain == null) return "NODM";
+        if(domain.getDevices().contains(device))return "NOK";
+        User owner = domain.getOwner();
+        if(!domain.getUsers().contains(user)) {
+            if (!owner.getName().equals(user.getName()))
+                return "NOPERM";
+        }
+        domain.addDevice(device);
+        devices.get(device).add(domain);
+        return updateDomainInFile(domain) ? "OK" : "NOK";
+    }
+
+    protected static boolean checkConnectionInfo(String name, String size) {
+        InputStream in = ServerStorage.class.getClassLoader().getResourceAsStream(INFO);
+        if (in != null) {
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(in))) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    String[] data = line.split(",");
+                    if (name.equals(data[0]) && size.equals(data[1]))
+                        return true;
+                }
+            } catch (IOException e) {
+                System.out.println(e.getMessage());
+            }
+        }
+        return false;
+    }
+
+    protected static void saveUser(User user) {
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter(USERS, true));
             writer.write(user + "\n");
@@ -122,9 +164,13 @@ public class ServerStorage {
         }
     }
 
+    protected static void saveDevice(Device device) {
+        devices.put(device, new ArrayList<>());
+    }
+
     protected static String createDomain(String name, User owner) {
         if (owner != null) {
-            ServerDomain alreadyExists = searchDomain(name);
+            ServerDomain alreadyExists = getDomain(name);
             if (alreadyExists == null) {
                 ServerDomain domain = new ServerDomain(name, owner);
                 domains.add(domain);
@@ -142,7 +188,7 @@ public class ServerStorage {
         return "NOK";
     }
 
-    protected static User searchUser(String username) {
+    protected static User getUser(String username) {
         for (User user : users) {
             if (username.equals(user.getName())){
                 return user;
@@ -151,24 +197,15 @@ public class ServerStorage {
         return null;
     }
 
-    protected static Device searchDevice(Device device) {
-        // TODO with the HashMap
-        return null;
-    }
-
-    protected static ServerConnection searchDeviceOLD(String user, int id) {
-        // TODO this method will probably not be needed after
-        //  Device implementation
-        for (ServerConnection device : connections) {
-            if(user.equals(device.getDevUser().getName())
-                    && id == device.getDevId()){
-                return device;
-            }
+    protected static Device getDevice(Device device) {
+        for (Map.Entry<Device, List<ServerDomain>> entry : devices.entrySet()) {
+            if (entry.getKey().equals(device))
+                return entry.getKey();
         }
         return null;
     }
 
-    protected static ServerDomain searchDomain(String name) {
+    protected static ServerDomain getDomain(String name) {
         for (ServerDomain domain : domains) {
             if (name.equals(domain.getName())){
                 return domain;
@@ -177,59 +214,8 @@ public class ServerStorage {
         return null;
     }
 
-    protected static String addUserToDomain(User user, User userToAdd, ServerDomain domain) {
-        if (domain == null) return "NODM";
-        if (userToAdd == null) return "NOUSER";
-        if (!domain.getOwner().equals(user)) return "NOPERM";
-        if (domain.getUsers().contains(userToAdd)) return "NOK";
-
-        domain.addUser(userToAdd);
-        return updateDomainInFile(domain) ? "OK" : "NOK";
-    }
-
-    protected static String addDeviceToDomain(ServerDomain domain, ServerConnection device) {
-        // TODO this will receive a Device and will need to update
-        //  the devices HashMap
-        if(domain == null ) return "NODM";
-        if(domain.getDevices().contains(device)) return "NOK" ;
-        User owner = domain.getOwner();
-        String user  = device.getDevUser().getName();
-        if(!domain.getUsers().contains(device.getDevUser())) {
-            if (!owner.getName().equals(user))
-                return "NOPERM";
-        }
-
-        domain.addDevice(device);
-        return updateDomainInFile(domain) ? "OK" : "NOK";
-    }
-
-    protected static boolean checkDeviceInfo(String name, String size) {
-        InputStream in = ServerStorage.class.getClassLoader().getResourceAsStream(INFO);
-        if (in != null) {
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(in))) {
-                String line;
-                while ((line = br.readLine()) != null) {
-                    String[] data = line.split(",");
-                    if (name.equals(data[0]) && size.equals(data[1]))
-                        return true;
-                }
-            } catch (IOException e) {
-                System.out.println(e.getMessage());
-            }
-        }
-        return false;
-    }
-
-    protected static void addConnection(ServerConnection connection) {
-        connections.add(connection);
-    }
-
-    protected static void removeConnection(ServerConnection connection){
-        connections.remove(connection);
-    }
-
-    protected static List<ServerConnection> getConnections() {
-        return connections;
+    protected static HashMap<Device, List<ServerDomain>> getDevices() {
+        return devices;
     }
 
 }
