@@ -25,11 +25,13 @@ public class Domain {
         this.users = new ArrayList<>();
         this.devices = new ArrayList<>();
 
-        String[] users = domainParts[2].substring(1, domainParts[2].length() - 1).split(";");
-        for (String user : users)
-            this.users.add(Storage.getUser(user));
+        if (!domainParts[2].equals("[]")) {
+            String[] users = domainParts[2].substring(1, domainParts[2].length() - 1).split(";");
+            for (String user : users)
+                this.users.add(Storage.getUser(user));
+        }
 
-        if (!domainParts[3].equals("{}")) {
+        if (!domainParts[3].equals("[]")) {
             String[] devices = domainParts[3].substring(1, domainParts[3].length() - 1).split(";");
             for (String device : devices) {
                 String[] deviceParts = device.split(":");
@@ -78,17 +80,17 @@ public class Domain {
         for (User user : this.users) {
             userJoiner.add(user.getName());
         }
-        String user = "{" + userJoiner + "}";
+        String user = "[" + userJoiner + "]";
         String devices;
         if (!this.devices.isEmpty()) {
             StringJoiner deviceJoiner = new StringJoiner(";");
             for (Device device : this.devices) {
                 deviceJoiner.add(device.toString());
             }
-            devices = "{" + deviceJoiner + "}";
+            devices = "[" + deviceJoiner + "]";
         }
         else {
-            devices = "{}";
+            devices = "[]";
         }
         return name + "," + owner.getName() + "," + user + "," + devices;
     }

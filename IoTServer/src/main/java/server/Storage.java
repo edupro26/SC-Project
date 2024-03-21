@@ -31,9 +31,7 @@ public class Storage {
                 System.out.println(result);
             }
             else {
-                result = loadUsers() ?
-                        "Users text file loaded successfully" : "Unable to load users text file";
-                System.out.println(result);
+                loadUsers();
             }
 
             if (!domains.exists()) {
@@ -42,16 +40,14 @@ public class Storage {
                 System.out.println(result);
             }
             else {
-                result = loadDomains() ?
-                        "Domains text file loaded successfully" : "Unable to load domains text file";
-                System.out.println(result);
+                loadDomains();
             }
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
     }
 
-    private boolean loadUsers() {
+    private void loadUsers() {
         try {
             BufferedReader in = new BufferedReader(new FileReader(USERS));
             String line;
@@ -60,32 +56,37 @@ public class Storage {
                 users.add(new User(data[0],data[1]));
             }
             in.close();
-            return true;
+            System.out.println("Users text file loaded successfully");
         } catch (IOException e) {
             System.out.println(e.getMessage());
-            return false;
+            System.out.println("Unable to load users text file");
         }
     }
 
-    private boolean loadDomains() {
+    private void loadDomains() {
         try {
             BufferedReader in = new BufferedReader(new FileReader(DOMAINS));
             String line;
             while ((line = in.readLine()) != null) {
                 domains.add(new Domain(line));
             }
+            in.close();
+            StringBuilder sb = new StringBuilder();
             for (Domain domain : domains){
                 for(Device device: domain.getDevices()) {
                     List<Domain> domains = devices.get(device);
                     domains.add(domain);
                     saveDevice(device, domains);
                 }
+                sb.append("Domain ").append(domain.getName()).append(" -> ")
+                        .append(domain).append(" ").append("\n");
             }
-            in.close();
-            return true;
+            System.out.println("Domains text file loaded successfully");
+            System.out.println("Printing server domains...");
+            System.out.println(sb);
         } catch (IOException e) {
             System.out.println(e.getMessage());
-            return false;
+            System.out.println("Unable to load domains text file");
         }
     }
 

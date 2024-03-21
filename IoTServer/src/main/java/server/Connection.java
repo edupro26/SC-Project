@@ -9,7 +9,7 @@ import java.util.ArrayList;
 
 public class Connection {
 
-    private Storage srvStorage;
+    private final Storage srvStorage;
     private final ObjectInputStream input;
     private final ObjectOutputStream output;
 
@@ -218,7 +218,6 @@ public class Connection {
                             }
                         }
                     }
-                    // TODO implement command
                     case "RI" -> {
                         String userDevice = parsedMsg[1];
                         User devUser = Storage.getUser(userDevice.split(":")[0]);

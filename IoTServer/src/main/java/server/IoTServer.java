@@ -39,7 +39,7 @@ public class IoTServer {
     private static class ServerThread extends Thread {
 
         private final Socket cliSocket;
-        private Storage srvStorage;
+        private final Storage srvStorage;
 
         public ServerThread (Socket cliSocket, Storage srvStorage) {
             this.cliSocket = cliSocket;
