@@ -63,7 +63,7 @@ public class NetworkServer {
                 // FIXME Enable when client app is finished and
                 //  don't forget to update size in device_info.csv
 //                System.out.print("Validating device info...");
-//                boolean validInfo = connection.validateDeviceInfo();
+//                boolean validInfo = connection.validateConnection();
 
                 if (validID /*&& validInfo*/) {
                     System.out.println("Client connected (" + clientAddress + ")");

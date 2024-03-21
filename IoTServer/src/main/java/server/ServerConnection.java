@@ -8,14 +8,16 @@ import java.util.List;
 
 public class ServerConnection {
 
-    private final String clientIP;
     private final ObjectInputStream input;
     private final ObjectOutputStream output;
 
+    private final String clientIP;
     private User devUser;
+    private Device device;
+
+    // TODO delete when Device is implemented in the project
     private int devId;
     private Boolean hasValidDevId;
-
     private Float lastTemperature;
 
     public ServerConnection(ObjectInputStream input, ObjectOutputStream output, String clientIP) {
@@ -31,20 +33,20 @@ public class ServerConnection {
     private void userAuthentication() {
         try {
             String in = (String) input.readObject();
-            String[] logIn = in.split(",");
-            User temp = new User(logIn[0], logIn[1]);
+            String[] userParts = in.split(",");
+            User logIn = new User(userParts[0], userParts[1]);
 
-            this.devUser = ServerStorage.searchUser(temp.getUsername());
-            if (this.devUser == null) {
-                ServerStorage.createUser(temp);
+            devUser = ServerStorage.searchUser(logIn.getName());
+            if (devUser == null) {
+                ServerStorage.createUser(logIn);
+                devUser = logIn;
                 output.writeObject("OK-NEW-USER");
-                this.devUser = temp;
             }
             else {
-                while (!temp.getPassword().equals(devUser.getPassword())) {
+                while (!logIn.getPassword().equals(devUser.getPassword())) {
                     output.writeObject("WRONG-PWD");
                     String password = ((String) input.readObject()).split(",")[1];
-                    temp.setPassword(password);
+                    logIn.setPassword(password);
                 }
                 output.writeObject("OK-USER");
             }
@@ -54,13 +56,16 @@ public class ServerConnection {
     }
 
     protected boolean validateDevID(List<ServerConnection> connections) {
+        // TODO remake to use Device. The method will need to receive
+        //  the HashMap with Devices and use it to validate the id
+        //  In the end the Device should be set to connected
         try {
             while (!hasValidDevId) {
                 String msg = (String) input.readObject();
                 boolean validId = true;
                 for (ServerConnection connection : connections) {
                     if (connection.getDevId() == Integer.parseInt(msg) &&
-                            connection.devUser.getUsername().equals(devUser.getUsername())) {
+                            connection.devUser.getName().equals(devUser.getName())) {
                         output.writeObject("NOK-DEVID");
                         validId = false;
                         break;
@@ -85,7 +90,7 @@ public class ServerConnection {
         return false;
     }
 
-    protected boolean validateDeviceInfo() {
+    protected boolean validateConnection() {
         try {
             String[] in = ((String) input.readObject()).split(",");
             String name = in[0];
@@ -132,9 +137,9 @@ public class ServerConnection {
                                 "Success: User added!" : "Error: Unable to add user!";
                         System.out.println(result);
                     }
-                    //TODO finish RD
                     case "RD" -> {
                         ServerDomain domain = ServerStorage.searchDomain(parsedMsg[1]);
+                        // TODO this method will receive a Device
                         result =  ServerStorage.addDeviceToDomain(domain,this);
                         output.writeObject(result);
                         result = result.equals("OK") ?
@@ -149,15 +154,16 @@ public class ServerConnection {
                             output.writeObject("NOK");
                         }
                     }
-                    // TODO finish EI
+                    // TODO these commands need to be looked at with more
+                    //  detail after Device implementation
                     case "EI" -> {
                         long imageSize = Long.parseLong(parsedMsg[1]);
 
                         output.writeObject("Send image");
 
-                        System.out.println("Receiving image from " + devUser.getUsername() + ":" + devId + " with size " + imageSize + " bytes.");
+                        System.out.println("Receiving image from " + devUser.getName() + ":" + devId + " with size " + imageSize + " bytes.");
 
-                        String imageName = "images/" + devUser.getUsername() + "_" + devId + ".jpg";
+                        String imageName = "images/" + devUser.getName() + "_" + devId + ".jpg";
 
                         File imageFile = new File(imageName);
 
@@ -186,7 +192,6 @@ public class ServerConnection {
                         output.writeObject("OK");
 
                     }
-                    // TODO needs testing
                     case "RT" -> {
                         ServerDomain domain = ServerStorage.searchDomain(parsedMsg[1]);
                         if (domain == null) {
@@ -217,13 +222,11 @@ public class ServerConnection {
                             }
                         }
                     }
-                    // TODO finish RI
+                    // TODO implement command
                     case "RI" -> {
                         String userDevice = parsedMsg[1];
                         User user = ServerStorage.searchUser(userDevice);
                         int devId = Integer.parseInt(parsedMsg[2]);
-
-
                     }
                     default -> output.writeObject("NOK");
                 }
@@ -247,7 +250,7 @@ public class ServerConnection {
 
     @Override
     public String toString() {
-        return devUser.getUsername() + ":" + devId;
+        return devUser.getName() + ":" + devId;
     }
 
 }
