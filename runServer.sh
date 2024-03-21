@@ -1,1 +1,1 @@
-java -jar IoTServer.jar 5555
+java -jar IoTServer-grupo6.jar 5555
