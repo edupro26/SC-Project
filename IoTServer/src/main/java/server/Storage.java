@@ -5,6 +5,9 @@ import java.util.*;
 
 public class Storage {
 
+    // TODO needs further research and testing
+    private static final Object monitor = new Object();
+
     private static final String USERS = "users.csv";
     private static final String DOMAINS = "domains.csv";
     private static final String INFO = "device_info.csv";
@@ -174,11 +177,13 @@ public class Storage {
         if (owner != null) {
             if (getDomain(name) == null) {
                 Domain domain = new Domain(name, owner);
-                domains.add(domain);
                 try {
-                    BufferedWriter writer = new BufferedWriter(new FileWriter(DOMAINS, true));
-                    writer.write(domain + "\n");
-                    writer.close();
+                    synchronized (monitor) {
+                        domains.add(domain);
+                        BufferedWriter writer = new BufferedWriter(new FileWriter(DOMAINS, true));
+                        writer.write(domain + "\n");
+                        writer.close();
+                    }
                 } catch (IOException e) {
                     System.out.println(e.getMessage());
                 }
