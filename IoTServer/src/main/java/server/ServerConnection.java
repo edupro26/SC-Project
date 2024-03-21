@@ -1,9 +1,6 @@
 package server;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.util.List;
 
 public class ServerConnection {
@@ -225,8 +222,36 @@ public class ServerConnection {
                     // TODO implement command
                     case "RI" -> {
                         String userDevice = parsedMsg[1];
-                        User user = ServerStorage.searchUser(userDevice);
-                        int devId = Integer.parseInt(parsedMsg[2]);
+                        User devUser = ServerStorage.searchUser(userDevice.split(":")[0]);
+                        int devId = Integer.parseInt(userDevice.split(":")[1]);
+
+                        // TODO Verify if device exists
+
+                        // TODO Verify permission
+
+                        // FInd if image exists
+                        String imageName = "images/" + devUser.getName() + "_" + devId + ".jpg";
+                        File imageFile = new File(imageName);
+                        if (!imageFile.exists()) {
+                            output.writeObject("NODATA");
+                        } else {
+                            output.writeObject("OK");
+                            output.writeLong(imageFile.length());
+
+
+                            FileInputStream fis = new FileInputStream(imageFile);
+                            byte[] buffer = new byte[1024];
+
+                            int bytesRead;
+                            while ((bytesRead = fis.read(buffer)) != -1) {
+                                output.write(buffer, 0, bytesRead);
+                            }
+
+                            output.flush();
+                            fis.close();
+                        }
+
+
                     }
                     default -> output.writeObject("NOK");
                 }

@@ -209,18 +209,24 @@ public class NetworkDevice {
 
         if (res.equals(OK_RESPONSE)) {
             try {
-                Long imageSize = input.readLong();
-                byte[] buffer = new byte[1024];
-                int bytesRead;
+                long imageSize = input.readLong();
                 File file = new File("image.jpg");
-                file.createNewFile();
+                if (!file.exists()) {
+                    file.createNewFile();
+                }
                 FileOutputStream fos = new FileOutputStream(file);
 
-                while (imageSize > 0 && (bytesRead = input.read(buffer, 0, (int) Math.min(buffer.length, imageSize))) != -1) {
+                long remainingBytes = imageSize;
+                int bytesRead;
+
+                byte[] buffer = new byte[1024];
+
+                while (remainingBytes > 0 && (bytesRead = input.read(buffer, 0, (int) Math.min(buffer.length, remainingBytes))) != -1) {
                     fos.write(buffer, 0, bytesRead);
-                    imageSize -= bytesRead;
+                    remainingBytes -= bytesRead;
                 }
 
+                fos.flush();
                 fos.close();
 
                 System.out.println("Resposta: " + OK_RESPONSE + ", " + imageSize + " (long), seguido de " + imageSize + " Bytes de dados.");
