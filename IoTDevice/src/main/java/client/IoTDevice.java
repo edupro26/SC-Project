@@ -1,6 +1,5 @@
 package client;
 
-import java.io.File;
 import java.util.Arrays;
 import java.util.Scanner;
 
@@ -22,7 +21,7 @@ public class IoTDevice {
         String userId = args[2];
         String[] server = serverAddress.split(":");
 
-        NetworkDevice client = new NetworkDevice(server[0], Integer.parseInt(server[1]));
+        DeviceHandler client = new DeviceHandler(server[0], Integer.parseInt(server[1]));
         try {
             client.connect();
             deviceLogIn(client, userId, devId);
@@ -43,7 +42,7 @@ public class IoTDevice {
         }
     }
 
-    private static void deviceLogIn(NetworkDevice client, String userId, String devId) {
+    private static void deviceLogIn(DeviceHandler client, String userId, String devId) {
         Scanner scanner = new Scanner(System.in);
         while (true) {
             System.out.print("Password: ");
@@ -135,7 +134,7 @@ public class IoTDevice {
                 \s""");
     }
 
-    private static void handleCommand(NetworkDevice client, String input) {
+    private static void handleCommand(DeviceHandler client, String input) {
         String[] parsedCommand = input.split(" ");
         String command = parsedCommand[0];
         String[] args = Arrays.copyOfRange(parsedCommand, 1, parsedCommand.length);

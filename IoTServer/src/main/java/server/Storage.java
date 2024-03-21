@@ -3,17 +3,17 @@ package server;
 import java.io.*;
 import java.util.*;
 
-public class ServerStorage {
+public class Storage {
 
     private static final String USERS = "users.csv";
     private static final String DOMAINS = "domains.csv";
     private static final String INFO = "device_info.csv";
 
     private static List<User> users;
-    private static List<ServerDomain> domains;
-    private static HashMap<Device, List<ServerDomain>> devices;
+    private static List<Domain> domains;
+    private static HashMap<Device, List<Domain>> devices;
 
-    public ServerStorage() {
+    public Storage() {
         users = new ArrayList<>();
         domains = new ArrayList<>();
         devices = new HashMap<>();
@@ -72,13 +72,13 @@ public class ServerStorage {
             BufferedReader in = new BufferedReader(new FileReader(DOMAINS));
             String line;
             while ((line = in.readLine()) != null) {
-                domains.add(new ServerDomain(line));
+                domains.add(new Domain(line));
             }
-            for (ServerDomain domain : domains){
+            for (Domain domain : domains){
                 for(Device device: domain.getDevices()) {
-                    List<ServerDomain> domains = devices.get(device);
+                    List<Domain> domains = devices.get(device);
                     domains.add(domain);
-                    devices.put(device, domains);
+                    saveDevice(device, domains);
                 }
             }
             in.close();
@@ -89,7 +89,7 @@ public class ServerStorage {
         }
     }
 
-    private static boolean updateDomainInFile(ServerDomain domain) {
+    private boolean updateDomainInFile(Domain domain) {
         File domains = new File(DOMAINS);
         File tempFile = new File("temp_domains.csv");
         try {
@@ -113,7 +113,7 @@ public class ServerStorage {
         return true;
     }
 
-    protected static String addUserToDomain(User user, User userToAdd, ServerDomain domain) {
+    protected String addUserToDomain(User user, User userToAdd, Domain domain) {
         if (domain == null) return "NODM";
         if (userToAdd == null) return "NOUSER";
         if (!domain.getOwner().equals(user)) return "NOPERM";
@@ -123,9 +123,9 @@ public class ServerStorage {
         return updateDomainInFile(domain) ? "OK" : "NOK";
     }
 
-    protected static String addDeviceToDomain(ServerDomain domain, Device device, User user) {
+    protected String addDeviceToDomain(Domain domain, Device device, User user) {
         if(domain == null) return "NODM";
-        if(domain.getDevices().contains(device))return "NOK";
+        if(domain.getDevices().contains(device)) return "NOK";
         User owner = domain.getOwner();
         if(!domain.getUsers().contains(user)) {
             if (!owner.getName().equals(user.getName()))
@@ -136,8 +136,8 @@ public class ServerStorage {
         return updateDomainInFile(domain) ? "OK" : "NOK";
     }
 
-    protected static boolean checkConnectionInfo(String name, String size) {
-        InputStream in = ServerStorage.class.getClassLoader().getResourceAsStream(INFO);
+    protected boolean checkConnectionInfo(String name, String size) {
+        InputStream in = Storage.class.getClassLoader().getResourceAsStream(INFO);
         if (in != null) {
             try (BufferedReader br = new BufferedReader(new InputStreamReader(in))) {
                 String line;
@@ -153,7 +153,7 @@ public class ServerStorage {
         return false;
     }
 
-    protected static void saveUser(User user) {
+    protected void saveUser(User user) {
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter(USERS, true));
             writer.write(user + "\n");
@@ -164,15 +164,15 @@ public class ServerStorage {
         }
     }
 
-    protected static void saveDevice(Device device) {
-        devices.put(device, new ArrayList<>());
+    protected void saveDevice(Device device, List<Domain> domains) {
+        // TODO Devices will also need to be stored in File
+        devices.put(device, domains);
     }
 
-    protected static String createDomain(String name, User owner) {
+    protected String createDomain(String name, User owner) {
         if (owner != null) {
-            ServerDomain alreadyExists = getDomain(name);
-            if (alreadyExists == null) {
-                ServerDomain domain = new ServerDomain(name, owner);
+            if (getDomain(name) == null) {
+                Domain domain = new Domain(name, owner);
                 domains.add(domain);
                 try {
                     BufferedWriter writer = new BufferedWriter(new FileWriter(DOMAINS, true));
@@ -190,31 +190,29 @@ public class ServerStorage {
 
     protected static User getUser(String username) {
         for (User user : users) {
-            if (username.equals(user.getName())){
+            if (username.equals(user.getName()))
                 return user;
-            }
         }
         return null;
     }
 
-    protected static Device getDevice(Device device) {
-        for (Map.Entry<Device, List<ServerDomain>> entry : devices.entrySet()) {
+    protected Device getDevice(Device device) {
+        for (Map.Entry<Device, List<Domain>> entry : devices.entrySet()) {
             if (entry.getKey().equals(device))
                 return entry.getKey();
         }
         return null;
     }
 
-    protected static ServerDomain getDomain(String name) {
-        for (ServerDomain domain : domains) {
-            if (name.equals(domain.getName())){
+    protected Domain getDomain(String name) {
+        for (Domain domain : domains) {
+            if (name.equals(domain.getName()))
                 return domain;
-            }
         }
         return null;
     }
 
-    protected static HashMap<Device, List<ServerDomain>> getDevices() {
+    protected static HashMap<Device, List<Domain>> getDevices() {
         return devices;
     }
 

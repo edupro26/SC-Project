@@ -5,9 +5,11 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.ArrayList;
 
-public class ServerConnection {
+public class Connection {
 
+    private Storage srvStorage;
     private final ObjectInputStream input;
     private final ObjectOutputStream output;
 
@@ -15,7 +17,8 @@ public class ServerConnection {
     private User devUser;
     private Device device;
 
-    public ServerConnection(ObjectInputStream input, ObjectOutputStream output, String clientIP) {
+    public Connection(ObjectInputStream input, ObjectOutputStream output, Storage srvStorage, String clientIP) {
+        this.srvStorage = srvStorage;
         this.input = input;
         this.output = output;
         this.clientIP = clientIP;
@@ -30,9 +33,9 @@ public class ServerConnection {
             String[] userParts = in.split(",");
             User logIn = new User(userParts[0], userParts[1]);
 
-            devUser = ServerStorage.getUser(logIn.getName());
+            devUser = Storage.getUser(logIn.getName());
             if (devUser == null) {
-                ServerStorage.saveUser(logIn);
+                srvStorage.saveUser(logIn);
                 devUser = logIn;
                 output.writeObject("OK-NEW-USER");
             }
@@ -57,7 +60,7 @@ public class ServerConnection {
                 int id = Integer.parseInt(msg);
                 if (id >= 0) {
                     device.setId(id);
-                    Device exits = ServerStorage.getDevice(device);
+                    Device exits = srvStorage.getDevice(device);
                     if (exits != null) {
                         if (!exits.isConnected()) {
                             device = exits;
@@ -69,7 +72,7 @@ public class ServerConnection {
                     }
                     else {
                         device.setConnected(true);
-                        ServerStorage.saveDevice(device);
+                        srvStorage.saveDevice(device, new ArrayList<>());
                         output.writeObject("OK-DEVID");
                         System.out.println("Device ID validated!");
                         return true;
@@ -89,7 +92,7 @@ public class ServerConnection {
             String[] in = ((String) input.readObject()).split(",");
             String name = in[0];
             String size = in[1];
-            boolean tested = ServerStorage.checkConnectionInfo(name, size);
+            boolean tested = srvStorage.checkConnectionInfo(name, size);
             if (tested) {
                 output.writeObject("OK-TESTED");
                 System.out.println("Device info validated!");
@@ -116,24 +119,24 @@ public class ServerConnection {
                 String result;
                 switch (command) {
                     case "CREATE" -> {
-                        result = ServerStorage.createDomain(parsedMsg[1], devUser);
+                        result = srvStorage.createDomain(parsedMsg[1], devUser);
                         output.writeObject(result);
                         result = result.equals("OK") ?
                                 "Success: Domain created!" : "Error: Domain not created!";
                         System.out.println(result);
                     }
                     case "ADD" -> {
-                        User user = ServerStorage.getUser(parsedMsg[1]);
-                        ServerDomain domain = ServerStorage.getDomain(parsedMsg[2]);
-                        result = ServerStorage.addUserToDomain(this.devUser, user, domain);
+                        User user = Storage.getUser(parsedMsg[1]);
+                        Domain domain = srvStorage.getDomain(parsedMsg[2]);
+                        result = srvStorage.addUserToDomain(this.devUser, user, domain);
                         output.writeObject(result);
                         result = result.equals("OK") ?
                                 "Success: User added!" : "Error: Unable to add user!";
                         System.out.println(result);
                     }
                     case "RD" -> {
-                        ServerDomain domain = ServerStorage.getDomain(parsedMsg[1]);
-                        result =  ServerStorage.addDeviceToDomain(domain, device, devUser);
+                        Domain domain = srvStorage.getDomain(parsedMsg[1]);
+                        result = srvStorage.addDeviceToDomain(domain, device, devUser);
                         output.writeObject(result);
                         result = result.equals("OK") ?
                                 "Success: Device registered!" : "Error: Unable to register device!";
@@ -186,7 +189,7 @@ public class ServerConnection {
 
                     }
                     case "RT" -> {
-                        ServerDomain domain = ServerStorage.getDomain(parsedMsg[1]);
+                        Domain domain = srvStorage.getDomain(parsedMsg[1]);
                         if (domain == null) {
                             output.writeObject("NODM");
                         } else if (!domain.getUsers().contains(devUser) && !domain.getOwner().equals(devUser)) {
@@ -218,7 +221,7 @@ public class ServerConnection {
                     // TODO implement command
                     case "RI" -> {
                         String userDevice = parsedMsg[1];
-                        User devUser = ServerStorage.getUser(userDevice.split(":")[0]);
+                        User devUser = Storage.getUser(userDevice.split(":")[0]);
                         int devId = Integer.parseInt(userDevice.split(":")[1]);
 
                         // TODO Verify if device exists

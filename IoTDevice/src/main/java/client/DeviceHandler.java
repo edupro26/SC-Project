@@ -3,7 +3,7 @@ package client;
 import java.io.*;
 import java.net.Socket;
 
-public class NetworkDevice {
+public class DeviceHandler {
 
     private static final String OK_RESPONSE = "OK";
     private static final String NODM = "NODM";
@@ -20,7 +20,7 @@ public class NetworkDevice {
     // Socket connection to the server
     private Socket socket;
 
-    public NetworkDevice(String address, int port) {
+    public DeviceHandler(String address, int port) {
         this.address = address;
         this.port = port;
     }

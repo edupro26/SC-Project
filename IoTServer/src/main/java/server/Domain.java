@@ -4,38 +4,37 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.StringJoiner;
 
-public class ServerDomain {
+public class Domain {
 
     private final String name;
     private final User owner;
     private final List<User> users;
     private final List<Device> devices;
 
-    protected ServerDomain(String name, User owner) {
+    protected Domain(String name, User owner) {
         this.name = name;
         this.owner = owner;
         this.users = new ArrayList<>();
-        this.addUser(owner); //TODO decide whether to remove this or not
         this.devices = new ArrayList<>();
     }
 
-    protected ServerDomain(String domain) {
+    protected Domain(String domain) {
         String[] domainParts = domain.split(",");
         this.name = domainParts[0];
-        this.owner = ServerStorage.getUser(domainParts[1]);
+        this.owner = Storage.getUser(domainParts[1]);
         this.users = new ArrayList<>();
         this.devices = new ArrayList<>();
 
         String[] users = domainParts[2].substring(1, domainParts[2].length() - 1).split(";");
         for (String user : users)
-            this.users.add(ServerStorage.getUser(user));
+            this.users.add(Storage.getUser(user));
 
         if (!domainParts[3].equals("{}")) {
             String[] devices = domainParts[3].substring(1, domainParts[3].length() - 1).split(";");
             for (String device : devices) {
                 String[] deviceParts = device.split(":");
                 Device newDev = new Device(deviceParts[0], Integer.parseInt(deviceParts[1]));
-                ServerStorage.getDevices().put(newDev, new ArrayList<>());
+                Storage.getDevices().put(newDev, new ArrayList<>());
                 this.devices.add(newDev);
             }
         }
