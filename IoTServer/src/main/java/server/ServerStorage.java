@@ -87,7 +87,7 @@ public class ServerStorage {
         }
     }
 
-    private static boolean updateDomainInFile(User owner, ServerDomain domain) {
+    private static boolean updateDomainInFile(ServerDomain domain) {
         File domains = new File(DOMAINS);
         File tempFile = new File("temp_domains.csv");
         try {
@@ -96,7 +96,7 @@ public class ServerStorage {
             String line;
             while ((line = in.readLine()) != null) {
                 String[] temp = line.split(",");
-                if (temp[0].equals(domain.getName()) && temp[1].equals(owner.getName()))
+                if (temp[0].equals(domain.getName()))
                     line = domain.toString();
                 out.write(line + "\n");
             }
@@ -184,7 +184,7 @@ public class ServerStorage {
         if (domain.getUsers().contains(userToAdd)) return "NOK";
 
         domain.addUser(userToAdd);
-        return updateDomainInFile(user, domain) ? "OK" : "NOK";
+        return updateDomainInFile(domain) ? "OK" : "NOK";
     }
 
     protected static String addDeviceToDomain(ServerDomain domain, ServerConnection device) {
@@ -200,7 +200,7 @@ public class ServerStorage {
         }
 
         domain.addDevice(device);
-        return updateDomainInFile(owner, domain) ? "OK" : "NOK";
+        return updateDomainInFile(domain) ? "OK" : "NOK";
     }
 
     protected static boolean checkDeviceInfo(String name, String size) {
