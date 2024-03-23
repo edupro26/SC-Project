@@ -145,9 +145,14 @@ public class Connection {
                     case "ET" -> {
                         try {
                             device.setLastTemp(Float.parseFloat(parsedMsg[1]));
-                            output.writeObject("OK");
+                            result = srvStorage.updateLastTemp(device);
+                            output.writeObject(result);
+                            result = result.equals("OK") ?
+                                    "Success: Temperature received!" : "Error: Unable to receive temperature!";
+                            System.out.println(result);
                         } catch (Exception e) {
                             output.writeObject("NOK");
+                            System.out.println("Error: Unable to receive temperature!");
                         }
                     }
                     // TODO these commands need to be looked at with more

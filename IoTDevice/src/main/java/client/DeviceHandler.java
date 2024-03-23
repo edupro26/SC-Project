@@ -5,11 +5,11 @@ import java.net.Socket;
 
 public class DeviceHandler {
 
-    private static final String OK_RESPONSE = "OK";
+    private static final String OK = "OK";
     private static final String NODM = "NODM";
     private static final String NOUSER = "NOUSER";
     private static final String NOPERM = "NOPERM";
-    private static final String ERROR_RESPONSE = "NOK";
+    private static final String NOK = "NOK";
 
     private final String address;
     private final int port;
@@ -68,9 +68,9 @@ public class DeviceHandler {
         String msg = parseCommandToSend(command, args);
         String res = this.sendReceive(msg);
         switch (res) {
-            case OK_RESPONSE -> System.out.println("Response: "
-                    + OK_RESPONSE + " # Domain created successfully");
-            case ERROR_RESPONSE -> System.out.println("Response: " + res
+            case OK -> System.out.println("Response: "
+                    + OK + " # Domain created successfully");
+            case NOK -> System.out.println("Response: " + res
                     + " # Domain already exists");
             default -> System.out.println("Response: NOK # Error creating domain");
         }
@@ -84,8 +84,8 @@ public class DeviceHandler {
         String msg = parseCommandToSend(command, args);
         String res = this.sendReceive(msg);
         switch (res) {
-            case OK_RESPONSE -> System.out.println("Response: "
-                    + OK_RESPONSE + " # User added successfully");
+            case OK -> System.out.println("Response: "
+                    + OK + " # User added successfully");
             case NODM -> System.out.println("Response: " + res
                     + " # Domain does not exist");
             case NOUSER -> System.out.println("Response: " + res
@@ -101,12 +101,11 @@ public class DeviceHandler {
             System.out.println("Usage: RD <dm>");
             return;
         }
-
         String msg = parseCommandToSend(command, args);
         String res = this.sendReceive(msg);
         switch (res) {
-            case OK_RESPONSE -> System.out.println("Response: "
-                    + OK_RESPONSE + " # Device registered successfully");
+            case OK -> System.out.println("Response: "
+                    + OK + " # Device registered successfully");
             case NODM -> System.out.println("Response: " + res
                     + " # Domain does not exist");
             case NOPERM -> System.out.println("Response: " + res
@@ -120,15 +119,13 @@ public class DeviceHandler {
             System.out.println("Usage: ET <float>");
             return;
         }
-
         String msg = parseCommandToSend(command, args);
         String res = this.sendReceive(msg);
-        if (res.equals(OK_RESPONSE)) {
-            System.out.println("Response: " + OK_RESPONSE +
+        if (res.equals(OK)) {
+            System.out.println("Response: " + OK +
                     " # Temperature sent successfully");
         } else {
-            System.out.println("Response: " + res +
-                    " # Error sending temperature");
+            System.out.println("Response: " + res + " # Error sending temperature");
         }
     }
 
@@ -153,7 +150,7 @@ public class DeviceHandler {
         // Send the file to the server
         String res = sendFileToServer(file);
 
-        if (res != null && res.equals(OK_RESPONSE)) {
+        if (res != null && res.equals(OK)) {
             System.out.println("Image sent successfully");
         } else {
             System.out.println("Error sending image");
@@ -168,7 +165,7 @@ public class DeviceHandler {
 
         String msg = parseCommandToSend(command, args);
         String res = this.sendReceive(msg);
-        if (res.equals(OK_RESPONSE)) {
+        if (res.equals(OK)) {
             try {
                 Long fileSize = input.readLong();
                 byte[] buffer = new byte[1024];
@@ -185,7 +182,7 @@ public class DeviceHandler {
                 }
 
                 fos.close();
-                System.out.println("Resposta: " + OK_RESPONSE + ", " + fileSize + " (long), seguido de " + fileSize + " bytes de dados.");
+                System.out.println("Resposta: " + OK + ", " + fileSize + " (long), seguido de " + fileSize + " bytes de dados.");
 
             } catch (Exception e) {
                 System.out.println(e.getMessage());
@@ -207,7 +204,7 @@ public class DeviceHandler {
         String msg = parseCommandToSend(command, args);
         String res = this.sendReceive(msg);
 
-        if (res.equals(OK_RESPONSE)) {
+        if (res.equals(OK)) {
             try {
                 long imageSize = input.readLong();
                 File file = new File("image.jpg");
@@ -229,7 +226,7 @@ public class DeviceHandler {
                 fos.flush();
                 fos.close();
 
-                System.out.println("Resposta: " + OK_RESPONSE + ", " + imageSize + " (long), seguido de " + imageSize + " Bytes de dados.");
+                System.out.println("Resposta: " + OK + ", " + imageSize + " (long), seguido de " + imageSize + " Bytes de dados.");
             } catch (Exception e) {
                 System.out.println("Error receiving image");
             }

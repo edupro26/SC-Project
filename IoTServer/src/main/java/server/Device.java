@@ -16,12 +16,15 @@ public class Device {
         lastTemp = null;
     }
 
-    protected Device(String device) {
+    protected Device(String device, String temp) {
         String[] deviceArgs = device.split(":");
         this.user = deviceArgs[0];
         this.id = Integer.parseInt(deviceArgs[1]);
         isConnected = false;
-        lastTemp = null;
+        if (!temp.equals("null"))
+            lastTemp = Float.parseFloat(temp);
+        else
+            lastTemp = null;
     }
 
     protected String getUser() {
