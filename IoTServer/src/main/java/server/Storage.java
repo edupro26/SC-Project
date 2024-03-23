@@ -8,108 +8,37 @@ public class Storage {
     // TODO needs further research and testing
     private static final Object monitor = new Object();
 
+    private static final String INFO = "device_info.csv";
     private static final String USERS = "users.csv";
     private static final String DOMAINS = "domains.csv";
-    private static final String INFO = "device_info.csv";
+    private static final String DEVICES = "devices.csv";
 
-    private static List<User> users;
-    private static List<Domain> domains;
-    private static HashMap<Device, List<Domain>> devices;
+    private final List<User> users;
+    private final List<Domain> domains;
+    private final HashMap<Device, List<Domain>> devices;
 
     public Storage() {
         users = new ArrayList<>();
         domains = new ArrayList<>();
         devices = new HashMap<>();
-        this.start();
-    }
-
-    private void start() {
-        try {
-            File users = new File(USERS);
-            File domains = new File(DOMAINS);
-            String result;
-            if (!users.exists()) {
-                result = users.createNewFile() ?
-                        "Users text file created successfully" : "Unable to create user text file";
-                System.out.println(result);
-            }
-            else {
-                loadUsers();
-            }
-
-            if (!domains.exists()) {
-                result = domains.createNewFile() ?
-                        "Domains text file created successfully" : "Unable to create domains text file";
-                System.out.println(result);
-            }
-            else {
-                loadDomains();
-            }
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
-    }
-
-    private void loadUsers() {
-        try {
-            BufferedReader in = new BufferedReader(new FileReader(USERS));
-            String line;
-            while ((line = in.readLine()) != null) {
-                String[] data = line.split(",");
-                users.add(new User(data[0],data[1]));
-            }
-            in.close();
-            System.out.println("Users text file loaded successfully");
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-            System.out.println("Unable to load users text file");
-        }
-    }
-
-    private void loadDomains() {
-        try {
-            BufferedReader in = new BufferedReader(new FileReader(DOMAINS));
-            String line;
-            while ((line = in.readLine()) != null) {
-                domains.add(new Domain(line));
-            }
-            in.close();
-            StringBuilder sb = new StringBuilder();
-            for (Domain domain : domains){
-                for(Device device: domain.getDevices()) {
-                    List<Domain> domains = devices.get(device);
-                    domains.add(domain);
-                    saveDevice(device, domains);
-                }
-                sb.append("Domain ").append(domain.getName()).append(" -> ")
-                        .append(domain).append(" ").append("\n");
-            }
-            System.out.println("Domains text file loaded successfully");
-            System.out.println("Printing server domains...");
-            System.out.println(sb);
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-            System.out.println("Unable to load domains text file");
-        }
+        new FileLoader(this);
     }
 
     private boolean updateDomainInFile(Domain domain) {
         File domains = new File(DOMAINS);
-        File tempFile = new File("temp_domains.csv");
-        try {
-            BufferedReader in = new BufferedReader(new FileReader(domains));
-            BufferedWriter out = new BufferedWriter(new FileWriter(tempFile));
+        try (BufferedReader in = new BufferedReader(new FileReader(domains))) {
+            StringBuilder content = new StringBuilder();
             String line;
             while ((line = in.readLine()) != null) {
                 String[] temp = line.split(",");
                 if (temp[0].equals(domain.getName()))
-                    line = domain.toString();
-                out.write(line + "\n");
+                    content.append(domain).append("\n");
+                else
+                    content.append(line).append("\n");
             }
+            BufferedWriter out = new BufferedWriter(new FileWriter(domains, false));
+            out.write(content.toString());
             out.close();
-            in.close();
-            if (!domains.delete()) return false;
-            if (!tempFile.renameTo(domains)) return false;
         } catch (IOException e) {
             System.out.println(e.getMessage());
             return false;
@@ -169,32 +98,35 @@ public class Storage {
     }
 
     protected void saveDevice(Device device, List<Domain> domains) {
-        // TODO Devices will also need to be stored in File
-        devices.put(device, domains);
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(DEVICES, true));
+            writer.write(device + ";" + device.getLastTemp() + "\n");
+            writer.close();
+            devices.put(device, domains);
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
     }
 
     protected String createDomain(String name, User owner) {
-        if (owner != null) {
-            if (getDomain(name) == null) {
+        if (owner == null) return "NOK";
+        if (getDomain(name) != null) return "NOK";
+        try {
+            synchronized (monitor) {
                 Domain domain = new Domain(name, owner);
-                try {
-                    synchronized (monitor) {
-                        domains.add(domain);
-                        BufferedWriter writer = new BufferedWriter(new FileWriter(DOMAINS, true));
-                        writer.write(domain + "\n");
-                        writer.close();
-                    }
-                } catch (IOException e) {
-                    System.out.println(e.getMessage());
-                }
-                return "OK";
+                domains.add(domain);
+                BufferedWriter writer = new BufferedWriter(new FileWriter(DOMAINS, true));
+                writer.write(domain + "\n");
+                writer.close();
             }
+            return "OK";
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
             return "NOK";
         }
-        return "NOK";
     }
 
-    protected static User getUser(String username) {
+    protected User getUser(String username) {
         for (User user : users) {
             if (username.equals(user.getName()))
                 return user;
@@ -218,8 +150,93 @@ public class Storage {
         return null;
     }
 
-    protected static HashMap<Device, List<Domain>> getDevices() {
+    protected HashMap<Device, List<Domain>> getDevices() {
         return devices;
+    }
+
+
+    private static class FileLoader {
+
+        private FileLoader(Storage srvStorage) {
+            File users = new File(USERS);
+            File domains = new File(DOMAINS);
+            File temps = new File(DEVICES);
+            this.start(users, domains, temps, srvStorage);
+        }
+
+        private void start(File users, File domains, File temps, Storage srvStorage) {
+            if (!createFile(users, "Users"))
+                loadUsers(srvStorage);
+            if (!createFile(domains, "Domains"))
+                loadDomains(srvStorage);
+            if (!createFile(temps, "Temperatures"))
+                loadTemps(srvStorage);
+
+            StringBuilder sb = new StringBuilder();
+            for (Domain domain : srvStorage.domains)
+                sb.append("Domain ").append(domain.getName()).append(" -> ")
+                        .append(domain).append(" ").append("\n");
+            System.out.println("Printing server domains...");
+            System.out.println(sb);
+        }
+
+        private void loadUsers(Storage srvStorage) {
+            try {
+                BufferedReader in = new BufferedReader(new FileReader(USERS));
+                String line;
+                while ((line = in.readLine()) != null) {
+                    String[] data = line.split(",");
+                    srvStorage.users.add(new User(data[0],data[1]));
+                }
+                in.close();
+                System.out.println("Users text file loaded successfully");
+            } catch (IOException e) {
+                System.out.println(e.getMessage());
+                System.out.println("Unable to load users text file");
+            }
+        }
+
+        private void loadDomains(Storage srvStorage) {
+            try {
+                BufferedReader in = new BufferedReader(new FileReader(DOMAINS));
+                String line;
+                while ((line = in.readLine()) != null) {
+                    srvStorage.domains.add(new Domain(line, srvStorage));
+                }
+                in.close();
+                for (Domain domain : srvStorage.domains){
+                    for(Device device: domain.getDevices()) {
+                        List<Domain> domains = srvStorage.devices.get(device);
+                        domains.add(domain);
+                        srvStorage.devices.put(device, domains);
+                    }
+                }
+                System.out.println("Domains text file loaded successfully");
+            } catch (IOException e) {
+                System.out.println(e.getMessage());
+                System.out.println("Unable to load domains text file");
+            }
+        }
+
+        private void loadTemps(Storage srvStorage) {
+            // TODO
+        }
+
+        private boolean createFile(File file, String type) {
+            try {
+                if (!file.exists()) {
+                    if (file.createNewFile()){
+                        System.out.println(type + " text file created successfully");
+                        return true;
+                    }
+                    System.out.println("Unable to create " + type.toLowerCase() + " text file");
+                }
+            } catch (IOException e) {
+                System.out.println(e.getMessage());
+            }
+            return false;
+        }
+
     }
 
 }

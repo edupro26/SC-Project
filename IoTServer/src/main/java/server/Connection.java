@@ -33,7 +33,7 @@ public class Connection {
             String[] userParts = in.split(",");
             User logIn = new User(userParts[0], userParts[1]);
 
-            devUser = Storage.getUser(logIn.getName());
+            devUser = srvStorage.getUser(logIn.getName());
             if (devUser == null) {
                 srvStorage.saveUser(logIn);
                 devUser = logIn;
@@ -126,7 +126,7 @@ public class Connection {
                         System.out.println(result);
                     }
                     case "ADD" -> {
-                        User user = Storage.getUser(parsedMsg[1]);
+                        User user = srvStorage.getUser(parsedMsg[1]);
                         Domain domain = srvStorage.getDomain(parsedMsg[2]);
                         result = srvStorage.addUserToDomain(this.devUser, user, domain);
                         output.writeObject(result);
@@ -220,7 +220,7 @@ public class Connection {
                     }
                     case "RI" -> {
                         String userDevice = parsedMsg[1];
-                        User devUser = Storage.getUser(userDevice.split(":")[0]);
+                        User devUser = srvStorage.getUser(userDevice.split(":")[0]);
                         int devId = Integer.parseInt(userDevice.split(":")[1]);
 
                         // TODO Verify if device exists

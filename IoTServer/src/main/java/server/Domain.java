@@ -18,17 +18,17 @@ public class Domain {
         this.devices = new ArrayList<>();
     }
 
-    protected Domain(String domain) {
+    protected Domain(String domain, Storage srvStorage) {
         String[] domainParts = domain.split(",");
         this.name = domainParts[0];
-        this.owner = Storage.getUser(domainParts[1]);
+        this.owner = srvStorage.getUser(domainParts[1]);
         this.users = new ArrayList<>();
         this.devices = new ArrayList<>();
 
         if (!domainParts[2].equals("[]")) {
             String[] users = domainParts[2].substring(1, domainParts[2].length() - 1).split(";");
             for (String user : users)
-                this.users.add(Storage.getUser(user));
+                this.users.add(srvStorage.getUser(user));
         }
 
         if (!domainParts[3].equals("[]")) {
@@ -36,7 +36,7 @@ public class Domain {
             for (String device : devices) {
                 String[] deviceParts = device.split(":");
                 Device newDev = new Device(deviceParts[0], Integer.parseInt(deviceParts[1]));
-                Storage.getDevices().put(newDev, new ArrayList<>());
+                srvStorage.getDevices().put(newDev, new ArrayList<>());
                 this.devices.add(newDev);
             }
         }
