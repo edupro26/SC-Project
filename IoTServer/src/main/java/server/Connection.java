@@ -6,7 +6,6 @@ import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
-
 public class Connection {
 
     private final Storage srvStorage;
@@ -217,12 +216,21 @@ public class Connection {
                     }
                     case "RI" -> { // TODO Finish RI command
                         String userDevice = parsedMsg[1];
-                        User devUser = srvStorage.getUser(userDevice.split(":")[0]);
+                        String username = userDevice.split(":")[0];
                         int devId = Integer.parseInt(userDevice.split(":")[1]);
 
-                        // TODO Verify if device exists
+                        Device reqDevice = srvStorage.getDevice(username, devId);
+                        if (reqDevice == null) {
+                            output.writeObject("NOID");
+                            break;
+                        }
 
-                        // TODO Verify permission
+                        User reqDevUser = srvStorage.getUser(username);
+
+                        if (!srvStorage.hasPerm(reqDevUser, reqDevice)) {
+                            output.writeObject("NOPERM");
+                            break;
+                        }
 
                         // FInd if image exists
                         String imageName = "images/" + devUser.getName() + "_" + devId + ".jpg";
