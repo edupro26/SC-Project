@@ -168,6 +168,27 @@ public class Storage {
         return devices;
     }
 
+    protected Device getDevice(String user, int id) {
+        for (Map.Entry<Device, List<Domain>> entry : devices.entrySet()) {
+            if (entry.getKey().getUser().equals(user) && entry.getKey().getId() == id)
+                return entry.getKey();
+        }
+        return null;
+    }
+
+    protected boolean hasPerm(User user, Device device) {
+        for (Map.Entry<Device, List<Domain>> entry : devices.entrySet()) {
+            if (entry.getKey().equals(device)) {
+                for (Domain domain : entry.getValue()) {
+                    if (domain.getUsers().contains(user) || domain.getOwner().equals(user))
+                        return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
 
     private static class FileLoader {
 
