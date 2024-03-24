@@ -2,6 +2,7 @@ package client;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.Arrays;
 
 public class DeviceHandler {
 
@@ -9,6 +10,7 @@ public class DeviceHandler {
     private static final String NODM = "NODM";
     private static final String NOUSER = "NOUSER";
     private static final String NOPERM = "NOPERM";
+    private static final String NODATA = "NODATA";
     private static final String NOK = "NOK";
 
     private final String address;
@@ -162,37 +164,32 @@ public class DeviceHandler {
             System.out.println("Usage: RT <dm>");
             return;
         }
-
         String msg = parseCommandToSend(command, args);
         String res = this.sendReceive(msg);
-        if (res.equals(OK)) {
-            try {
-                Long fileSize = input.readLong();
-                byte[] buffer = new byte[1024];
-                int bytesRead;
-                File file = new File("temperatures.txt");
-                if (!file.exists()) {
-                    file.createNewFile();
+        switch (res) {
+            case OK -> {
+                try {
+                    FileOutputStream out = new FileOutputStream(args[0] + ".txt");
+                    BufferedOutputStream bos = new BufferedOutputStream(out);
+                    byte[] buffer = new byte[1024];
+                    int bytesRead = input.read(buffer, 0, buffer.length);
+                    bos.write(buffer, 0, bytesRead);
+                    bos.close();
+                    File file = new File(args[0] + ".txt");
+                    System.out.println("Response: " + res + ", " + file.length()
+                            + " (long), followed by " + file.length() + " bytes of data");
+                } catch (IOException e) {
+                    System.out.println(e.getMessage());
                 }
-                FileOutputStream fos = new FileOutputStream(file);
-                long remainingBytes = fileSize;
-                while (remainingBytes > 0 && (bytesRead = input.read(buffer, 0, (int) Math.min(buffer.length, remainingBytes))) != -1) {
-                    fos.write(buffer, 0, bytesRead);
-                    remainingBytes -= bytesRead;
-                }
-
-                fos.close();
-                System.out.println("Resposta: " + OK + ", " + fileSize + " (long), seguido de " + fileSize + " bytes de dados.");
-
-            } catch (Exception e) {
-                System.out.println(e.getMessage());
-                System.out.println("Error receiving temperatures");
             }
-        } else {
-            System.out.println("Response: " + res +
-                    " # Error receiving temperatures");
+            case NODM -> System.out.println("Response: " + res
+                    + " # Domain does not exist");
+            case NOPERM -> System.out.println("Response: " + res
+                    + " # This user does not have permissions");
+            case NODATA -> System.out.println("Response: " + res
+                    + " # No data found in this domain");
+            default -> System.out.println("Response: NOK # Error getting temperatures");
         }
-
     }
 
     public void sendReceiveRI(String[] args, String command) {

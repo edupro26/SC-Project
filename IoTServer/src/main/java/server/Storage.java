@@ -24,6 +24,42 @@ public class Storage {
         new FileLoader(this);
     }
 
+    protected void saveUser(User user) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(USERS, true))) {
+            writer.write(user + "\n");
+            users.add(user);
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    protected void saveDevice(Device device, List<Domain> domains) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(DEVICES, true))) {
+            writer.write(device + "," + device.getLastTemp() + "\n");
+            devices.put(device, domains);
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    protected String createDomain(String name, User owner) {
+        if (owner == null) return "NOK";
+        if (getDomain(name) != null) return "NOK";
+        try {
+            synchronized (monitor) {
+                Domain domain = new Domain(name, owner);
+                domains.add(domain);
+                BufferedWriter writer = new BufferedWriter(new FileWriter(DOMAINS, true));
+                writer.write(domain + "\n");
+                writer.close();
+            }
+            return "OK";
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+            return "NOK";
+        }
+    }
+
     private boolean updateDomainInFile(Domain domain) {
         try (BufferedReader in = new BufferedReader(new FileReader(DOMAINS))) {
             StringBuilder file = new StringBuilder();
@@ -43,6 +79,29 @@ public class Storage {
             return false;
         }
         return true;
+    }
+
+    protected String updateLastTemp(Device device) {
+        try (BufferedReader in = new BufferedReader(new FileReader(DEVICES))) {
+            StringBuilder file = new StringBuilder();
+            String line;
+            while ((line = in.readLine()) != null) {
+                String[] temp = line.split(",");
+                if (temp[0].equals(device.toString())) {
+                    file.append(device).append(",")
+                            .append(device.getLastTemp()).append("\n");
+                } else {
+                    file.append(line).append("\n");
+                }
+            }
+            BufferedWriter out = new BufferedWriter(new FileWriter(DEVICES, false));
+            out.write(file.toString());
+            out.close();
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+            return "NOK";
+        }
+        return "OK";
     }
 
     protected String addUserToDomain(User user, User userToAdd, Domain domain) {
@@ -84,65 +143,6 @@ public class Storage {
             }
         }
         return false;
-    }
-
-    protected void saveUser(User user) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(USERS, true))) {
-            writer.write(user + "\n");
-            users.add(user);
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
-    }
-
-    protected void saveDevice(Device device, List<Domain> domains) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(DEVICES, true))) {
-            writer.write(device + "," + device.getLastTemp() + "\n");
-            devices.put(device, domains);
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
-    }
-
-    protected String updateLastTemp(Device device) {
-        try (BufferedReader in = new BufferedReader(new FileReader(DEVICES))) {
-            StringBuilder file = new StringBuilder();
-            String line;
-            while ((line = in.readLine()) != null) {
-                String[] temp = line.split(",");
-                if (temp[0].equals(device.toString())) {
-                    file.append(device).append(",")
-                            .append(device.getLastTemp()).append("\n");
-                } else {
-                    file.append(line).append("\n");
-                }
-            }
-            BufferedWriter out = new BufferedWriter(new FileWriter(DEVICES, false));
-            out.write(file.toString());
-            out.close();
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-            return "NOK";
-        }
-        return "OK";
-    }
-
-    protected String createDomain(String name, User owner) {
-        if (owner == null) return "NOK";
-        if (getDomain(name) != null) return "NOK";
-        try {
-            synchronized (monitor) {
-                Domain domain = new Domain(name, owner);
-                domains.add(domain);
-                BufferedWriter writer = new BufferedWriter(new FileWriter(DOMAINS, true));
-                writer.write(domain + "\n");
-                writer.close();
-            }
-            return "OK";
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-            return "NOK";
-        }
     }
 
     protected User getUser(String username) {
@@ -243,6 +243,10 @@ public class Storage {
                     if (exits != null) {
                         List<Domain> domains = srvStorage.devices.get(exits);
                         srvStorage.devices.remove(exits);
+                        for (Domain domain : domains) {
+                            domain.getDevices().remove(exits);
+                            domain.getDevices().add(device);
+                        }
                         srvStorage.devices.put(device, domains);
                     }
                     else {

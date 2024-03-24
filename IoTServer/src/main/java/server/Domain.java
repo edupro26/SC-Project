@@ -1,5 +1,9 @@
 package server;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringJoiner;
@@ -42,12 +46,21 @@ public class Domain {
         }
     }
 
-    protected String[] getDomainTemperatures() {
-        String[] temperatures = new String[devices.size()];
-        for (int i = 0; i < devices.size(); i++) {
-            temperatures[i] = devices.get(i) + "->" + devices.get(i).getLastTemp();
+    protected File getDomainTemperatures() {
+        File file = new File(name + ".txt");
+        try (BufferedWriter out = new BufferedWriter(new FileWriter(file, false))) {
+            StringBuilder content = new StringBuilder();
+            for (Device device : devices) {
+                if (device.getLastTemp() != null)
+                    content.append(device).append(" -> ")
+                        .append(device.getLastTemp()).append("\n");
+            }
+            out.write(content.toString());
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+            return null;
         }
-        return temperatures;
+        return file.length() > 0 ? file : null;
     }
 
     protected void addUser(User user) {

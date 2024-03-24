@@ -155,9 +155,7 @@ public class Connection {
                             System.out.println("Error: Unable to receive temperature!");
                         }
                     }
-                    // TODO these commands need to be looked at with more
-                    //  detail after Device implementation
-                    case "EI" -> {
+                    case "EI" -> { // TODO Finish EI command
                         long imageSize = Long.parseLong(parsedMsg[1]);
 
                         output.writeObject("Send image");
@@ -197,33 +195,27 @@ public class Connection {
                         Domain domain = srvStorage.getDomain(parsedMsg[1]);
                         if (domain == null) {
                             output.writeObject("NODM");
-                        } else if (!domain.getUsers().contains(devUser) && !domain.getOwner().equals(devUser)) {
+                        } else if (!domain.getUsers().contains(devUser) &&
+                                !domain.getOwner().equals(devUser)) {
                             output.writeObject("NOPERM");
-                        }
-                        else {
-                            String[] temperatures = domain.getDomainTemperatures();
-                            if (temperatures.length == 0) {
+                        } else {
+                            File file = domain.getDomainTemperatures();
+                            if (file == null) {
                                 output.writeObject("NODATA");
                             }
                             else {
-                                // Form a txt file with the temperatures, send the data size and then the file
                                 output.writeObject("OK");
-                                StringBuilder data = new StringBuilder();
-                                for (String temperature : temperatures) {
-                                    data.append(temperature).append("\n");
-                                }
-
-                                byte[] dataBytes = data.toString().getBytes();
-                                output.writeLong(dataBytes.length);
-                                output.write(dataBytes);
-
-
+                                byte[] buffer = new byte[(int) file.length()];
+                                FileInputStream in = new FileInputStream(file);
+                                BufferedInputStream bis = new BufferedInputStream(in);
+                                bis.read(buffer, 0, buffer.length);
+                                output.write(buffer, 0, buffer.length);
                                 output.flush();
-
+                                bis.close();
                             }
                         }
                     }
-                    case "RI" -> {
+                    case "RI" -> { // TODO Finish RI command
                         String userDevice = parsedMsg[1];
                         User devUser = srvStorage.getUser(userDevice.split(":")[0]);
                         int devId = Integer.parseInt(userDevice.split(":")[1]);
