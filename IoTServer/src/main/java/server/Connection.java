@@ -216,8 +216,20 @@ public class Connection {
                     }
                     case "RI" -> { // TODO Finish RI command
                         String userDevice = parsedMsg[1];
-                        String username = userDevice.split(":")[0];
-                        int devId = Integer.parseInt(userDevice.split(":")[1]);
+                        String[] split = userDevice.split(":");
+                        if (split.length != 2) {
+                            output.writeObject("NOK");
+                            break;
+                        }
+                        String username = split[0];
+
+                        int devId;
+                        try {
+                            devId = Integer.parseInt(split[1]);
+                        } catch (NumberFormatException e) {
+                            output.writeObject("NOK");
+                            break;
+                        }
 
                         Device reqDevice = srvStorage.getDevice(username, devId);
                         if (reqDevice == null) {
