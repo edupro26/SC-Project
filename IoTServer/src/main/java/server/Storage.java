@@ -5,13 +5,10 @@ import java.util.*;
 
 public class Storage {
 
-    // TODO needs further research and testing
-    private static final Object monitor = new Object();
-
     private static final String INFO = "device_info.csv";
-    private static final String USERS = "users.csv";
-    private static final String DOMAINS = "domains.csv";
-    private static final String DEVICES = "devices.csv";
+    private static final String USERS = "server-files/users.csv";
+    private static final String DOMAINS = "server-files/domains.csv";
+    private static final String DEVICES = "server-files/devices.csv";
 
     private final List<User> users;
     private final List<Domain> domains;
@@ -24,7 +21,7 @@ public class Storage {
         new FileLoader(this);
     }
 
-    protected void saveUser(User user) {
+    protected synchronized void saveUser(User user) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(USERS, true))) {
             writer.write(user + "\n");
             users.add(user);
@@ -33,7 +30,7 @@ public class Storage {
         }
     }
 
-    protected void saveDevice(Device device, List<Domain> domains) {
+    protected synchronized void saveDevice(Device device, List<Domain> domains) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(DEVICES, true))) {
             writer.write(device + "," + device.getLastTemp() + "\n");
             devices.put(device, domains);
@@ -42,17 +39,15 @@ public class Storage {
         }
     }
 
-    protected String createDomain(String name, User owner) {
+    protected synchronized String createDomain(String name, User owner) {
         if (owner == null) return "NOK";
         if (getDomain(name) != null) return "NOK";
         try {
-            synchronized (monitor) {
-                Domain domain = new Domain(name, owner);
-                domains.add(domain);
-                BufferedWriter writer = new BufferedWriter(new FileWriter(DOMAINS, true));
-                writer.write(domain + "\n");
-                writer.close();
-            }
+            Domain domain = new Domain(name, owner);
+            domains.add(domain);
+            BufferedWriter writer = new BufferedWriter(new FileWriter(DOMAINS, true));
+            writer.write(domain + "\n");
+            writer.close();
             return "OK";
         } catch (IOException e) {
             System.out.println(e.getMessage());
@@ -81,7 +76,7 @@ public class Storage {
         return true;
     }
 
-    protected String updateLastTemp(Device device) {
+    protected synchronized String updateLastTemp(Device device) {
         try (BufferedReader in = new BufferedReader(new FileReader(DEVICES))) {
             StringBuilder file = new StringBuilder();
             String line;
@@ -104,7 +99,7 @@ public class Storage {
         return "OK";
     }
 
-    protected String addUserToDomain(User user, User userToAdd, Domain domain) {
+    protected synchronized String addUserToDomain(User user, User userToAdd, Domain domain) {
         if (domain == null) return "NODM";
         if (userToAdd == null) return "NOUSER";
         if (!domain.getOwner().equals(user)) return "NOPERM";
@@ -114,7 +109,7 @@ public class Storage {
         return updateDomainInFile(domain) ? "OK" : "NOK";
     }
 
-    protected String addDeviceToDomain(Domain domain, Device device, User user) {
+    protected synchronized String addDeviceToDomain(Domain domain, Device device, User user) {
         if(domain == null) return "NODM";
         if(domain.getDevices().contains(device)) return "NOK";
         User owner = domain.getOwner();
@@ -176,7 +171,12 @@ public class Storage {
 
     private static class FileLoader {
 
+        private static final String SERVER_FILES = "server-files";
+        private static final String TEMPERATURES = "temperatures";
+        private static final String IMAGES = "images";
+
         private FileLoader(Storage srvStorage) {
+            createFolders();
             File users = new File(USERS);
             File domains = new File(DOMAINS);
             File temps = new File(DEVICES);
@@ -273,6 +273,15 @@ public class Storage {
                 System.out.println(e.getMessage());
             }
             return false;
+        }
+
+        protected void createFolders() {
+            File server = new File(SERVER_FILES);
+            if (!server.isDirectory()) server.mkdir();
+            File temps = new File(TEMPERATURES);
+            if (!temps.isDirectory()) temps.mkdir();
+            File images = new File(IMAGES);
+            if (!images.isDirectory()) images.mkdir();
         }
 
     }

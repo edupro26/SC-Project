@@ -13,6 +13,8 @@ public class DeviceHandler {
     private static final String NODATA = "NODATA";
     private static final String NOK = "NOK";
 
+    private static final String SERVER_OUT = "server-output/";
+
     private final String address;
     private final int port;
 
@@ -168,19 +170,21 @@ public class DeviceHandler {
         String res = this.sendReceive(msg);
         switch (res) {
             case OK -> {
+                File outputFolder = new File(SERVER_OUT);
+                if (!outputFolder.isDirectory()) outputFolder.mkdir();
                 try {
-                    FileOutputStream out = new FileOutputStream(args[0] + ".txt");
+                    FileOutputStream out = new FileOutputStream(SERVER_OUT + args[0] + ".txt");
                     BufferedOutputStream bos = new BufferedOutputStream(out);
                     byte[] buffer = new byte[1024];
                     int bytesRead = input.read(buffer, 0, buffer.length);
                     bos.write(buffer, 0, bytesRead);
                     bos.close();
-                    File file = new File(args[0] + ".txt");
-                    System.out.println("Response: " + res + ", " + file.length()
-                            + " (long), followed by " + file.length() + " bytes of data");
                 } catch (IOException e) {
                     System.out.println(e.getMessage());
                 }
+                File file = new File(SERVER_OUT + args[0] + ".txt");
+                System.out.println("Response: " + res + ", " + file.length()
+                        + " (long), followed by " + file.length() + " bytes of data");
             }
             case NODM -> System.out.println("Response: " + res
                     + " # Domain does not exist");

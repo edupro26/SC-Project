@@ -47,7 +47,7 @@ public class Domain {
     }
 
     protected File getDomainTemperatures() {
-        File file = new File(name + ".txt");
+        File file = new File( "temperatures/" + name + ".txt");
         try (BufferedWriter out = new BufferedWriter(new FileWriter(file, false))) {
             StringBuilder content = new StringBuilder();
             for (Device device : devices) {
