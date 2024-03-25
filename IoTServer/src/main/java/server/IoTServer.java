@@ -59,12 +59,10 @@ public class IoTServer {
                 System.out.print("Validating device ID... ");
                 boolean validID = connection.validateDevID();
 
-                // FIXME Enable when client app is finished and
-                //  don't forget to update size in device_info.csv
-//                System.out.print("Validating device info...");
-//                boolean validInfo = connection.validateConnection();
+                System.out.print("Validating device info...");
+                boolean validInfo = connection.validateConnection();
 
-                if (validID /*&& validInfo*/) {
+                if (validID && validInfo) {
                     System.out.println("Client connected (" + clientAddress + ")");
                     System.out.println("Active connections: " + ++counter);
                     connection.handleRequests();

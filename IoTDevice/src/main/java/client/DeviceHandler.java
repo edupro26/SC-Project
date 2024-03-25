@@ -24,12 +24,12 @@ public class DeviceHandler {
     // Socket connection to the server
     private Socket socket;
 
-    public DeviceHandler(String address, int port) {
+    protected DeviceHandler(String address, int port) {
         this.address = address;
         this.port = port;
     }
 
-    public void connect() {
+    protected void connect() {
         try {
             socket = new Socket(address, port);
             System.out.println("Connected to server: " + address + ":" + port);
@@ -42,7 +42,7 @@ public class DeviceHandler {
         }
     }
 
-    public void disconnect() {
+    protected void disconnect() {
         try {
             output.close();
             input.close();
@@ -52,7 +52,7 @@ public class DeviceHandler {
         }
     }
 
-    public String sendReceive(String msg) {
+    protected String sendReceive(String msg) {
         try {
             this.output.writeObject(msg);
 
@@ -64,7 +64,7 @@ public class DeviceHandler {
         return null;
     }
 
-    public void sendReceiveCREATE(String[] args, String command) {
+    protected void sendReceiveCREATE(String[] args, String command) {
         if (args.length != 1) {
             System.out.println("Usage: CREATE <dm>");
             return;
@@ -80,7 +80,7 @@ public class DeviceHandler {
         }
     }
 
-    public void sendReceiveADD(String[] args, String command) {
+    protected void sendReceiveADD(String[] args, String command) {
         if (args.length != 2) {
             System.out.println("Usage: ADD <user1> <dm>");
             return;
@@ -100,7 +100,7 @@ public class DeviceHandler {
         }
     }
 
-    public void sendReceiveRD(String[] args, String command) {
+    protected void sendReceiveRD(String[] args, String command) {
         if (args.length != 1) {
             System.out.println("Usage: RD <dm>");
             return;
@@ -118,7 +118,7 @@ public class DeviceHandler {
         }
     }
 
-    public void sendReceiveET(String[] args, String command) {
+    protected void sendReceiveET(String[] args, String command) {
         if (args.length != 1) {
             System.out.println("Usage: ET <float>");
             return;
@@ -133,7 +133,7 @@ public class DeviceHandler {
         }
     }
 
-    public void sendReceiveEI(String[] args, String command) {
+    protected void sendReceiveEI(String[] args, String command) {
         if (args.length != 1) {
             System.out.println("Usage: EI <filename.jpg>");
             return;
@@ -149,7 +149,7 @@ public class DeviceHandler {
         }
     }
 
-    public void sendReceiveRT(String[] args, String command) {
+    protected void sendReceiveRT(String[] args, String command) {
         if (args.length != 1) {
             System.out.println("Usage: RT <dm>");
             return;
@@ -173,7 +173,7 @@ public class DeviceHandler {
         }
     }
 
-    public void sendReceiveRI(String[] args, String command) {
+    protected void sendReceiveRI(String[] args, String command) {
         if (args.length != 1) {
             System.out.println("Usage: RI <user-id>:<dev_id>");
             return;
