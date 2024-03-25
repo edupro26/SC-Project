@@ -2,12 +2,12 @@ package client;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.Arrays;
 
 public class DeviceHandler {
 
     private static final String OK = "OK";
     private static final String NODM = "NODM";
+    private static final String NOID = "NOID";
     private static final String NOUSER = "NOUSER";
     private static final String NOPERM = "NOPERM";
     private static final String NODATA = "NODATA";
@@ -138,26 +138,14 @@ public class DeviceHandler {
             System.out.println("Usage: EI <filename.jpg>");
             return;
         }
-
-        // Send command to server with the file size
-        File file = new File(args[0]);
-        String msg = parseCommandToSend(command, new String[]{String.valueOf(file.length())});
-
-        // Send the command to the server to warn it will receive a file
-        String firstRes = this.sendReceive(msg);
-
-        if (!firstRes.equals("Send image")) {
-            System.out.println("Error sending image size");
-            return;
-        }
-
-        // Send the file to the server
-        String res = sendFileToServer(file);
-
-        if (res != null && res.equals(OK)) {
-            System.out.println("Image sent successfully");
+        String msg = parseCommandToSend(command, args);
+        String res = this.sendReceive(msg);
+        if (res.equals(OK)) {
+            String result = sendFile(args[0]) ? "Response: " + OK + " # Image " +
+                    "sent successfully" : "Response: " + NOK + " # Error sending image";
+            System.out.println(result);
         } else {
-            System.out.println("Error sending image");
+            System.out.println("Response: " + res + " # Error sending image");
         }
     }
 
@@ -168,23 +156,12 @@ public class DeviceHandler {
         }
         String msg = parseCommandToSend(command, args);
         String res = this.sendReceive(msg);
+        String name = SERVER_OUT + args[0] + ".txt";
         switch (res) {
             case OK -> {
-                File outputFolder = new File(SERVER_OUT);
-                if (!outputFolder.isDirectory()) outputFolder.mkdir();
-                try {
-                    FileOutputStream out = new FileOutputStream(SERVER_OUT + args[0] + ".txt");
-                    BufferedOutputStream bos = new BufferedOutputStream(out);
-                    byte[] buffer = new byte[1024];
-                    int bytesRead = input.read(buffer, 0, buffer.length);
-                    bos.write(buffer, 0, bytesRead);
-                    bos.close();
-                } catch (IOException e) {
-                    System.out.println(e.getMessage());
-                }
-                File file = new File(SERVER_OUT + args[0] + ".txt");
-                System.out.println("Response: " + res + ", " + file.length()
-                        + " (long), followed by " + file.length() + " bytes of data");
+                int received = receiveFile(name);
+                System.out.println("Response: " + res + ", " + received
+                        + " (long), followed by " + received + " bytes of data");
             }
             case NODM -> System.out.println("Response: " + res
                     + " # Domain does not exist");
@@ -201,50 +178,74 @@ public class DeviceHandler {
             System.out.println("Usage: RI <user-id>:<dev_id>");
             return;
         }
-
         String msg = parseCommandToSend(command, args);
         String res = this.sendReceive(msg);
-
-        if (res.equals(OK)) {
-            try {
-                long imageSize = input.readLong();
-                File file = new File("image.jpg");
-                if (!file.exists()) {
-                    file.createNewFile();
-                }
-                FileOutputStream fos = new FileOutputStream(file);
-
-                long remainingBytes = imageSize;
-                int bytesRead;
-
-                byte[] buffer = new byte[1024];
-
-                while (remainingBytes > 0 && (bytesRead = input.read(buffer, 0, (int) Math.min(buffer.length, remainingBytes))) != -1) {
-                    fos.write(buffer, 0, bytesRead);
-                    remainingBytes -= bytesRead;
-                }
-
-                fos.flush();
-                fos.close();
-
-                System.out.println("Resposta: " + OK + ", " + imageSize + " (long), seguido de " + imageSize + " Bytes de dados.");
-            } catch (Exception e) {
-                System.out.println("Error receiving image");
+        String[] temp = args[0].split(":");
+        String name = SERVER_OUT + temp[0] + "_" + temp[1] + ".jpg";
+        switch (res) {
+            case OK -> {
+                int received = receiveFile(name);
+                System.out.println("Response: " + res + ", " + received
+                        + " (long), followed by " + received + " bytes of data");
             }
-        } else if (res.equals("NODATA")) {
-            System.out.println("Resposta: " + res + " # esse device id não publicou dados");
-        } else if (res.equals("NOID")) {
-            System.out.println("Resposta: " + res + " # esse device id não existe");
-        } else if (res.equals("NOPERM")) {
-            System.out.println("Resposta: " + res + " # sem permissões de leitura");
-        } else {
-            System.out.println("Response: " + res + " # Error receiving image");
+            case NODATA -> System.out.println("Response: " + res
+                    + " # No image found for this device");
+            case NOID -> System.out.println("Response: " + res
+                    + " # No device found with this id");
+            case NOPERM -> System.out.println("Response: " + res
+                    + " # This user does not have permissions");
+            default -> System.out.println("Response: NOK # Error getting image");
         }
+    }
+
+    private boolean sendFile(String filePath) {
+        try {
+            File image = new File(filePath);
+            FileInputStream in = new FileInputStream(image);
+            BufferedInputStream bis = new BufferedInputStream(in);
+            byte[] buffer = new byte[8192];
+            int bytesLeft = (int) image.length();
+            while (bytesLeft > 0) {
+                int bytesRead = bis.read(buffer);
+                output.write(buffer, 0, bytesRead);
+                bytesLeft -= bytesRead;
+            }
+            output.flush();
+            bis.close();
+            in.close();
+            return true;
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
+        return false;
+    }
+
+    private int receiveFile(String name) {
+        File outputFolder = new File(SERVER_OUT);
+        if (!outputFolder.isDirectory()) outputFolder.mkdir();
+        try {
+            int size = input.readInt();
+            FileOutputStream out = new FileOutputStream(name);
+            BufferedOutputStream bos = new BufferedOutputStream(out);
+            byte[] buffer = new byte[8192];
+            int bytesLeft = size;
+            while (bytesLeft > 0) {
+                int bytesRead = input.read(buffer);
+                bos.write(buffer, 0, bytesRead);
+                bytesLeft -= bytesRead;
+            }
+            bos.flush();
+            bos.close();
+            out.close();
+            return size;
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+        return -1;
     }
 
     private String parseCommandToSend(String command, String[] args) {
         StringBuilder sb = new StringBuilder(command);
-
         for (String arg : args) {
             sb.append(";").append(arg);
         }
@@ -252,27 +253,4 @@ public class DeviceHandler {
         return sb.toString();
     }
 
-    private String sendFileToServer(File file) {
-        try {
-
-            FileInputStream fis = new FileInputStream(file);
-
-            byte[] buffer = new byte[1024];
-            int bytesRead;
-            while ((bytesRead = fis.read(buffer)) != -1) {
-                output.write(buffer, 0, bytesRead);
-            }
-
-            output.flush();
-            fis.close();
-
-            return (String) input.readObject();
-
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-        }
-
-        return null;
-
-    }
 }

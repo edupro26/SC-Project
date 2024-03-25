@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+
 public class Connection {
 
     private final Storage srvStorage;
@@ -115,158 +116,28 @@ public class Connection {
                 String[] parsedMsg = msg.split(";");
                 String command = parsedMsg[0];
 
-                String result;
                 switch (command) {
-                    case "CREATE" -> {
-                        result = srvStorage.createDomain(parsedMsg[1], devUser);
-                        output.writeObject(result);
-                        result = result.equals("OK") ?
-                                "Success: Domain created!" : "Error: Domain not created!";
-                        System.out.println(result);
-                    }
-                    case "ADD" -> {
-                        User user = srvStorage.getUser(parsedMsg[1]);
-                        Domain domain = srvStorage.getDomain(parsedMsg[2]);
-                        result = srvStorage.addUserToDomain(this.devUser, user, domain);
-                        output.writeObject(result);
-                        result = result.equals("OK") ?
-                                "Success: User added!" : "Error: Unable to add user!";
-                        System.out.println(result);
-                    }
-                    case "RD" -> {
-                        Domain domain = srvStorage.getDomain(parsedMsg[1]);
-                        result = srvStorage.addDeviceToDomain(domain, device, devUser);
-                        output.writeObject(result);
-                        result = result.equals("OK") ?
-                                "Success: Device registered!" : "Error: Unable to register device!";
-                        System.out.println(result);
-                    }
-                    case "ET" -> {
-                        try {
-                            device.setLastTemp(Float.parseFloat(parsedMsg[1]));
-                            result = srvStorage.updateLastTemp(device);
-                            output.writeObject(result);
-                            result = result.equals("OK") ?
-                                    "Success: Temperature received!" : "Error: Unable to receive temperature!";
-                            System.out.println(result);
-                        } catch (Exception e) {
+                    case "CREATE" -> handleCREATE(parsedMsg[1]);
+                    case "ADD" -> handleADD(parsedMsg[1], parsedMsg[2]);
+                    case "RD" -> handleRD(parsedMsg[1]);
+                    case "ET" -> handleET(parsedMsg[1]);
+                    case "EI" -> handleEI(parsedMsg[1]);
+                    case "RT" -> handleRT(parsedMsg[1]);
+                    case "RI" -> {
+                        String[] devParts = parsedMsg[1].split(":");
+                        if (devParts.length != 2) {
                             output.writeObject("NOK");
-                            System.out.println("Error: Unable to receive temperature!");
-                        }
-                    }
-                    case "EI" -> { // TODO Finish EI command
-                        long imageSize = Long.parseLong(parsedMsg[1]);
-
-                        output.writeObject("Send image");
-
-                        System.out.println("Receiving image from " + devUser.getName() + ":" + device.getId() + " with size " + imageSize + " bytes.");
-
-                        String imageName = "images/" + devUser.getName() + "_" + device.getId() + ".jpg";
-
-                        File imageFile = new File(imageName);
-
-                        File parentDir = imageFile.getParentFile();
-                        if (!parentDir.exists()) {
-                            parentDir.mkdirs();
-                        }
-
-                        if (!imageFile.exists()) {
-                            imageFile.createNewFile();
-                        }
-
-                        FileOutputStream imageOutput = new FileOutputStream(imageFile);
-
-                        long remainingBytes = imageSize;
-                        int bytesRead;
-
-                        byte[] buffer = new byte[1024]; // Use a fixed-size buffer
-                        while (remainingBytes > 0 && (bytesRead = input.read(buffer, 0, (int) Math.min(buffer.length, remainingBytes))) != -1){
-                            imageOutput.write(buffer, 0, bytesRead);
-                            remainingBytes -= bytesRead;
-                        }
-
-                        imageOutput.flush();
-                        imageOutput.close();
-                        output.writeObject("OK");
-
-                    }
-                    case "RT" -> {
-                        Domain domain = srvStorage.getDomain(parsedMsg[1]);
-                        if (domain == null) {
-                            output.writeObject("NODM");
-                        } else if (!domain.getUsers().contains(devUser) &&
-                                !domain.getOwner().equals(devUser)) {
-                            output.writeObject("NOPERM");
-                        } else {
-                            File file = domain.getDomainTemperatures();
-                            if (file == null) {
-                                output.writeObject("NODATA");
-                            }
-                            else {
-                                output.writeObject("OK");
-                                byte[] buffer = new byte[(int) file.length()];
-                                FileInputStream in = new FileInputStream(file);
-                                BufferedInputStream bis = new BufferedInputStream(in);
-                                bis.read(buffer, 0, buffer.length);
-                                output.write(buffer, 0, buffer.length);
-                                output.flush();
-                                bis.close();
-                            }
-                        }
-                    }
-                    case "RI" -> { // TODO Finish RI command
-                        String userDevice = parsedMsg[1];
-                        String[] split = userDevice.split(":");
-                        if (split.length != 2) {
-                            output.writeObject("NOK");
+                            System.out.println("Error: Unable to send image!");
                             break;
                         }
-                        String username = split[0];
-
-                        int devId;
                         try {
-                            devId = Integer.parseInt(split[1]);
+                            Integer.parseInt(devParts[1]);
                         } catch (NumberFormatException e) {
                             output.writeObject("NOK");
+                            System.out.println("Error: Unable to send image!");
                             break;
                         }
-
-                        Device reqDevice = srvStorage.getDevice(username, devId);
-                        if (reqDevice == null) {
-                            output.writeObject("NOID");
-                            break;
-                        }
-
-                        User reqDevUser = srvStorage.getUser(username);
-
-                        if (!srvStorage.hasPerm(reqDevUser, reqDevice)) {
-                            output.writeObject("NOPERM");
-                            break;
-                        }
-
-                        // FInd if image exists
-                        String imageName = "images/" + devUser.getName() + "_" + devId + ".jpg";
-                        File imageFile = new File(imageName);
-                        if (!imageFile.exists()) {
-                            output.writeObject("NODATA");
-                        } else {
-                            output.writeObject("OK");
-                            output.writeLong(imageFile.length());
-
-
-                            FileInputStream fis = new FileInputStream(imageFile);
-                            byte[] buffer = new byte[1024];
-
-                            int bytesRead;
-                            while ((bytesRead = fis.read(buffer)) != -1) {
-                                output.write(buffer, 0, bytesRead);
-                            }
-
-                            output.flush();
-                            fis.close();
-                        }
-
-
+                        handleRI(devParts[0], Integer.parseInt(devParts[1]));
                     }
                     default -> output.writeObject("NOK");
                 }
@@ -275,6 +146,136 @@ public class Connection {
             this.device.setConnected(false);
             System.out.println("Client disconnected (" + this.clientIP + ")");
         }
+    }
+
+    private void handleCREATE(String d) throws IOException {
+        String result = srvStorage.createDomain(d, devUser);
+        output.writeObject(result);
+        result = result.equals("OK") ?
+                "Success: Domain created!" : "Error: Domain not created!";
+        System.out.println(result);
+    }
+
+    private void handleADD(String u, String d) throws IOException {
+        User user = srvStorage.getUser(u);
+        Domain domain = srvStorage.getDomain(d);
+        String result = srvStorage.addUserToDomain(this.devUser, user, domain);
+        output.writeObject(result);
+        result = result.equals("OK") ?
+                "Success: User added!" : "Error: Unable to add user!";
+        System.out.println(result);
+    }
+
+    private void handleRD(String d) throws IOException {
+        Domain domain = srvStorage.getDomain(d);
+        String result = srvStorage.addDeviceToDomain(domain, device, devUser);
+        output.writeObject(result);
+        result = result.equals("OK") ?
+                "Success: Device registered!" : "Error: Unable to register device!";
+        System.out.println(result);
+    }
+
+    private void handleET(String t) throws IOException {
+        try {
+            device.setLastTemp(Float.parseFloat(t));
+            String result = srvStorage.updateLastTemp(device);
+            output.writeObject(result);
+            result = result.equals("OK") ?
+                    "Success: Temperature received!" : "Error: Unable to receive temperature!";
+            System.out.println(result);
+        } catch (Exception e) {
+            output.writeObject("NOK");
+            System.out.println("Error: Unable to receive temperature!");
+        }
+    }
+
+    private void handleEI(String filePath) throws IOException {
+        File image = new File(filePath);
+        if (image.isFile() && image.exists()) {
+            receiveImage(image);
+            System.out.println("Success: Image received!");
+        } else {
+            System.out.println("Error: Unable to receive image!");
+            output.writeObject("NOK");
+        }
+    }
+
+    private void handleRT(String d) throws IOException {
+        Domain domain = srvStorage.getDomain(d);
+        if (domain == null) {
+            output.writeObject("NODM");
+            System.out.println("Error: Domain does not exist!");
+        } else if (!domain.getUsers().contains(devUser) &&
+                !domain.getOwner().equals(devUser)) {
+            output.writeObject("NOPERM");
+            System.out.println("Error: User does not have permissions!");
+        } else {
+            File file = domain.getDomainTemperatures();
+            if (file == null) {
+                output.writeObject("NODATA");
+                System.out.println("Error: No data found for this device!");
+            }
+            else {
+                sendFile(file);
+            }
+        }
+    }
+
+    private void handleRI(String user, int id) throws IOException {
+        Device received = new Device(user, id);
+        Device device = srvStorage.getDevice(received);
+        if (device == null) {
+            output.writeObject("NOID");
+            System.out.println("Error: Device id not found!");
+        } else if (!srvStorage.hasPerm(devUser, device)) {
+            output.writeObject("NOPERM");
+            System.out.println("Error: User does not have permissions!");
+        } else {
+            String name = device.getUser() + "_" + device.getId() + ".jpg";
+            File image = new File(new File("images"), name);
+            if (image.isFile() && image.exists()){
+                sendFile(image);
+            } else {
+                output.writeObject("NODATA");
+                System.out.println("Error: No data found for this device!");
+            }
+        }
+    }
+
+    private void receiveImage(File image) throws IOException {
+        output.writeObject("OK");
+        String imageName = device.getUser() + "_" + device.getId() + ".jpg";
+        File file = new File(new File("images"), imageName);
+        FileOutputStream out = new FileOutputStream(file);
+        BufferedOutputStream bos = new BufferedOutputStream(out);
+        byte[] buffer = new byte[8192];
+        int bytesLeft = (int) image.length();
+        while (bytesLeft > 0) {
+            int bytesRead = input.read(buffer);
+            bos.write(buffer, 0, bytesRead);
+            bytesLeft -= bytesRead;
+        }
+        bos.flush();
+        bos.close();
+        out.close();
+    }
+
+    private void sendFile(File file) throws IOException {
+        output.writeObject("OK");
+        output.writeInt((int) file.length());
+        System.out.println("Success: File send successfully!");
+        FileInputStream in = new FileInputStream(file);
+        BufferedInputStream bis = new BufferedInputStream(in);
+        byte[] buffer = new byte[8192];
+        int bytesLeft = (int) file.length();
+        while (bytesLeft > 0) {
+            int bytesRead = bis.read(buffer);
+            output.write(buffer, 0, bytesRead);
+            bytesLeft -= bytesRead;
+        }
+        output.flush();
+        bis.close();
+        in.close();
     }
 
 }
