@@ -3,17 +3,41 @@ package server;
 import java.io.*;
 import java.util.*;
 
+/**
+ * The storage of the {@link IoTServer}. This class is responsible for
+ * saving data sent from the {@code IoTDevice}. It holds the data structures
+ * where users, domains and devices are saved. It also handles interaction
+ * with text files and images (.jpg).
+ *
+ * @author Eduardo Proença (57551)
+ * @author Manuel Barral (52026)
+ * @author Tiago Oliveira (54979)
+ *
+ * @see Domain
+ * @see Device
+ * @see User
+ * @see Connection
+ */
 public class Storage {
 
+    /**
+     * File paths
+     */
     private static final String INFO = "device_info.csv";
     private static final String USERS = "server-files/users.csv";
     private static final String DOMAINS = "server-files/domains.csv";
     private static final String DEVICES = "server-files/devices.csv";
 
+    /**
+     * Data structures
+     */
     private final List<User> users;
     private final List<Domain> domains;
     private final HashMap<Device, List<Domain>> devices;
 
+    /**
+     * Initiates a new Storage for the IoTServer
+     */
     public Storage() {
         users = new ArrayList<>();
         domains = new ArrayList<>();
@@ -21,6 +45,15 @@ public class Storage {
         new FileLoader(this);
     }
 
+    /**
+     * Saves the given {@code User} to the list {@link #users} of this
+     * storage. It also writes the user to a users.csv file located
+     * in the server-files folder.
+     *
+     * @param user the {@code User} to be saved
+     * @requires {@code user != null}
+     * @see FileLoader
+     */
     protected synchronized void saveUser(User user) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(USERS, true))) {
             writer.write(user + "\n");
@@ -30,6 +63,16 @@ public class Storage {
         }
     }
 
+    /**
+     * Saves the {@code Device} as the key, and a list of domains as the value,
+     * to the map {@link #devices} of this storage. It also writes the device
+     * to a devices.csv file located in the server-files folder.
+     *
+     * @param device the {@code Device} to be saved
+     * @param domains a list of {@code Domains} where the {@code Device} is registered
+     * @requires {@code device != null && domains != null}
+     * @see FileLoader
+     */
     protected synchronized void saveDevice(Device device, List<Domain> domains) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(DEVICES, true))) {
             writer.write(device + "," + device.getLastTemp() + "\n");
@@ -39,6 +82,19 @@ public class Storage {
         }
     }
 
+    /**
+     * Creates a new {@code Domain} with the {@code name} and {@code owner}
+     * given and saves it the list {@link #domains} of this storage.
+     * It also writes the domain to a domains.csv file located in the
+     * server-files folder.
+     *
+     * @param name the name of the {@code Domain}
+     * @param owner the owner of the {@code Domain}
+     * @requires {@code name != null}
+     * @return "OK" if the method concluded with success, "NOK" otherwise.
+     * @see FileLoader
+     * @see Codes
+     */
     protected synchronized String createDomain(String name, User owner) {
         if (owner == null) return Codes.NOK.toString();
         if (getDomain(name) != null) return Codes.NOK.toString();
@@ -55,6 +111,15 @@ public class Storage {
         }
     }
 
+    /**
+     * Updates the domains.csv file located in the server-files
+     * folder in the {@code Domain} given.
+     *
+     * @param domain the {@code Domain} to write in file
+     * @return true if the method concluded with success, false otherwise
+     * @see FileLoader
+     * @requires {@code domain != null}
+     */
     private boolean updateDomainInFile(Domain domain) {
         try (BufferedReader in = new BufferedReader(new FileReader(DOMAINS))) {
             StringBuilder file = new StringBuilder();
@@ -76,6 +141,16 @@ public class Storage {
         return true;
     }
 
+    /**
+     * Updates the devices.csv file located in the server-files folder with
+     * the last temperature sent from the {@code Device} given.
+     *
+     * @param device the {@code Device}
+     * @return "OK" if the method concluded with success, "NOK" otherwise.
+     * @see FileLoader
+     * @see Codes
+     * @requires {@code device != null}
+     */
     protected synchronized String updateLastTemp(Device device) {
         try (BufferedReader in = new BufferedReader(new FileReader(DEVICES))) {
             StringBuilder file = new StringBuilder();
@@ -99,6 +174,22 @@ public class Storage {
         return Codes.OK.toString();
     }
 
+    /**
+     * Adds a given {@code User} to a given {@code Domain} of this storage.
+     * It also updates the content of the {@code Domain} in the domains.csv
+     * file located in the server-files folder.
+     *
+     * @param user the {@code User} of the current {@code Device}
+     * @param userToAdd the {@code User} to add to the {@code Domain}
+     * @param domain the {@code Domain}
+     * @return "NODM" if the {@code domain} does not exist,
+     *         "NOUSER" if the {@code userToAdd} does not exist,
+     *         "NOPERM" if the {@code user} does not have permission,
+     *         "NOK" if there was an error writing to the file,
+     *         "OK" if the method concluded with success.
+     * @see #updateDomainInFile(Domain)
+     * @see Codes
+     */
     protected synchronized String addUserToDomain(User user, User userToAdd, Domain domain) {
         if (domain == null) return Codes.NODM.toString();
         if (userToAdd == null) return Codes.NOUSER.toString();
@@ -109,19 +200,40 @@ public class Storage {
         return updateDomainInFile(domain) ? Codes.OK.toString() : Codes.NOK.toString();
     }
 
+    /**
+     * Adds a given {@code Device} to a given {@code Domain} of this storage.
+     * It also updates the content of the {@code Domain} in the domains.csv
+     * file located in the server-files folder.
+     *
+     * @param user the {@code User} of the current {@code Device}
+     * @param device the {@code Device} to add to the {@code Domain}
+     * @param domain the {@code Domain}
+     * @return "NODM" if the {@code domain} does not exist,
+     *         "NOPERM" if the {@code user} does not have permission,
+     *         "NOK" if the {@code device} is already in the {@code domain},
+     *              or there was an error writing to the file,
+     *         "OK" if the method concluded with success.
+     * @see #updateDomainInFile(Domain)
+     * @see Codes
+     */
     protected synchronized String addDeviceToDomain(Domain domain, Device device, User user) {
         if(domain == null) return Codes.NODM.toString();
         if(domain.getDevices().contains(device)) return Codes.NOK.toString();
-        User owner = domain.getOwner();
-        if(!domain.getUsers().contains(user)) {
-            if (!owner.getName().equals(user.getName()))
-                return Codes.NOPERM.toString();
-        }
+        if (!hasPerm(user, device)) return Codes.NOPERM.toString();
+
         domain.addDevice(device);
         devices.get(device).add(domain);
         return updateDomainInFile(domain) ? Codes.OK.toString() : Codes.NOK.toString();
     }
 
+    /**
+     * Verifies if a {@code User} has permission to read data
+     * sent from the {@code Device}.
+     *
+     * @param user the {@code User} to verify
+     * @param device the {@code Device}
+     * @return true, if the user has permission, false otherwise
+     */
     protected boolean hasPerm(User user, Device device) {
         for (Map.Entry<Device, List<Domain>> entry : devices.entrySet()) {
             if (entry.getKey().equals(device)) {
@@ -134,6 +246,13 @@ public class Storage {
         return false;
     }
 
+    /**
+     * Validates the name and the size of the {@code IoTDevice} executable
+     *
+     * @param name the name {@code IoTDevice} executable
+     * @param size the size {@code IoTDevice} executable
+     * @return true, if validated, false otherwise
+     */
     protected boolean checkConnectionInfo(String name, String size) {
         InputStream in = Storage.class.getClassLoader().getResourceAsStream(INFO);
         if (in != null) {
@@ -152,6 +271,13 @@ public class Storage {
         return false;
     }
 
+    /**
+     * Returns a {@code User} from the list {@link #users}
+     * of this storage that matches the username given.
+     *
+     * @param username the username of the {@code User}
+     * @return a {@code User}, if the username was found, null otherwise
+     */
     protected User getUser(String username) {
         for (User user : users) {
             if (username.equals(user.getName()))
@@ -160,6 +286,13 @@ public class Storage {
         return null;
     }
 
+    /**
+     * Returns a {@code Device} from the map {@link #devices}
+     * of this storage that matches the {@code Device} given, used as a key.
+     *
+     * @param device the {@code Device} used as key for the search
+     * @return a {@code Device}, if the key matched, null otherwise
+     */
     protected Device getDevice(Device device) {
         for (Map.Entry<Device, List<Domain>> entry : devices.entrySet()) {
             if (entry.getKey().equals(device))
@@ -168,6 +301,13 @@ public class Storage {
         return null;
     }
 
+    /**
+     * Returns a {@code Domain} from the list {@link #domains}
+     * of this storage that matches the name given.
+     *
+     * @param name the name of the {@code Domain}
+     * @return a {@code Domain}, if the name matched, null otherwise
+     */
     protected Domain getDomain(String name) {
         for (Domain domain : domains) {
             if (name.equals(domain.getName()))
@@ -176,17 +316,36 @@ public class Storage {
         return null;
     }
 
+    /**
+     * Returns the map {@link #devices} of this storage.
+     *
+     * @return the map {@link #devices} of this storage.
+     */
     protected HashMap<Device, List<Domain>> getDevices() {
         return devices;
     }
 
 
+    /**
+     * Private class used when constructing a new {@code Storage}.
+     * Responsible for creating/loading files used by this storage.
+     */
     private static class FileLoader {
 
+        /**
+         * Folder names
+         */
         private static final String SERVER_FILES = "server-files";
         private static final String TEMPERATURES = "temperatures";
         private static final String IMAGES = "images";
 
+        /**
+         * Constructs a new {@code FileLoader}.
+         *
+         * @param srvStorage this storage
+         * @see Storage
+         * @see #start(File, File, File, Storage)
+         */
         private FileLoader(Storage srvStorage) {
             createFolders();
             File users = new File(USERS);
@@ -195,6 +354,19 @@ public class Storage {
             this.start(users, domains, temps, srvStorage);
         }
 
+        /**
+         * Creates all the files used by this storage to save data.
+         * If they already exist, then loads their content to the
+         * data structures of this storage.
+         *
+         * @param users the users.csv file
+         * @param domains the domains.csv file
+         * @param temps the devices.csv file
+         * @param srvStorage this storage
+         * @see #loadUsers(Storage)
+         * @see #loadDomains(Storage)
+         * @see #loadTemps(Storage)
+         */
         private void start(File users, File domains, File temps, Storage srvStorage) {
             if (!createFile(users, "Users"))
                 loadUsers(srvStorage);
@@ -211,6 +383,12 @@ public class Storage {
             System.out.println(sb);
         }
 
+        /**
+         * Loads the data from users.csv file to the list
+         * {@link #users} of this storage
+         *
+         * @param srvStorage this storage
+         */
         private void loadUsers(Storage srvStorage) {
             try (BufferedReader in = new BufferedReader(new FileReader(USERS))) {
                 String line;
@@ -225,6 +403,12 @@ public class Storage {
             }
         }
 
+        /**
+         * Loads the data from domains.csv file to the list
+         * {@link #domains} of this storage
+         *
+         * @param srvStorage this storage
+         */
         private void loadDomains(Storage srvStorage) {
             try (BufferedReader in = new BufferedReader(new FileReader(DOMAINS))) {
                 String line;
@@ -245,6 +429,12 @@ public class Storage {
             }
         }
 
+        /**
+         * Loads the data from devices.csv file to the map
+         * {@link #devices} of this storage
+         *
+         * @param srvStorage this storage
+         */
         private void loadTemps(Storage srvStorage) {
             try (BufferedReader in = new BufferedReader(new FileReader(DEVICES))) {
                 String line;
@@ -272,6 +462,13 @@ public class Storage {
             }
         }
 
+        /**
+         * Creates a new file
+         *
+         * @param file the file to create
+         * @param type the type of the file (Users, Domains, Temperatures)
+         * @return true, if file was created, false otherwise
+         */
         private boolean createFile(File file, String type) {
             try {
                 if (!file.exists()) {
@@ -287,7 +484,11 @@ public class Storage {
             return false;
         }
 
-        protected void createFolders() {
+        /**
+         * Creates the folders necessary to store the files of
+         * this storage, if they do not already exist.
+         */
+        private void createFolders() {
             File server = new File(SERVER_FILES);
             if (!server.isDirectory()) server.mkdir();
             File temps = new File(TEMPERATURES);
