@@ -7,6 +7,16 @@ import java.security.ProtectionDomain;
 import java.util.Arrays;
 import java.util.Scanner;
 
+/**
+ *
+ *<p>
+ * Esta classe é responsável pelo ligação do user com o server e pelo processamento dos comandos no lado do user.
+ *</p>
+ *
+ * @author Eduardo Proença - 57551
+ * @author Tiago Oliveira - 54979
+ * @author Manuel Barral - 52026
+ */
 public class IoTDevice {
 
     private IoTDevice() {}
@@ -32,7 +42,6 @@ public class IoTDevice {
             Scanner scanner = new Scanner(System.in);
 
             while (true) {
-                // Ask user for input
                 System.out.print("Command: ");
 
                 String msg = scanner.nextLine();
@@ -44,6 +53,13 @@ public class IoTDevice {
         }
     }
 
+    /**
+     * Método responsável pela autentificação de um utilizador no server
+     *
+     * @param client handler que irá processar as mensagens do user
+     * @param userId Nome do user
+     * @param devId Id do device
+     */
     private static void deviceLogIn(DeviceHandler client, String userId, String devId) throws URISyntaxException {
         Scanner scanner = new Scanner(System.in);
         while (true) {
@@ -86,6 +102,12 @@ public class IoTDevice {
         }
     }
 
+    /**
+     *Verifica se os argumentos passados têm o formato correto
+     *
+     * @param args serverAdress:port  devId username
+     * @return Mensagem associada ao estado dos argumentos
+     */
     private static String checkArgs(String[] args) {
         if (args.length < 3) {
             return "Usage: java -jar IoTDevice-grupo6.jar <serverAddress> <dev-id> <user-id>";
@@ -121,18 +143,27 @@ public class IoTDevice {
         }
     }
 
+    /**
+     * Printa os possiveis comandos que o user pode executar
+     */
     private static void printMenu() {
         System.out.println("""
                 CREATE <dm>
                 ADD <user1> <dm>
                 RD <dm>
                 ET <float>
-                ET <filename.jpg>
+                EI <filename.jpg>
                 RT <dm>
                 RI <user-id>:<dev_id>
                 \s""");
     }
 
+    /**
+     * Executa o comando passado pelo user consoante o input
+     *
+     * @param client handler onde irão ser processados os comandos
+     * @param input comando a ser execitado
+     */
     private static void handleCommand(DeviceHandler client, String input) {
         String[] parsedCommand = input.split(" ");
         String command = parsedCommand[0];

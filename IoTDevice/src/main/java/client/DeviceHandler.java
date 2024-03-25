@@ -3,6 +3,16 @@ package client;
 import java.io.*;
 import java.net.Socket;
 
+/**
+ *
+ *<p>
+ * Esta classe é responsável pela ligação do user ao server e pelo processamento dos comandos executados pelo user.
+ *</p>
+ *
+ * @author Eduardo Proença - 57551
+ * @author Tiago Oliveira - 54979
+ * @author Manuel Barral - 52026
+ */
 public class DeviceHandler {
 
     private static final String OK = "OK";
@@ -15,13 +25,19 @@ public class DeviceHandler {
 
     private static final String SERVER_OUT = "server-output/";
 
+    /*User adress*/
     private final String address;
+
+    /*Porto de ligação */
     private final int port;
 
+    /** Objeto responsável pelo envio de dados do user para o server*/
     private ObjectOutputStream output;
+
+    /** Objeto responsável pelo envio de dados do server para o user*/
     private ObjectInputStream input;
 
-    // Socket connection to the server
+    /** Socket connection to the server*/
     private Socket socket;
 
     protected DeviceHandler(String address, int port) {
@@ -29,6 +45,9 @@ public class DeviceHandler {
         this.port = port;
     }
 
+    /**
+     * Conecta o current device ao servidor através de um socket e os canais de input/output
+     */
     protected void connect() {
         try {
             socket = new Socket(address, port);
@@ -42,6 +61,9 @@ public class DeviceHandler {
         }
     }
 
+    /**
+     * Desconecta o device do server fechando o socket e os canais input/output abertos anteriormente.
+     */
     protected void disconnect() {
         try {
             output.close();
@@ -52,6 +74,12 @@ public class DeviceHandler {
         }
     }
 
+    /**
+     * Método responsável pelo envio dos comandos do user para o server e pela recepção da resposta do server
+     *
+     * @param msg mensagem enviada para o server
+     * @return A resposta do server à mensagem enviada pelo user
+     */
     protected String sendReceive(String msg) {
         try {
             this.output.writeObject(msg);
@@ -64,6 +92,12 @@ public class DeviceHandler {
         return null;
     }
 
+    /**
+     * Cria um dominio no servidor
+     *
+     * @param args domain name
+     * @param command Create
+     */
     protected void sendReceiveCREATE(String[] args, String command) {
         if (args.length != 1) {
             System.out.println("Usage: CREATE <dm>");
@@ -80,6 +114,12 @@ public class DeviceHandler {
         }
     }
 
+    /**
+     * Adiciona o user ao dominio especificado
+     *
+     * @param args  User a ser adicionado, Domain onde irá ser adicionado
+     * @param command ADD
+     */
     protected void sendReceiveADD(String[] args, String command) {
         if (args.length != 2) {
             System.out.println("Usage: ADD <user1> <dm>");
@@ -100,6 +140,12 @@ public class DeviceHandler {
         }
     }
 
+    /**
+     * Adiciona um device ao dominio
+     *
+     * @param args Domain - Dominio no qual o device se regista
+     * @param command RD
+     */
     protected void sendReceiveRD(String[] args, String command) {
         if (args.length != 1) {
             System.out.println("Usage: RD <dm>");
@@ -118,6 +164,12 @@ public class DeviceHandler {
         }
     }
 
+    /**
+     * Envia a temperatura de um device para o servidor
+     *
+     * @param args float - Temperatura enviada para o server
+     * @param command ET
+     */
     protected void sendReceiveET(String[] args, String command) {
         if (args.length != 1) {
             System.out.println("Usage: ET <float>");
@@ -133,6 +185,12 @@ public class DeviceHandler {
         }
     }
 
+    /**
+     *Envia uma imagem para o path designado
+     *
+     * @param args filename.jpg - imagem a ser enviada
+     * @param command EI
+     */
     protected void sendReceiveEI(String[] args, String command) {
         if (args.length != 1) {
             System.out.println("Usage: EI <filename.jpg>");
@@ -149,6 +207,12 @@ public class DeviceHandler {
         }
     }
 
+    /**
+     * Recebe as ultimas atualizacoes de temperatura
+     *
+     * @param args Domain - nome do dominio
+     * @param command RT
+     */
     protected void sendReceiveRT(String[] args, String command) {
         if (args.length != 1) {
             System.out.println("Usage: RT <dm>");
@@ -173,6 +237,12 @@ public class DeviceHandler {
         }
     }
 
+    /**
+     * Recebe a imagem associada ao conjunto UserId:DevId
+     *
+     * @param args UserId:DevId 
+     * @param command RI
+     */
     protected void sendReceiveRI(String[] args, String command) {
         if (args.length != 1) {
             System.out.println("Usage: RI <user-id>:<dev_id>");
@@ -198,6 +268,12 @@ public class DeviceHandler {
         }
     }
 
+    /**
+     * Envia o ficheiro localizado em filePath
+     *
+     * @param filePath Path para o qual o ficheiro irá ser enviado
+     * @return Retorna true se o envio foi bem sucedido, senão retorna falso
+     */
     private boolean sendFile(String filePath) {
         try {
             File image = new File(filePath);
@@ -219,7 +295,12 @@ public class DeviceHandler {
         }
         return false;
     }
-
+    /**
+     *Recebe um ficheiro do servidor e guarda-o numa pasta
+     *
+     * @param name Nome do ficheiro a receber
+     * @return Tamanho do ficheiro recebido se o ficheiro for recebido, -1 se houver erros
+     */
     private int receiveFile(String name) {
         File outputFolder = new File(SERVER_OUT);
         if (!outputFolder.isDirectory()) outputFolder.mkdir();
@@ -238,12 +319,19 @@ public class DeviceHandler {
             bos.close();
             out.close();
             return size;
-        } catch (Exception e) {
+        } catch (IOException e) {
             System.out.println(e.getMessage());
         }
         return -1;
     }
 
+    /**
+     *Este método prepara o input dado pelo user para que este seja processado pelo server
+     *
+     * @param command Comando a ser executado no server
+     * @param args Argumentos passados pelo user na execução do comando
+     * @return String num formato específico para processamento por parte do server
+     */
     private String parseCommandToSend(String command, String[] args) {
         StringBuilder sb = new StringBuilder(command);
         for (String arg : args) {
