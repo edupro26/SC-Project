@@ -1,12 +1,13 @@
 package client;
 
 import java.io.File;
+import java.net.URISyntaxException;
+import java.security.CodeSource;
+import java.security.ProtectionDomain;
 import java.util.Arrays;
 import java.util.Scanner;
 
 public class IoTDevice {
-
-    private static final String EXEC = "IoTDevice-grupo6.jar";
 
     private IoTDevice() {}
 
@@ -43,7 +44,7 @@ public class IoTDevice {
         }
     }
 
-    private static void deviceLogIn(DeviceHandler client, String userId, String devId) {
+    private static void deviceLogIn(DeviceHandler client, String userId, String devId) throws URISyntaxException {
         Scanner scanner = new Scanner(System.in);
         while (true) {
             System.out.print("Password: ");
@@ -67,7 +68,9 @@ public class IoTDevice {
                     }
                     if(id.equals("OK-DEVID")) {
                         System.out.println("Sending application size to the server...");
-                        File exec = new File(EXEC);
+                        ProtectionDomain protectionDomain = IoTDevice.class.getProtectionDomain();
+                        CodeSource codeSource = protectionDomain.getCodeSource();
+                        File exec = new File(codeSource.getLocation().toURI().getPath());
                         String res = client.sendReceive(exec.getName() + "," + exec.length());
                         System.out.println("Response: " + res + "\n");
                         if (res.equals("NOK-TESTED")) {
