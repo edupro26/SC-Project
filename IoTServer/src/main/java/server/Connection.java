@@ -37,15 +37,15 @@ public class Connection {
             if (devUser == null) {
                 srvStorage.saveUser(logIn);
                 devUser = logIn;
-                output.writeObject("OK-NEW-USER");
+                output.writeObject(Codes.OKNEWUSER.toString());
             }
             else {
                 while (!logIn.getPassword().equals(devUser.getPassword())) {
-                    output.writeObject("WRONG-PWD");
+                    output.writeObject(Codes.WRONGPWD.toString());
                     String password = ((String) input.readObject()).split(",")[1];
                     logIn.setPassword(password);
                 }
-                output.writeObject("OK-USER");
+                output.writeObject(Codes.OKUSER.toString());
             }
             this.device = new Device(devUser.getName(), -1);
         } catch (Exception e) {
@@ -65,7 +65,7 @@ public class Connection {
                         if (!exits.isConnected()) {
                             device = exits;
                             device.setConnected(true);
-                            output.writeObject("OK-DEVID");
+                            output.writeObject(Codes.OKDEVID.toString());
                             System.out.println("Device ID validated!");
                             return true;
                         }
@@ -73,12 +73,12 @@ public class Connection {
                     else {
                         device.setConnected(true);
                         srvStorage.saveDevice(device, new ArrayList<>());
-                        output.writeObject("OK-DEVID");
+                        output.writeObject(Codes.OKDEVID.toString());
                         System.out.println("Device ID validated!");
                         return true;
                     }
                 }
-                output.writeObject("NOK-DEVID");
+                output.writeObject(Codes.NOKDEVID.toString());
                 device.setId(-1);
             }
         } catch (Exception e) {
@@ -96,12 +96,12 @@ public class Connection {
             String size = in[1];
             boolean tested = srvStorage.checkConnectionInfo(name, size);
             if (tested) {
-                output.writeObject("OK-TESTED");
+                output.writeObject(Codes.OKTESTED.toString());
                 System.out.println("Device info validated!");
                 return true;
             }
             else {
-                output.writeObject("NOK-TESTED");
+                output.writeObject(Codes.NOKTESTED.toString());
                 System.out.println("Device info not validated!");
             }
         } catch (Exception e) {
@@ -128,20 +128,20 @@ public class Connection {
                     case "RI" -> {
                         String[] devParts = parsedMsg[1].split(":");
                         if (devParts.length != 2) {
-                            output.writeObject("NOK");
+                            output.writeObject(Codes.NOK.toString());
                             System.out.println("Error: Unable to send image!");
                             break;
                         }
                         try {
                             Integer.parseInt(devParts[1]);
                         } catch (NumberFormatException e) {
-                            output.writeObject("NOK");
+                            output.writeObject(Codes.NOK.toString());
                             System.out.println("Error: Unable to send image!");
                             break;
                         }
                         handleRI(devParts[0], Integer.parseInt(devParts[1]));
                     }
-                    default -> output.writeObject("NOK");
+                    default -> output.writeObject(Codes.NOK.toString());
                 }
             }
         } catch (Exception e) {
@@ -153,7 +153,7 @@ public class Connection {
     private void handleCREATE(String d) throws IOException {
         String result = srvStorage.createDomain(d, devUser);
         output.writeObject(result);
-        result = result.equals("OK") ?
+        result = result.equals(Codes.OK.toString()) ?
                 "Success: Domain created!" : "Error: Domain not created!";
         System.out.println(result);
     }
@@ -163,7 +163,7 @@ public class Connection {
         Domain domain = srvStorage.getDomain(d);
         String result = srvStorage.addUserToDomain(this.devUser, user, domain);
         output.writeObject(result);
-        result = result.equals("OK") ?
+        result = result.equals(Codes.OK.toString()) ?
                 "Success: User added!" : "Error: Unable to add user!";
         System.out.println(result);
     }
@@ -172,7 +172,7 @@ public class Connection {
         Domain domain = srvStorage.getDomain(d);
         String result = srvStorage.addDeviceToDomain(domain, device, devUser);
         output.writeObject(result);
-        result = result.equals("OK") ?
+        result = result.equals(Codes.OK.toString()) ?
                 "Success: Device registered!" : "Error: Unable to register device!";
         System.out.println(result);
     }
@@ -182,11 +182,11 @@ public class Connection {
             device.setLastTemp(Float.parseFloat(t));
             String result = srvStorage.updateLastTemp(device);
             output.writeObject(result);
-            result = result.equals("OK") ?
+            result = result.equals(Codes.OK.toString()) ?
                     "Success: Temperature received!" : "Error: Unable to receive temperature!";
             System.out.println(result);
         } catch (Exception e) {
-            output.writeObject("NOK");
+            output.writeObject(Codes.NOK.toString());
             System.out.println("Error: Unable to receive temperature!");
         }
     }
@@ -198,23 +198,23 @@ public class Connection {
             System.out.println("Success: Image received!");
         } else {
             System.out.println("Error: Unable to receive image!");
-            output.writeObject("NOK");
+            output.writeObject(Codes.NOK.toString());
         }
     }
 
     private void handleRT(String d) throws IOException {
         Domain domain = srvStorage.getDomain(d);
         if (domain == null) {
-            output.writeObject("NODM");
+            output.writeObject(Codes.NODM.toString());
             System.out.println("Error: Domain does not exist!");
         } else if (!domain.getUsers().contains(devUser) &&
                 !domain.getOwner().equals(devUser)) {
-            output.writeObject("NOPERM");
+            output.writeObject(Codes.NOPERM.toString());
             System.out.println("Error: User does not have permissions!");
         } else {
             File file = domain.getDomainTemperatures();
             if (file == null) {
-                output.writeObject("NODATA");
+                output.writeObject(Codes.NODATA.toString());
                 System.out.println("Error: No data found for this device!");
             }
             else {
@@ -227,10 +227,10 @@ public class Connection {
         Device received = new Device(user, id);
         Device device = srvStorage.getDevice(received);
         if (device == null) {
-            output.writeObject("NOID");
+            output.writeObject(Codes.NOID.toString());
             System.out.println("Error: Device id not found!");
         } else if (!srvStorage.hasPerm(devUser, device)) {
-            output.writeObject("NOPERM");
+            output.writeObject(Codes.NOPERM.toString());
             System.out.println("Error: User does not have permissions!");
         } else {
             String name = device.getUser() + "_" + device.getId() + ".jpg";
@@ -238,14 +238,14 @@ public class Connection {
             if (image.isFile() && image.exists()){
                 sendFile(image);
             } else {
-                output.writeObject("NODATA");
+                output.writeObject(Codes.NODATA.toString());
                 System.out.println("Error: No data found for this device!");
             }
         }
     }
 
     private void receiveImage(File image) throws IOException {
-        output.writeObject("OK");
+        output.writeObject(Codes.OK.toString());
         String imageName = device.getUser() + "_" + device.getId() + ".jpg";
         File file = new File(new File("images"), imageName);
         FileOutputStream out = new FileOutputStream(file);
@@ -263,7 +263,7 @@ public class Connection {
     }
 
     private void sendFile(File file) throws IOException {
-        output.writeObject("OK");
+        output.writeObject(Codes.OK.toString());
         output.writeInt((int) file.length());
         System.out.println("Success: File send successfully!");
         FileInputStream in = new FileInputStream(file);

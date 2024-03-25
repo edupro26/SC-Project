@@ -40,18 +40,18 @@ public class Storage {
     }
 
     protected synchronized String createDomain(String name, User owner) {
-        if (owner == null) return "NOK";
-        if (getDomain(name) != null) return "NOK";
+        if (owner == null) return Codes.NOK.toString();
+        if (getDomain(name) != null) return Codes.NOK.toString();
         try {
             Domain domain = new Domain(name, owner);
             domains.add(domain);
             BufferedWriter writer = new BufferedWriter(new FileWriter(DOMAINS, true));
             writer.write(domain + "\n");
             writer.close();
-            return "OK";
+            return Codes.OK.toString();
         } catch (IOException e) {
             System.out.println(e.getMessage());
-            return "NOK";
+            return Codes.NOK.toString();
         }
     }
 
@@ -94,32 +94,32 @@ public class Storage {
             out.close();
         } catch (IOException e) {
             System.out.println(e.getMessage());
-            return "NOK";
+            return Codes.NOK.toString();
         }
-        return "OK";
+        return Codes.OK.toString();
     }
 
     protected synchronized String addUserToDomain(User user, User userToAdd, Domain domain) {
-        if (domain == null) return "NODM";
-        if (userToAdd == null) return "NOUSER";
-        if (!domain.getOwner().equals(user)) return "NOPERM";
-        if (domain.getUsers().contains(userToAdd)) return "NOK";
+        if (domain == null) return Codes.NODM.toString();
+        if (userToAdd == null) return Codes.NOUSER.toString();
+        if (!domain.getOwner().equals(user)) return Codes.NOPERM.toString();
+        if (domain.getUsers().contains(userToAdd)) return Codes.NOK.toString();
 
         domain.addUser(userToAdd);
-        return updateDomainInFile(domain) ? "OK" : "NOK";
+        return updateDomainInFile(domain) ? Codes.OK.toString() : Codes.NOK.toString();
     }
 
     protected synchronized String addDeviceToDomain(Domain domain, Device device, User user) {
-        if(domain == null) return "NODM";
-        if(domain.getDevices().contains(device)) return "NOK";
+        if(domain == null) return Codes.NODM.toString();
+        if(domain.getDevices().contains(device)) return Codes.NOK.toString();
         User owner = domain.getOwner();
         if(!domain.getUsers().contains(user)) {
             if (!owner.getName().equals(user.getName()))
-                return "NOPERM";
+                return Codes.NOPERM.toString();
         }
         domain.addDevice(device);
         devices.get(device).add(domain);
-        return updateDomainInFile(domain) ? "OK" : "NOK";
+        return updateDomainInFile(domain) ? Codes.OK.toString() : Codes.NOK.toString();
     }
 
     protected boolean hasPerm(User user, Device device) {
