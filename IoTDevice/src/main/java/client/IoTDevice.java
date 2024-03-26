@@ -122,7 +122,7 @@ public class IoTDevice {
      */
     private static String checkArgs(String[] args) {
         if (args.length < 3) {
-            return "Usage: java -jar IoTDevice-grupo6.jar <serverAddress> <dev-id> <user-id>";
+            return "Usage: java -jar IoTDevice.jar <serverAddress> <dev-id> <user-id>";
         }
 
         try {
