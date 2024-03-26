@@ -31,23 +31,19 @@ módulos, `IoTDevice` e `IoTServer`.
 
 > ##### Módulo *IoTDevice*:
 > - `src/main/java/client` contém código fonte do **IoTDevice**
-> - `target` contém o arquivo .jar do cliente, gerado pelo maven
 
 > ##### Módulo *IoTServer*:
 > - `src/main/java/server` contém código fonte do **IoTSever**
 > - `src/main/resources` contém recursos utilizados pelo servidor
-> - `target` contém o arquivo .jar do servidor, gerado pelo maven
 
 **Nota:**
 
 Durante a comunicação entre cliente e servidor serão criados os seguintes diretórios:
 
-- `server-output` criado do lado do cliente. Contém ficheiros enviados do servidor para
-o cliente
-- `server-files` criado do lado do servidor. Contém ficheiros que dados do servidor
-- `temperatures` criado do lado do servidor. Contém ficheiros com as temperaturas dos
-dispositivos em cada domínio do servidor
-- `images` criado do lado do servidor. Contém as imagens enviadas do cliente para o servidor 
+- `server-output` contém ficheiros enviados do servidor para o cliente
+- `server-files` contém ficheiros com dados do servidor
+- `temperatures` contém ficheiros com as temperaturas dos dispositivos em cada domínio do servidor
+- `images` contém as imagens enviadas do cliente para o servidor 
 
 
 
@@ -70,37 +66,30 @@ O programa `IoTDevice` disponibiliza ao utilizador a seguinte interface de coman
 **Notas:** 
 
 - O servidor apenas suporta imagens com a extenção .jpg
-- Todas as funcionalidades pedidas no enuciado do projeto foram implementadas.
+- Todas as funcionalidades pedidas no enuciado do projeto foram implementadas
 
 
 ## Compilação e Execução
 
 
-Como referido anteriormente, o projeto está organizado com uma estrutura maven, sendo que utiliza
-o mesmo como build tool. Desta maneira, pode utilizar o comando `mvn package` para compilar
-e compactar o código fonte em dois arquivos *.jar*, um para o cliente e outro para o servidor.
-Estes arquivos serão guardados nos diretórios `target` correspondentes.
+Para compilar e executar o projeto, siga os passos abaixo:
 
-De seguida, para executar o projeto, siga estes passos:
-
-1. Executar o seguinte comando no diretório `IoTServer/target` para iniciar o servidor
-
-         $ java -jar IoTServer-grupo6.jar <port>
-
-2. Executar seguinte o comando no diretório `IoTDevice/target` para iniciar o cliente
-
-         $ java -jar IoTDevice-grupo6.jar <IP/hostname>[:Port] <dev-id> <user-id>
-
-Caso pertenda apagar as pastas `target` pode utilizar o comando `mvn clean`.
-
-<br>
-
-Alternativamente, se não pertender utilizar o maven, pode seguir os seguintes passos para
-compilar e executar o projeto:
 
 1. Dentro do diretório do projeto executar o script `build.sh`
 
-         $ bash build.sh
+         $ ./build.sh
+         
+         
+         Conteudo do script:
+
+         # Build Server
+         javac -d out/server/classes -cp IoTServer/src/main/java IoTServer/src/main/java/server/*.java
+         cp -r IoTServer/src/main/resources/* out/server/classes
+         jar cvfe out/IoTServer.jar server.IoTServer -C out/server/classes .
+
+         # Build Client
+         javac -d out/client/classes -cp IoTDevice/src/main/java IoTDevice/src/main/java/client/*.java
+         jar cvfe out/IoTDevice.jar client.IoTDevice -C out/client/classes .
 
 2. Dentro do diretório `out`, executar o seguinte comando para iniciar o servidor
 
@@ -110,12 +99,12 @@ compilar e executar o projeto:
 
          $ java -jar IoTDevice.jar <IP/hostname>[:Port] <dev-id> <user-id>
 
-Caso pertenda apagar as pasta `out` pode executar o script `clean.sh`.
+Caso pertenda apagar a pasta `out` pode executar o script `clean.sh`.
 
 
 **Notas:** <br>
 
-- Para iniciar mais do que um cliente, execute o comando de execução do cliente em diferentes terminais
-- Caso o servidor continuar a responder ***NOK-TESTED*** depois de autenticar o utilizador e validar o 
-id do dispositivo, verifique se o tamanho do arquivo .jar do cliente corresponde a um dos tamanhos (em bytes)
-no ficheiro **device_info.csv** no diretório `src/main/resources` do módulo `IoTServer`.
+- Para utilizar mais do que um cliente, execute o comando para iniciar o cliente em diferentes terminais
+- Pode também utilizar o maven como build tool, executando o comando `mvn package`. Note que, terá de 
+atualizar o ficheiro `device_info.csv` localizado dentro do diretório `src/main/resources` do módulo
+`IoTServer`, com o nome e tamanho corretos do arquivo .jar do cliente
