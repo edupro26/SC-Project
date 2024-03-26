@@ -219,7 +219,11 @@ public class Storage {
     protected synchronized String addDeviceToDomain(Domain domain, Device device, User user) {
         if(domain == null) return Codes.NODM.toString();
         if(domain.getDevices().contains(device)) return Codes.NOK.toString();
-        if (!hasPerm(user, device)) return Codes.NOPERM.toString();
+        User owner = domain.getOwner();
+        if(!domain.getUsers().contains(user)) {
+            if (!owner.getName().equals(user.getName()))
+                return Codes.NOPERM.toString();
+        }
 
         domain.addDevice(device);
         devices.get(device).add(domain);
