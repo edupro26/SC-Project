@@ -8,19 +8,28 @@ import java.util.Arrays;
 import java.util.Scanner;
 
 /**
+ * Represents a {@code IoTDevice} capable of connecting to the {@code IoTServer}.
+ * This class is responsible for presenting an interface, through which the user can
+ * send data and requests from his {@code IoTDevice} to the {@code IoTServer}.
  *
- *<p>
- * Esta classe é responsável pelo ligação do user com o server e pelo processamento dos comandos no lado do user.
- *</p>
+ * @author Eduardo Proença (57551)
+ * @author Manuel Barral (52026)
+ * @author Tiago Oliveira (54979)
  *
- * @author Eduardo Proença - 57551
- * @author Tiago Oliveira - 54979
- * @author Manuel Barral - 52026
+ * @see DeviceHandler
  */
 public class IoTDevice {
 
+    /**
+     * This class is not meant to be constructed
+     */
     private IoTDevice() {}
 
+    /**
+     * Main routine of this IoTDevice.
+     *
+     * @param args the arguments given when executed
+     */
     public static void main(String[] args) {
         String checkArgs = checkArgs(args);
         if (checkArgs != null) {
@@ -54,23 +63,25 @@ public class IoTDevice {
     }
 
     /**
-     * Método responsável pela autentificação de um utilizador no server
+     * Authenticates the user and validates the id of this IoTDevice.
+     * It also tests this IoTDevice executable.
      *
-     * @param client handler que irá processar as mensagens do user
-     * @param userId Nome do user
-     * @param devId Id do device
+     * @param handler handler used for communication with the {@code IoTServer}
+     * @param userId username of the user of this IoTDevice
+     * @param devId id of this IoTDevice
+     * @see DeviceHandler
      */
-    private static void deviceLogIn(DeviceHandler client, String userId, String devId) throws URISyntaxException {
+    private static void deviceLogIn(DeviceHandler handler, String userId, String devId) throws URISyntaxException {
         Scanner scanner = new Scanner(System.in);
         while (true) {
             System.out.print("Password: ");
             String pw = scanner.nextLine();
-            String logIn = client.sendReceive(userId + "," + pw);
+            String logIn = handler.sendReceive(userId + "," + pw);
             System.out.println("Response: " + logIn);
             if (logIn.equals("OK-USER") || logIn.equals("OK-NEW-USER")){
                 while (true) {
                     System.out.println("Sending device ID to the server...");
-                    String id = client.sendReceive(devId);
+                    String id = handler.sendReceive(devId);
                     System.out.println("Response: " + id);
                     if(id.equals("NOK-DEVID")) {
                         try {
@@ -87,7 +98,7 @@ public class IoTDevice {
                         ProtectionDomain protectionDomain = IoTDevice.class.getProtectionDomain();
                         CodeSource codeSource = protectionDomain.getCodeSource();
                         File exec = new File(codeSource.getLocation().toURI().getPath());
-                        String res = client.sendReceive(exec.getName() + "," + exec.length());
+                        String res = handler.sendReceive(exec.getName() + "," + exec.length());
                         System.out.println("Response: " + res + "\n");
                         if (res.equals("NOK-TESTED")) {
                             System.exit(1);
@@ -103,10 +114,11 @@ public class IoTDevice {
     }
 
     /**
-     *Verifica se os argumentos passados têm o formato correto
+     * Validates the arguments given when executing this IoTDevice.
      *
-     * @param args serverAdress:port  devId username
-     * @return Mensagem associada ao estado dos argumentos
+     * @param args the arguments given when executing this IoTDevice
+     * @return error message if something is wrong with the arguments,
+     *         null otherwise
      */
     private static String checkArgs(String[] args) {
         if (args.length < 3) {
@@ -144,7 +156,7 @@ public class IoTDevice {
     }
 
     /**
-     * Printa os possiveis comandos que o user pode executar
+     * Prints the command interface.
      */
     private static void printMenu() {
         System.out.println("""
@@ -159,25 +171,26 @@ public class IoTDevice {
     }
 
     /**
-     * Executa o comando passado pelo user consoante o input
+     * Handles the command chosen by the user input.
      *
-     * @param client handler onde irão ser processados os comandos
-     * @param input comando a ser execitado
+     * @param handler handler used for communication with the {@code IoTServer}
+     * @param input the input given by the user of this IoTDevice
      */
-    private static void handleCommand(DeviceHandler client, String input) {
+    private static void handleCommand(DeviceHandler handler, String input) {
         String[] parsedCommand = input.split(" ");
         String command = parsedCommand[0];
         String[] args = Arrays.copyOfRange(parsedCommand, 1, parsedCommand.length);
 
         switch (command) {
-            case "CREATE" -> client.sendReceiveCREATE(args, command);
-            case "ADD" -> client.sendReceiveADD(args, command);
-            case "RD" -> client.sendReceiveRD(args, command);
-            case "ET" -> client.sendReceiveET(args, command);
-            case "EI" -> client.sendReceiveEI(args, command);
-            case "RT" -> client.sendReceiveRT(args, command);
-            case "RI" -> client.sendReceiveRI(args, command);
+            case "CREATE" -> handler.sendReceiveCREATE(args, command);
+            case "ADD" -> handler.sendReceiveADD(args, command);
+            case "RD" -> handler.sendReceiveRD(args, command);
+            case "ET" -> handler.sendReceiveET(args, command);
+            case "EI" -> handler.sendReceiveEI(args, command);
+            case "RT" -> handler.sendReceiveRT(args, command);
+            case "RI" -> handler.sendReceiveRI(args, command);
             default -> System.out.println("Response: NOK # Invalid command");
         }
     }
+
 }

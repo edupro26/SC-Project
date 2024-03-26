@@ -5,16 +5,20 @@ import java.net.Socket;
 
 /**
  *
- *<p>
- * Esta classe é responsável pela ligação do user ao server e pelo processamento dos comandos executados pelo user.
- *</p>
+ * A handler used by the {@link IoTDevice} when communicating
+ * with the {@code IoTServer}.
  *
- * @author Eduardo Proença - 57551
- * @author Tiago Oliveira - 54979
- * @author Manuel Barral - 52026
+ * @author Eduardo Proença (57551)
+ * @author Manuel Barral (52026)
+ * @author Tiago Oliveira (54979)
+ *
+ * @see IoTDevice
  */
 public class DeviceHandler {
 
+    /**
+     * Response codes received by the {@code IoTServer}
+     */
     private static final String OK = "OK";
     private static final String NODM = "NODM";
     private static final String NOID = "NOID";
@@ -23,30 +27,39 @@ public class DeviceHandler {
     private static final String NODATA = "NODATA";
     private static final String NOK = "NOK";
 
+    /**
+     * Folder used as an output for files sent by the {@code IoTServer}
+     */
     private static final String SERVER_OUT = "server-output/";
 
-    /*User adress*/
-    private final String address;
-
-    /*Porto de ligação */
-    private final int port;
-
-    /** Objeto responsável pelo envio de dados do user para o server*/
+    /**
+     * Communication channels
+     */
     private ObjectOutputStream output;
-
-    /** Objeto responsável pelo envio de dados do server para o user*/
     private ObjectInputStream input;
 
-    /** Socket connection to the server*/
-    private Socket socket;
+    /**
+     * DeviceHandler attributes
+     */
+    private final String address;       // the ip address of the client
+    private final int port;             // the server port
+    private Socket socket;              // the client socket
 
+    /**
+     * Constructs a new {@code DeviceHandler}.
+     *
+     * @param address the ip address of the {@code IoTDevice}
+     * @param port the port of the {@code IoTServer}
+     * @requires {@code address != null && port != null}
+     */
     protected DeviceHandler(String address, int port) {
         this.address = address;
         this.port = port;
     }
 
     /**
-     * Conecta o current device ao servidor através de um socket e os canais de input/output
+     * Connects opens a {@link Socket} to the {@code IoTServer}
+     * and its input and output streams
      */
     protected void connect() {
         try {
@@ -62,7 +75,7 @@ public class DeviceHandler {
     }
 
     /**
-     * Desconecta o device do server fechando o socket e os canais input/output abertos anteriormente.
+     * Closes the {@link Socket} connection to the IoTServer and its input and output streams
      */
     protected void disconnect() {
         try {
@@ -75,10 +88,11 @@ public class DeviceHandler {
     }
 
     /**
-     * Método responsável pelo envio dos comandos do user para o server e pela recepção da resposta do server
+     * Send a request to the {@code IoTServer} and returns the corresponding response.
      *
-     * @param msg mensagem enviada para o server
-     * @return A resposta do server à mensagem enviada pelo user
+     * @param msg the request to the {@code IoTServer}
+     * @return server response or null if an error occurred
+     * @requires {@code msg != null}
      */
     protected String sendReceive(String msg) {
         try {
@@ -93,10 +107,12 @@ public class DeviceHandler {
     }
 
     /**
-     * Cria um dominio no servidor
+     * Sends a CREATE request to the {@code IoTServer}
+     * and handles the response.
      *
-     * @param args domain name
-     * @param command Create
+     * @param args name of the domain to create
+     * @param command the command in a string format
+     * @requires {@code args != null && command != null}
      */
     protected void sendReceiveCREATE(String[] args, String command) {
         if (args.length != 1) {
@@ -115,10 +131,12 @@ public class DeviceHandler {
     }
 
     /**
-     * Adiciona o user ao dominio especificado
+     * Sends an ADD request to the {@code IoTServer}
+     * and handles the response.
      *
-     * @param args  User a ser adicionado, Domain onde irá ser adicionado
-     * @param command ADD
+     * @param args user to be added and the domain
+     * @param command the command in a string format
+     * @requires {@code args != null && command != null}
      */
     protected void sendReceiveADD(String[] args, String command) {
         if (args.length != 2) {
@@ -141,10 +159,12 @@ public class DeviceHandler {
     }
 
     /**
-     * Adiciona um device ao dominio
+     * Sends an RD request to the {@code IoTServer}
+     * and handles the response.
      *
-     * @param args Domain - Dominio no qual o device se regista
-     * @param command RD
+     * @param args domain in which the device will be registered
+     * @param command the command in a string format
+     * @requires {@code args != null && command != null}
      */
     protected void sendReceiveRD(String[] args, String command) {
         if (args.length != 1) {
@@ -165,10 +185,12 @@ public class DeviceHandler {
     }
 
     /**
-     * Envia a temperatura de um device para o servidor
+     * Sends an ET request to the {@code IoTServer}
+     * and handles the response.
      *
-     * @param args float - Temperatura enviada para o server
-     * @param command ET
+     * @param args the temperature to send
+     * @param command the command in a string format
+     * @requires {@code args != null && command != null}
      */
     protected void sendReceiveET(String[] args, String command) {
         if (args.length != 1) {
@@ -186,10 +208,12 @@ public class DeviceHandler {
     }
 
     /**
-     *Envia uma imagem para o path designado
+     * Sends an EI request to the {@code IoTServer}
+     * and handles the response.
      *
-     * @param args filename.jpg - imagem a ser enviada
-     * @param command EI
+     * @param args the path for the image to send
+     * @param command the command in a string format
+     * @requires {@code args != null && command != null}
      */
     protected void sendReceiveEI(String[] args, String command) {
         if (args.length != 1) {
@@ -208,10 +232,12 @@ public class DeviceHandler {
     }
 
     /**
-     * Recebe as ultimas atualizacoes de temperatura
+     * Sends an RT request to the {@code IoTServer}
+     * and handles the response.
      *
-     * @param args Domain - nome do dominio
-     * @param command RT
+     * @param args the domain to receive data from
+     * @param command the command in a string format
+     * @requires {@code args != null && command != null}
      */
     protected void sendReceiveRT(String[] args, String command) {
         if (args.length != 1) {
@@ -238,10 +264,12 @@ public class DeviceHandler {
     }
 
     /**
-     * Recebe a imagem associada ao conjunto UserId:DevId
+     * Sends an RI request to the {@code IoTServer}
+     * and handles the response.
      *
-     * @param args UserId:DevId 
-     * @param command RI
+     * @param args the device to receive data from
+     * @param command the command in a string format
+     * @requires {@code args != null && command != null}
      */
     protected void sendReceiveRI(String[] args, String command) {
         if (args.length != 1) {
@@ -269,10 +297,11 @@ public class DeviceHandler {
     }
 
     /**
-     * Envia o ficheiro localizado em filePath
+     * Sends a file to the {@code IoTServer}.
      *
-     * @param filePath Path para o qual o ficheiro irá ser enviado
-     * @return Retorna true se o envio foi bem sucedido, senão retorna falso
+     * @param filePath the path of the file to be sent
+     * @return true if the file was sent, false otherwise
+     * @requires {@code filePath != null}
      */
     private boolean sendFile(String filePath) {
         try {
@@ -295,18 +324,21 @@ public class DeviceHandler {
         }
         return false;
     }
+
     /**
-     *Recebe um ficheiro do servidor e guarda-o numa pasta
+     * Receives a file from the {@code IoTServer} and saves it
+     * in the output folder.
      *
-     * @param name Nome do ficheiro a receber
-     * @return Tamanho do ficheiro recebido se o ficheiro for recebido, -1 se houver erros
+     * @param filePath the path where the file will be saved
+     * @return file size if the file was received, -1 otherwise
+     * @requires {@code filePath != null}
      */
-    private int receiveFile(String name) {
+    private int receiveFile(String filePath) {
         File outputFolder = new File(SERVER_OUT);
         if (!outputFolder.isDirectory()) outputFolder.mkdir();
         try {
             int size = input.readInt();
-            FileOutputStream out = new FileOutputStream(name);
+            FileOutputStream out = new FileOutputStream(filePath);
             BufferedOutputStream bos = new BufferedOutputStream(out);
             byte[] buffer = new byte[8192];
             int bytesLeft = size;
@@ -326,11 +358,12 @@ public class DeviceHandler {
     }
 
     /**
-     *Este método prepara o input dado pelo user para que este seja processado pelo server
+     * Formats the command chosen by the user input, so it can
+     * be sent to the {@code IoTServer}.
      *
-     * @param command Comando a ser executado no server
-     * @param args Argumentos passados pelo user na execução do comando
-     * @return String num formato específico para processamento por parte do server
+     * @param command the command
+     * @param args the command arguments
+     * @return a string ready to be sent to the {@code IoTServer}
      */
     private String parseCommandToSend(String command, String[] args) {
         StringBuilder sb = new StringBuilder(command);

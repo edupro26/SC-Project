@@ -9,21 +9,32 @@ import java.util.List;
 import java.util.StringJoiner;
 
 /**
- * Represents a domain in the server with its users and devices.
+ * Represents a domain in the {@link IoTServer} with its users and devices.
  *
- * @author Eduardo Proença - 57551, Manuel Barral - 52026, Tiago Oliveira - 54979
+ * @author Eduardo Proença (57551)
+ * @author Manuel Barral (52026)
+ * @author Tiago Oliveira (54979)
+ *
+ * @see User
+ * @see Device
+ * @see Connection
  */
 public class Domain {
 
-    private final String name; // domain name
-    private final User owner; // domain owner
-    private final List<User> users; // list of users with read permissions
-    private final List<Device> devices; // list of devices in the domain
+    /**
+     * Domain attributes
+     */
+    private final String name;              // the name of the domain
+    private final User owner;               // the user who created the domain
+    private final List<User> users;         // list of users with read permissions
+    private final List<Device> devices;     // list of devices in the domain
 
     /**
-     * Creates a new domain with a name and an owner.
-     * @param name
-     * @param owner
+     * Constructs a new {@code Domain} with a name and an owner.
+     *
+     * @param name the name of this domain
+     * @param owner the owner of this domain
+     * @requires {@code name != null && owner != null}
      */
     protected Domain(String name, User owner) {
         this.name = name;
@@ -33,9 +44,12 @@ public class Domain {
     }
 
     /**
-     * Creates a new domain given the representative string of the domain.
+     * Constructs a new {@code Domain} with the string representation given.
+     *
      * @param domain the string representation of the domain
      * @param srvStorage the storage of the server to get the users and devices
+     * @see Storage
+     * @requires {@code domain != null && srvStorage != null}
      */
     protected Domain(String domain, Storage srvStorage) {
         String[] domainParts = domain.split(",");
@@ -62,8 +76,9 @@ public class Domain {
     }
 
     /**
-     * Returns the file with the temperatures of the domain.
-     * @return the file with the temperatures of the domain.
+     * Returns a file with the temperatures sent from the {@code Devices} of this domain.
+     *
+     * @return a file with the temperatures sent from the {@code Devices} of this domain.
      */
     protected File getDomainTemperatures() {
         File file = new File( "temperatures/" + name + ".txt");
@@ -83,40 +98,47 @@ public class Domain {
     }
 
     /**
-     * Adds a user to the domain.
-     * @param user the user to be added
+     * Adds a {@code User} to this domain.
+     *
+     * @param user the {@code User} to be added
+     * @requires {@code user != null}
      */
     protected void addUser(User user) {
         users.add(user);
     }
 
     /**
-     * Adds a device to the domain.
-     * @param device the device to be added
+     * Adds a {@code Device} to this domain.
+     *
+     * @param device the {@code Device} to be added
+     * @requires {@code device != null}
      */
     protected void addDevice(Device device) {
         devices.add(device);
     }
 
     /**
-     * Returns the name of the domain.
-     * @return the name of the domain
+     * Returns the name of this domain.
+     *
+     * @return the name of this domain
      */
     protected String getName() {
         return name;
     }
 
     /**
-     * Returns the owner of the domain.
-     * @return the owner of the domain
+     * Returns the owner of this domain.
+     *
+     * @return the owner of this domain
      */
     protected User getOwner() {
         return owner;
     }
 
     /**
-     * Returns the list of users with read permissions of the domain.
-     * @return list of users
+     * Returns the list of users in this domain.
+     *
+     * @return the list of users in this domain
      */
     protected List<User> getUsers() {
         return users;
@@ -124,12 +146,18 @@ public class Domain {
 
     /**
      * Returns the list of devices in the domain.
-     * @return list of devices
+     *
+     * @return the list of devices in the domain
      */
     protected List<Device> getDevices() {
         return devices;
     }
 
+    /**
+     * Returns a string representation of this domain.
+     *
+     * @return a string representation of this domain
+     */
     @Override
     public String toString() {
         StringJoiner userJoiner = new StringJoiner(";");

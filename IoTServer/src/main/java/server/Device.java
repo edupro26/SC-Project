@@ -3,21 +3,31 @@ package server;
 import java.util.Objects;
 
 /**
- * Represents a device in the server.
+ * Represents a {@code IoTDevice} on the side of the {@link IoTServer}.
  *
- * @author Eduardo Proença - 57551, Manuel Barral - 52026, Tiago Oliveira - 54979
+ * @author Eduardo Proença (57551)
+ * @author Manuel Barral (52026)
+ * @author Tiago Oliveira (54979)
+ *
+ * @see Connection
+ * @see User
  */
 public class Device {
 
-    private final String user; // user of the device
-    private int id; // id of the device
-    private boolean isConnected; // connection status
-    private Float lastTemp; // last temperature given by the device
+    /**
+     * Device attributes
+     */
+    private final String user;      // user of the device
+    private int id;                 // id of the device
+    private boolean isConnected;    // connection status
+    private Float lastTemp;         // last temperature given by the device
 
     /**
-     * Creates a new device with a user and an id.
-     * @param user
-     * @param id
+     * Constructs a new {@code Device} with a user and an id.
+     *
+     * @param user the user of this device
+     * @param id the id of this device
+     * @requires {@code user != null and id != null}
      */
     protected Device(String user, int id) {
         this.user = user;
@@ -27,9 +37,11 @@ public class Device {
     }
 
     /**
-     * Creates a new device given the representative string of the device.
-     * @param device the string representation of the device
-     * @param temp the last temperature given by the device
+     * Creates a new {@code Device} with the given string representation.
+     *
+     * @param device the string representation of this device
+     * @param temp the last temperature given by this device
+     * @requires {@code device != null}
      */
     protected Device(String device, String temp) {
         String[] deviceArgs = device.split(":");
@@ -43,32 +55,36 @@ public class Device {
     }
 
     /**
-     * Returns the user of the device.
-     * @return the user of the device
+     * Returns the user of this device.
+     *
+     * @return the user of this device
      */
     protected String getUser() {
         return user;
     }
 
     /**
-     * Returns the id of the device.
-     * @return the id of the device
+     * Returns the id of this device.
+     *
+     * @return the id of this device
      */
     protected int getId() {
         return id;
     }
 
     /**
-     * Returns the connection status of the device.
-     * @return the connection status of the device
+     * Returns the connection status of this device.
+     *
+     * @return true if this device is connected, false otherwise
      */
     protected boolean isConnected() {
         return isConnected;
     }
 
     /**
-     * Returns the last temperature given by the device.
-     * @return the last temperature given by the device
+     * Returns the last temperature sent by this device.
+     *
+     * @return the last temperature sent by this device
      */
     protected Float getLastTemp() {
         return lastTemp;
@@ -76,28 +92,38 @@ public class Device {
 
     /**
      * Sets the connection status of the device.
-     * @param connected if connected true, if not false
+     *
+     * @param connected true to connect, false to disconnect
      */
     protected void setConnected(boolean connected) {
         isConnected = connected;
     }
 
     /**
-     * Sets the id of the device.
-     * @param id
+     * Sets the id of this device.
+     *
+     * @param id the id for this device
+     * @requires {@code id != null}
      */
     public void setId(int id) {
         this.id = id;
     }
 
     /**
-     * Sets the last temperature given by the device.
-     * @param lastTemp
+     * Sets the last temperature sent by this device.
+     *
+     * @param lastTemp the temperature sent
      */
     protected void setLastTemp(Float lastTemp) {
         this.lastTemp = lastTemp;
     }
 
+    /**
+     * Compares if this device is equal to the {@link Object} given.
+     *
+     * @param obj the object to compare
+     * @return true if it is equal, false otherwise
+     */
     @Override
     public boolean equals(Object obj) {
         if (obj == this)
@@ -110,6 +136,11 @@ public class Device {
                 && Objects.equals(id, device.id);
     }
 
+    /**
+     * Returns a string representation of this device
+     *
+     * @return a string representation of this device
+     */
     @Override
     public String toString() {
         return user + ":" + id;

@@ -37,9 +37,9 @@ public class Connection {
     /**
      * Connection attributes
      */
-    private final String clientIP;
-    private User devUser;
-    private Device device;
+    private final String clientIP;  //The client IP
+    private User devUser;           //The user of this connection
+    private Device device;          //The device of this connection
 
     /**
      * Constructs a new {@code Connection}.
@@ -157,6 +157,8 @@ public class Connection {
 
     /**
      * Handles the requests from the {@code IoTDevice}.
+     *
+     * @see Codes
      */
     protected void handleRequests() {
         try {
@@ -203,6 +205,7 @@ public class Connection {
      * @param d the name of the {@code Domain} to create
      * @throws IOException if an error occurred when writing to the server
      *         files, or during the communication between client and server
+     * @see Codes
      */
     private void handleCREATE(String d) throws IOException {
         String result = srvStorage.createDomain(d, devUser);
@@ -219,6 +222,7 @@ public class Connection {
      * @param d the name of the {@code Domain}
      * @throws IOException if an error occurred when writing to the server
      *         files, or during the communication between client and server
+     * @see Codes
      */
     private void handleADD(String u, String d) throws IOException {
         User user = srvStorage.getUser(u);
@@ -236,6 +240,7 @@ public class Connection {
      * @param d the name of the {@code Domain}
      * @throws IOException if an error occurred when writing to the server
      *         files, or during the communication between client and server
+     * @see Codes
      */
     private void handleRD(String d) throws IOException {
         Domain domain = srvStorage.getDomain(d);
@@ -252,6 +257,7 @@ public class Connection {
      * @param t the temperature in string format
      * @throws IOException if an error occurred when writing to the server
      *         files, or during the communication between client and server
+     * @see Codes
      */
     private void handleET(String t) throws IOException {
         try {
@@ -274,6 +280,7 @@ public class Connection {
      * @throws IOException if an error occurred when receiving the image,
      *         or during the communication between client and server
      * @see #receiveImage(File)
+     * @see Codes
      */
     private void handleEI(String filePath) throws IOException {
         File image = new File(filePath);
@@ -293,6 +300,7 @@ public class Connection {
      * @throws IOException if an error occurred when sending the file,
      *         or during the communication between client and server
      * @see #sendFile(File)
+     * @see Codes
      */
     private void handleRT(String d) throws IOException {
         Domain domain = srvStorage.getDomain(d);
@@ -323,6 +331,7 @@ public class Connection {
      * @throws IOException if an error occurred when sending the image,
      *         or during the communication between client and server
      * @see #sendFile(File)
+     * @see Codes
      */
     private void handleRI(String user, int id) throws IOException {
         Device received = new Device(user, id);
@@ -351,6 +360,7 @@ public class Connection {
      * @param image the image file
      * @throws IOException if an error occurred when receiving the image,
      *         or during the communication between client and server
+     * @see Codes
      */
     private void receiveImage(File image) throws IOException {
         output.writeObject(Codes.OK.toString());
@@ -376,6 +386,7 @@ public class Connection {
      * @param file the file to send
      * @throws IOException if an error occurred when sending the file,
      *         or during the communication between client and server
+     * @see Codes
      */
     private void sendFile(File file) throws IOException {
         output.writeObject(Codes.OK.toString());

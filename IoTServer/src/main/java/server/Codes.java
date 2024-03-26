@@ -1,12 +1,11 @@
 package server;
 
 /**
- * Enum containing all the response codes
- * sent from the IoTServer to the IoTDevice
+ * Enum containing all the response codes of the {@link IoTServer}.
  *
- * @author Eduardo Proença - 57551
- *         Manuel Barral - 52026
- *         Tiago Oliveira - 54979
+ * @author Eduardo Proença (57551)
+ * @author Manuel Barral (52026)
+ * @author Tiago Oliveira (54979)
  */
 public enum Codes {
 

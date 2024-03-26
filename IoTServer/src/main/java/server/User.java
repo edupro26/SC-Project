@@ -1,20 +1,29 @@
 package server;
 
-
 /**
  * Represents a user with a name and a password.
  *
- * @author Eduardo Proença - 57551, Manuel Barral - 52026, Tiago Oliveira - 54979
+ * @author Eduardo Proença (57551)
+ * @author Manuel Barral (52026)
+ * @author Tiago Oliveira (54979)
+ *
+ * @see Connection
+ * @see Device
  */
 public class User {
 
-    private final String name;
-    private String password;
+    /**
+     * User attributes
+     */
+    private final String name;      // the name of this user
+    private String password;        // the password of this user
 
     /**
-     * Creates a new user with a name and a password.
-     * @param name
-     * @param password
+     * Constructs a new {@code User} with a name and a password.
+     *
+     * @param name the name of this user
+     * @param password the password of this user
+     * @requires {@code name != null && password != null}
      */
     public User(String name, String password) {
         this.name = name;
@@ -22,29 +31,39 @@ public class User {
     }
 
     /**
-     * Returns the name of the user.
-     * @return the name of the user
+     * Returns the name of this user.
+     *
+     * @return the name of this user
      */
     public String getName() {
         return name;
     }
 
     /**
-     * Returns the password of the user.
-     * @return the password of the user
+     * Returns the password of this user.
+     *
+     * @return the password of this user
      */
     public String getPassword() {
         return password;
     }
 
     /**
-     * Sets the password of the user.
-     * @param password
+     * Sets the password of this user.
+     *
+     * @param password the password to be set
+     * @requires {@code password != null}
      */
     public void setPassword(String password) {
         this.password = password;
     }
 
+    /**
+     * Compares if this user is equal to the {@link Object} given.
+     *
+     * @param obj the object to compare
+     * @return true if it is equal, false otherwise
+     */
     @Override
     public boolean equals(Object obj) {
         if (obj == this) {
@@ -56,6 +75,11 @@ public class User {
         return user.getName().equals(this.name);
     }
 
+    /**
+     * Returns a string representation of this user
+     *
+     * @return a string representation of this user
+     */
     @Override
     public String toString() {
         return this.name + "," + this.password;
