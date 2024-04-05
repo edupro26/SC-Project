@@ -1,4 +1,4 @@
-# SC - Projeto 1 (2023/2024)
+# SC | Projeto 1 - Fase 2 | 2023/24
 
 
 <br> Projeto desenvolvido no âmbito da disciplina Seguranca e Confiabilidade
