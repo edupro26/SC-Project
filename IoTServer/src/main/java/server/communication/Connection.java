@@ -1,5 +1,6 @@
-package server;
+package server.communication;
 
+import server.IoTServer;
 import server.components.Device;
 import server.components.Domain;
 import server.components.User;
@@ -101,7 +102,7 @@ public class Connection {
      *
      * @return true if validated, false otherwise
      */
-    protected boolean validateDevID() {
+    public boolean validateDevID() {
         try {
             while (device.getId() < 0) {
                 String msg = (String) input.readObject();
@@ -140,7 +141,7 @@ public class Connection {
      *
      * @return true if validated, false otherwise
      */
-    protected boolean validateConnection() {
+    public boolean validateConnection() {
         try {
             String[] in = ((String) input.readObject()).split(",");
             String name = in[0];
@@ -166,7 +167,7 @@ public class Connection {
      *
      * @see Codes
      */
-    protected void handleRequests() {
+    public void handleRequests() {
         try {
             while (true) {
                 String msg = (String) input.readObject();

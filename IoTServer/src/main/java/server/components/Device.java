@@ -1,6 +1,6 @@
 package server.components;
 
-import server.Connection;
+import server.communication.Connection;
 import server.IoTServer;
 
 import java.util.Objects;

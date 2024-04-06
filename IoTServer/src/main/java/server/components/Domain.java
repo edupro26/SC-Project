@@ -1,9 +1,7 @@
 package server.components;
 
-import server.Connection;
+import server.communication.Connection;
 import server.IoTServer;
-import server.components.Device;
-import server.components.User;
 import server.persistence.Storage;
 
 import java.io.BufferedWriter;

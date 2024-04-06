@@ -1,6 +1,6 @@
 package server.components;
 
-import server.Connection;
+import server.communication.Connection;
 
 /**
  * Represents a user with a name and a password.

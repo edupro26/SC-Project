@@ -1,6 +1,8 @@
 package server.persistence;
 
 import server.*;
+import server.communication.Codes;
+import server.communication.Connection;
 import server.components.Device;
 import server.components.Domain;
 import server.components.User;
