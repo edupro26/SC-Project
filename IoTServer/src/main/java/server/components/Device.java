@@ -2,7 +2,6 @@ package server.components;
 
 import server.Connection;
 import server.IoTServer;
-import server.User;
 
 import java.util.Objects;
 

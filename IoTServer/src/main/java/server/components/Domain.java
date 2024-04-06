@@ -1,6 +1,9 @@
-package server;
+package server.components;
 
+import server.Connection;
+import server.IoTServer;
 import server.components.Device;
+import server.components.User;
 import server.persistence.Storage;
 
 import java.io.BufferedWriter;
@@ -83,7 +86,7 @@ public class Domain {
      *
      * @return a file with the temperatures sent from the {@code Devices} of this domain.
      */
-    protected File getDomainTemperatures() {
+    public File getDomainTemperatures() {
         File file = new File( "temperatures/" + name + ".txt");
         try (BufferedWriter out = new BufferedWriter(new FileWriter(file, false))) {
             StringBuilder content = new StringBuilder();

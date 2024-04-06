@@ -1,6 +1,8 @@
 package server;
 
 import server.components.Device;
+import server.components.Domain;
+import server.components.User;
 import server.persistence.Storage;
 
 import java.io.File;
