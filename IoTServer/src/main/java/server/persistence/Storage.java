@@ -25,7 +25,7 @@ import java.util.*;
  * @see User
  * @see Connection
  */
-public class Storage {
+public final class Storage {
 
     /**
      * File paths

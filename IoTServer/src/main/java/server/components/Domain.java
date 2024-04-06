@@ -23,7 +23,7 @@ import java.util.StringJoiner;
  * @see Device
  * @see Connection
  */
-public class Domain {
+public final class Domain {
 
     /**
      * Domain attributes

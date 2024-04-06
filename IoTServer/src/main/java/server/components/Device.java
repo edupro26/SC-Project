@@ -15,7 +15,7 @@ import java.util.Objects;
  * @see Connection
  * @see User
  */
-public class Device {
+public final class Device {
 
     /**
      * Device attributes

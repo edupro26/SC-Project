@@ -5,7 +5,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
-public class SecurityUtils {
+public final class SecurityUtils {
     private static final String API_URL = "https://lmpinto.eu.pythonanywhere.com/2FA";
     private static HttpClient client = HttpClient.newHttpClient();
 

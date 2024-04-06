@@ -12,7 +12,7 @@ import server.communication.Connection;
  * @see Connection
  * @see Device
  */
-public class User {
+public final class User {
 
     /**
      * User attributes

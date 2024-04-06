@@ -30,7 +30,7 @@ import java.util.ArrayList;
  * @see Device
  * @see User
  */
-public class Connection {
+public final class Connection {
 
     /**
      * Storage of the {@link IoTServer}
