@@ -1,6 +1,7 @@
 package server.persistence;
 
 import server.*;
+import server.components.Device;
 
 import java.io.*;
 import java.util.*;

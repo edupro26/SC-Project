@@ -1,4 +1,8 @@
-package server;
+package server.components;
+
+import server.Connection;
+import server.IoTServer;
+import server.User;
 
 import java.util.Objects;
 
@@ -29,7 +33,7 @@ public class Device {
      * @param id the id of this device
      * @requires {@code user != null and id != null}
      */
-    protected Device(String user, int id) {
+    public Device(String user, int id) {
         this.user = user;
         this.id = id;
         isConnected = false;
@@ -59,7 +63,7 @@ public class Device {
      *
      * @return the user of this device
      */
-    protected String getUser() {
+    public String getUser() {
         return user;
     }
 
@@ -68,7 +72,7 @@ public class Device {
      *
      * @return the id of this device
      */
-    protected int getId() {
+    public int getId() {
         return id;
     }
 
@@ -77,7 +81,7 @@ public class Device {
      *
      * @return true if this device is connected, false otherwise
      */
-    protected boolean isConnected() {
+    public boolean isConnected() {
         return isConnected;
     }
 
@@ -95,7 +99,7 @@ public class Device {
      *
      * @param connected true to connect, false to disconnect
      */
-    protected void setConnected(boolean connected) {
+    public void setConnected(boolean connected) {
         isConnected = connected;
     }
 
@@ -114,7 +118,7 @@ public class Device {
      *
      * @param lastTemp the temperature sent
      */
-    protected void setLastTemp(Float lastTemp) {
+    public void setLastTemp(Float lastTemp) {
         this.lastTemp = lastTemp;
     }
 
