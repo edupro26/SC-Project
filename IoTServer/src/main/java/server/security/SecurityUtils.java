@@ -1,4 +1,4 @@
-package server;
+package server.security;
 
 import java.net.URI;
 import java.net.http.HttpClient;
