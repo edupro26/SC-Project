@@ -38,10 +38,31 @@ public class IoTServer {
      * @see ServerThread
      */
     public static void main(String[] args) {
-        int port = args.length > 0 ? Integer.parseInt(args[0]) : 12345;
-        System.out.println("Server started on port " + port);
+        int port = 12345;
+        String passwordCipher;
+        String keystore;
+        String passwordKeystore;
+        String apiKey;
 
+        if (args.length == 5) {
+            port = Integer.parseInt(args[0]);
+            passwordCipher = args[1];
+            keystore = args[2];
+            passwordKeystore = args[3];
+            apiKey = args[4];
+        } else if (args.length == 4) {
+            passwordCipher = args[0];
+            keystore = args[1];
+            passwordKeystore = args[2];
+            apiKey = args[3];
+        } else {
+            System.out.println("Usage: IoTServer <port> <password-cifra> <keystore> <password-keystore> <2FA-APIKey>");
+            System.exit(1);
+        }
+
+        System.out.println("Server started on port " + port);
         ServerSocket srvSocket = null;
+
         try {
             srvSocket = new ServerSocket(port);
             Storage srvStorage = new Storage();
