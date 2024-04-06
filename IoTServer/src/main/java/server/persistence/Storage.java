@@ -1,4 +1,6 @@
-package server;
+package server.persistence;
+
+import server.*;
 
 import java.io.*;
 import java.util.*;
@@ -54,7 +56,7 @@ public class Storage {
      * @requires {@code user != null}
      * @see FileLoader
      */
-    protected synchronized void saveUser(User user) {
+    public synchronized void saveUser(User user) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(USERS, true))) {
             writer.write(user + "\n");
             users.add(user);
@@ -73,7 +75,7 @@ public class Storage {
      * @requires {@code device != null && domains != null}
      * @see FileLoader
      */
-    protected synchronized void saveDevice(Device device, List<Domain> domains) {
+    public synchronized void saveDevice(Device device, List<Domain> domains) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(DEVICES, true))) {
             writer.write(device + "," + device.getLastTemp() + "\n");
             devices.put(device, domains);
@@ -95,7 +97,7 @@ public class Storage {
      * @see FileLoader
      * @see Codes
      */
-    protected synchronized String createDomain(String name, User owner) {
+    public synchronized String createDomain(String name, User owner) {
         if (owner == null) return Codes.NOK.toString();
         if (getDomain(name) != null) return Codes.NOK.toString();
         try {
@@ -151,7 +153,7 @@ public class Storage {
      * @see Codes
      * @requires {@code device != null}
      */
-    protected synchronized String updateLastTemp(Device device) {
+    public synchronized String updateLastTemp(Device device) {
         try (BufferedReader in = new BufferedReader(new FileReader(DEVICES))) {
             StringBuilder file = new StringBuilder();
             String line;
@@ -190,7 +192,7 @@ public class Storage {
      * @see #updateDomainInFile(Domain)
      * @see Codes
      */
-    protected synchronized String addUserToDomain(User user, User userToAdd, Domain domain) {
+    public synchronized String addUserToDomain(User user, User userToAdd, Domain domain) {
         if (domain == null) return Codes.NODM.toString();
         if (userToAdd == null) return Codes.NOUSER.toString();
         if (!domain.getOwner().equals(user)) return Codes.NOPERM.toString();
@@ -216,7 +218,7 @@ public class Storage {
      * @see #updateDomainInFile(Domain)
      * @see Codes
      */
-    protected synchronized String addDeviceToDomain(Domain domain, Device device, User user) {
+    public synchronized String addDeviceToDomain(Domain domain, Device device, User user) {
         if(domain == null) return Codes.NODM.toString();
         if(domain.getDevices().contains(device)) return Codes.NOK.toString();
         User owner = domain.getOwner();
@@ -238,7 +240,7 @@ public class Storage {
      * @param device the {@code Device}
      * @return true, if the user has permission, false otherwise
      */
-    protected boolean hasPerm(User user, Device device) {
+    public boolean hasPerm(User user, Device device) {
         for (Map.Entry<Device, List<Domain>> entry : devices.entrySet()) {
             if (entry.getKey().equals(device)) {
                 for (Domain domain : entry.getValue()) {
@@ -257,7 +259,7 @@ public class Storage {
      * @param size the size {@code IoTDevice} executable
      * @return true, if validated, false otherwise
      */
-    protected boolean checkConnectionInfo(String name, String size) {
+    public boolean checkConnectionInfo(String name, String size) {
         InputStream in = Storage.class.getClassLoader().getResourceAsStream(INFO);
         if (in != null) {
             try (BufferedReader br = new BufferedReader(new InputStreamReader(in))) {
@@ -282,7 +284,7 @@ public class Storage {
      * @param username the username of the {@code User}
      * @return a {@code User}, if the username was found, null otherwise
      */
-    protected User getUser(String username) {
+    public User getUser(String username) {
         for (User user : users) {
             if (username.equals(user.getName()))
                 return user;
@@ -297,7 +299,7 @@ public class Storage {
      * @param device the {@code Device} used as key for the search
      * @return a {@code Device}, if the key matched, null otherwise
      */
-    protected Device getDevice(Device device) {
+    public Device getDevice(Device device) {
         for (Map.Entry<Device, List<Domain>> entry : devices.entrySet()) {
             if (entry.getKey().equals(device))
                 return entry.getKey();
@@ -312,7 +314,7 @@ public class Storage {
      * @param name the name of the {@code Domain}
      * @return a {@code Domain}, if the name matched, null otherwise
      */
-    protected Domain getDomain(String name) {
+    public Domain getDomain(String name) {
         for (Domain domain : domains) {
             if (name.equals(domain.getName()))
                 return domain;
@@ -325,7 +327,7 @@ public class Storage {
      *
      * @return the map {@link #devices} of this storage.
      */
-    protected HashMap<Device, List<Domain>> getDevices() {
+    public HashMap<Device, List<Domain>> getDevices() {
         return devices;
     }
 

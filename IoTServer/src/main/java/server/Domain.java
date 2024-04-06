@@ -1,5 +1,7 @@
 package server;
 
+import server.persistence.Storage;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -36,7 +38,7 @@ public class Domain {
      * @param owner the owner of this domain
      * @requires {@code name != null && owner != null}
      */
-    protected Domain(String name, User owner) {
+    public Domain(String name, User owner) {
         this.name = name;
         this.owner = owner;
         this.users = new ArrayList<>();
@@ -51,7 +53,7 @@ public class Domain {
      * @see Storage
      * @requires {@code domain != null && srvStorage != null}
      */
-    protected Domain(String domain, Storage srvStorage) {
+    public Domain(String domain, Storage srvStorage) {
         String[] domainParts = domain.split(",");
         this.name = domainParts[0];
         this.owner = srvStorage.getUser(domainParts[1]);
@@ -103,7 +105,7 @@ public class Domain {
      * @param user the {@code User} to be added
      * @requires {@code user != null}
      */
-    protected void addUser(User user) {
+    public void addUser(User user) {
         users.add(user);
     }
 
@@ -113,7 +115,7 @@ public class Domain {
      * @param device the {@code Device} to be added
      * @requires {@code device != null}
      */
-    protected void addDevice(Device device) {
+    public void addDevice(Device device) {
         devices.add(device);
     }
 
@@ -122,7 +124,7 @@ public class Domain {
      *
      * @return the name of this domain
      */
-    protected String getName() {
+    public String getName() {
         return name;
     }
 
@@ -131,7 +133,7 @@ public class Domain {
      *
      * @return the owner of this domain
      */
-    protected User getOwner() {
+    public User getOwner() {
         return owner;
     }
 
@@ -140,7 +142,7 @@ public class Domain {
      *
      * @return the list of users in this domain
      */
-    protected List<User> getUsers() {
+    public List<User> getUsers() {
         return users;
     }
 
@@ -149,7 +151,7 @@ public class Domain {
      *
      * @return the list of devices in the domain
      */
-    protected List<Device> getDevices() {
+    public List<Device> getDevices() {
         return devices;
     }
 

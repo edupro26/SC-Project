@@ -43,7 +43,7 @@ public class Device {
      * @param temp the last temperature given by this device
      * @requires {@code device != null}
      */
-    protected Device(String device, String temp) {
+    public Device(String device, String temp) {
         String[] deviceArgs = device.split(":");
         this.user = deviceArgs[0];
         this.id = Integer.parseInt(deviceArgs[1]);
@@ -86,7 +86,7 @@ public class Device {
      *
      * @return the last temperature sent by this device
      */
-    protected Float getLastTemp() {
+    public Float getLastTemp() {
         return lastTemp;
     }
 
