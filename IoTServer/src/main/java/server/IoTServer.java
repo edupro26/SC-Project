@@ -1,5 +1,11 @@
 package server;
 
+import server.communication.Connection;
+import server.components.Device;
+import server.components.Domain;
+import server.components.User;
+import server.persistence.Storage;
+
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
@@ -103,7 +109,7 @@ public class IoTServer {
          * @param srvStorage the {@code Storage} of this IoTServer
          * @requires {@code cliSocket != null && srvStorage != null}
          */
-        public ServerThread (Socket cliSocket, Storage srvStorage) {
+        private ServerThread (Socket cliSocket, Storage srvStorage) {
             this.cliSocket = cliSocket;
             this.srvStorage = srvStorage;
         }
