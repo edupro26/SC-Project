@@ -121,8 +121,8 @@ public class IoTDevice {
      *         null otherwise
      */
     private static String checkArgs(String[] args) {
-        if (args.length < 3) {
-            return "Usage: java -jar IoTDevice.jar <serverAddress> <dev-id> <user-id>";
+        if (args.length != 6) {
+            return "Usage: java -jar IoTDevice.jar <serverAddress> <truststore> <keystore> <passwordkeystore> <dev-id> <user-id>";
         }
 
         try {
@@ -139,13 +139,13 @@ public class IoTDevice {
             }
 
             try {
-                Integer.parseInt(args[1]);
+                Integer.parseInt(args[4]);
             } catch (Exception e) {
                 return "Error: <dev-id> must be an Integer";
             }
 
             try {
-                Integer.parseInt(args[2]);
+                Integer.parseInt(args[5]);
                 return "Error: <user-id> can't be a Integer";
             } catch (Exception e) {
                 return null;
