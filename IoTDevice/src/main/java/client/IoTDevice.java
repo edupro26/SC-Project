@@ -38,8 +38,11 @@ public class IoTDevice {
         }
 
         String serverAddress = args[0];
-        String devId = args[1];
-        String userId = args[2];
+        String truststore = args[1];
+        String keystore = args[2];
+        String passwordKeystore = args[3];
+        String devId = args[4];
+        String userId = args[5];
         String[] server = serverAddress.split(":");
 
         DeviceHandler client = new DeviceHandler(server[0], Integer.parseInt(server[1]));
