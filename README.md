@@ -108,3 +108,11 @@ Caso pertenda apagar a pasta `out` pode executar o script `clean.sh`.
 - Pode também utilizar o maven como build tool, executando o comando `mvn package`. Note que, terá de 
 atualizar o ficheiro `device_info.csv` localizado dentro do diretório `src/main/resources` do módulo
 `IoTServer`, com o nome e tamanho corretos do arquivo .jar do cliente
+
+## Chaves
+
+Comando para gerar chave assimétrica:
+
+```bash
+keytool -genkeypair -alias IoTServerKeyPair -keyalg RSA -keysize 2048 -keystore keystore.server
+```
