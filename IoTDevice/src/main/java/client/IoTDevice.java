@@ -101,7 +101,8 @@ public class IoTDevice {
                         }
                     }
                     if(id.equals("OK-DEVID")) {
-                        System.out.println("Sending application size to the server...");
+                        // FIXME Enable client verification later
+                        /*System.out.println("Sending application size to the server...");
                         ProtectionDomain protectionDomain = IoTDevice.class.getProtectionDomain();
                         CodeSource codeSource = protectionDomain.getCodeSource();
                         File exec = new File(codeSource.getLocation().toURI().getPath());
@@ -112,7 +113,7 @@ public class IoTDevice {
                         }
                         if (res.equals("OK-TESTED")) {
                             return;
-                        }
+                        }*/
                         return;
                     }
                 }

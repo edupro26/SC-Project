@@ -142,10 +142,11 @@ public class IoTServer {
                 System.out.print("Validating device ID... ");
                 boolean validID = connection.validateDevID();
 
-                System.out.print("Validating device info...");
-                boolean validInfo = connection.validateConnection();
+                // FIXME Enable client verification later
+                /*System.out.print("Validating device info...");
+                boolean validInfo = connection.validateConnection();*/
 
-                if (validID && validInfo) {
+                if (validID /*&& validInfo*/) {
                     System.out.println("Client connected (" + clientAddress + ")");
                     System.out.println("Active connections: " + ++counter);
                     connection.handleRequests();
