@@ -1,7 +1,10 @@
 package client;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
 import java.util.Arrays;
@@ -30,7 +33,7 @@ public class IoTDevice {
      *
      * @param args the arguments given when executed
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws UnsupportedEncodingException {
         String checkArgs = checkArgs(args);
         if (checkArgs != null) {
             System.out.println(checkArgs);
@@ -38,12 +41,15 @@ public class IoTDevice {
         }
 
         String serverAddress = args[0];
-        String truststore = args[1];
-        String keystore = args[2];
+        String truststore = URLDecoder.decode(args[1], StandardCharsets.UTF_8.name());
+        String keystore = URLDecoder.decode(args[2], StandardCharsets.UTF_8.name());
         String passwordKeystore = args[3];
         String devId = args[4];
         String userId = args[5];
         String[] server = serverAddress.split(":");
+
+        System.out.println("Truststore: " + truststore);
+        System.out.println("Keystore: " + keystore);
 
         System.setProperty("javax.net.ssl.trustStore", truststore);
         System.setProperty("javax.net.ssl.keyStore", keystore);
