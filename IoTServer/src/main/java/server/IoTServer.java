@@ -6,6 +6,8 @@ import server.components.Domain;
 import server.components.User;
 import server.persistence.Storage;
 
+import javax.net.ServerSocketFactory;
+import javax.net.ssl.SSLServerSocket;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
@@ -82,10 +84,11 @@ public class IoTServer {
         System.setProperty("javax.net.ssl.keyStorePassword", passwordKeystore);
 
         System.out.println("Server started on port " + port);
-        ServerSocket srvSocket = null;
+        SSLServerSocket srvSocket = null;
 
         try {
-            srvSocket = new ServerSocket(port);
+            ServerSocketFactory ssf = ServerSocketFactory.getDefault();
+            srvSocket = (SSLServerSocket) ssf.createServerSocket(port);
             Storage srvStorage = new Storage();
             System.out.println("Waiting for clients...");
             while (true) {
