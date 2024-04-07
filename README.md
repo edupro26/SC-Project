@@ -111,8 +111,20 @@ atualizar o ficheiro `device_info.csv` localizado dentro do diretório `src/main
 
 ## Chaves
 
-Comando para gerar chave assimétrica:
+Comando para gerar chave assimétrica e armazenar no keystore do servidor:
 
 ```bash
 keytool -genkeypair -alias IoTServerKeyPair -keyalg RSA -keysize 2048 -keystore keystore.server
+```
+
+Comando para exportar chave pública do servidor:
+
+```bash
+keytool -exportcert -alias IoTServerKeyPair -file certServer.cer -keystore keystore.server
+```
+
+Comando para importar chave pública para truststore do cliente:
+
+```bash
+keytool -importcert -alias IoTServerKeyPair -file certServer.cer -keystore truststore.client
 ```
