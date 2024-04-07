@@ -78,6 +78,9 @@ public class IoTServer {
             System.exit(1);
         }
 
+        System.setProperty("javax.net.ssl.keyStore", keystore);
+        System.setProperty("javax.net.ssl.keyStorePassword", passwordKeystore);
+
         System.out.println("Server started on port " + port);
         ServerSocket srvSocket = null;
 
