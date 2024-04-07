@@ -1,5 +1,8 @@
 package client;
 
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 import java.io.*;
 import java.net.Socket;
 
@@ -43,7 +46,7 @@ public class DeviceHandler {
      */
     private final String address;       // the ip address of the client
     private final int port;             // the server port
-    private Socket socket;              // the client socket
+    private SSLSocket socket;              // the client socket
 
     /**
      * Constructs a new {@code DeviceHandler}.
@@ -63,7 +66,8 @@ public class DeviceHandler {
      */
     protected void connect() {
         try {
-            socket = new Socket(address, port);
+            SocketFactory sf = SSLSocketFactory.getDefault();
+            socket = (SSLSocket) sf.createSocket(address, port);
             System.out.println("Connected to server: " + address + ":" + port);
 
             this.output = new ObjectOutputStream(socket.getOutputStream());
