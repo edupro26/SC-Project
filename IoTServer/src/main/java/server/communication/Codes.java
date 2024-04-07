@@ -1,4 +1,6 @@
-package server;
+package server.communication;
+
+import server.IoTServer;
 
 /**
  * Enum containing all the response codes of the {@link IoTServer}.

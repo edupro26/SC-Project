@@ -1,4 +1,4 @@
-package server;
+package server.security;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -11,7 +11,7 @@ import java.net.http.HttpResponse;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 
-public class SecurityUtils {
+public final class SecurityUtils {
     private static final String API_URL = "https://lmpinto.eu.pythonanywhere.com/2FA";
     private static HttpClient client = HttpClient.newHttpClient();
 

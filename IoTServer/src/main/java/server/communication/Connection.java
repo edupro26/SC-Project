@@ -1,8 +1,17 @@
-package server;
+package server.communication;
 
-import java.io.*;
+import server.IoTServer;
+import server.components.Device;
+import server.components.Domain;
+import server.components.User;
+import server.persistence.Storage;
+
 import java.io.File;
+import java.io.IOException;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
@@ -21,7 +30,7 @@ import java.util.ArrayList;
  * @see Device
  * @see User
  */
-public class Connection {
+public final class Connection {
 
     /**
      * Storage of the {@link IoTServer}
@@ -93,7 +102,7 @@ public class Connection {
      *
      * @return true if validated, false otherwise
      */
-    protected boolean validateDevID() {
+    public boolean validateDevID() {
         try {
             while (device.getId() < 0) {
                 String msg = (String) input.readObject();
@@ -132,7 +141,7 @@ public class Connection {
      *
      * @return true if validated, false otherwise
      */
-    protected boolean validateConnection() {
+    public boolean validateConnection() {
         try {
             String[] in = ((String) input.readObject()).split(",");
             String name = in[0];
@@ -158,7 +167,7 @@ public class Connection {
      *
      * @see Codes
      */
-    protected void handleRequests() {
+    public void handleRequests() {
         try {
             while (true) {
                 String msg = (String) input.readObject();

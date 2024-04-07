@@ -1,4 +1,7 @@
-package server;
+package server.components;
+
+import server.communication.Connection;
+import server.IoTServer;
 
 import java.util.Objects;
 
@@ -12,7 +15,7 @@ import java.util.Objects;
  * @see Connection
  * @see User
  */
-public class Device {
+public final class Device {
 
     /**
      * Device attributes
@@ -29,7 +32,7 @@ public class Device {
      * @param id the id of this device
      * @requires {@code user != null and id != null}
      */
-    protected Device(String user, int id) {
+    public Device(String user, int id) {
         this.user = user;
         this.id = id;
         isConnected = false;
@@ -43,7 +46,7 @@ public class Device {
      * @param temp the last temperature given by this device
      * @requires {@code device != null}
      */
-    protected Device(String device, String temp) {
+    public Device(String device, String temp) {
         String[] deviceArgs = device.split(":");
         this.user = deviceArgs[0];
         this.id = Integer.parseInt(deviceArgs[1]);
@@ -59,7 +62,7 @@ public class Device {
      *
      * @return the user of this device
      */
-    protected String getUser() {
+    public String getUser() {
         return user;
     }
 
@@ -68,7 +71,7 @@ public class Device {
      *
      * @return the id of this device
      */
-    protected int getId() {
+    public int getId() {
         return id;
     }
 
@@ -77,7 +80,7 @@ public class Device {
      *
      * @return true if this device is connected, false otherwise
      */
-    protected boolean isConnected() {
+    public boolean isConnected() {
         return isConnected;
     }
 
@@ -86,7 +89,7 @@ public class Device {
      *
      * @return the last temperature sent by this device
      */
-    protected Float getLastTemp() {
+    public Float getLastTemp() {
         return lastTemp;
     }
 
@@ -95,7 +98,7 @@ public class Device {
      *
      * @param connected true to connect, false to disconnect
      */
-    protected void setConnected(boolean connected) {
+    public void setConnected(boolean connected) {
         isConnected = connected;
     }
 
@@ -114,7 +117,7 @@ public class Device {
      *
      * @param lastTemp the temperature sent
      */
-    protected void setLastTemp(Float lastTemp) {
+    public void setLastTemp(Float lastTemp) {
         this.lastTemp = lastTemp;
     }
 

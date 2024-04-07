@@ -1,4 +1,6 @@
-package server;
+package server.components;
+
+import server.communication.Connection;
 
 /**
  * Represents a user with a name and a password.
@@ -10,7 +12,7 @@ package server;
  * @see Connection
  * @see Device
  */
-public class User {
+public final class User {
 
     /**
      * User attributes
