@@ -49,4 +49,5 @@ build/
 /**/*.jpg
 
 
-
+### Keys related files ###
+/keystore.server
