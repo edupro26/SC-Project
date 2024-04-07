@@ -1,19 +1,17 @@
 package server.components;
 
-import server.communication.Connection;
-import server.IoTServer;
-import server.persistence.Storage;
-
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.io.FileWriter;
+import java.io.BufferedWriter;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.StringJoiner;
 
+import server.persistence.Storage;
+
 /**
- * Represents a domain in the {@link IoTServer} with its users and devices.
+ * Represents a domain in the {@code IoTServer} with its users and devices.
  *
  * @author Eduardo Proença (57551)
  * @author Manuel Barral (52026)
@@ -21,7 +19,6 @@ import java.util.StringJoiner;
  *
  * @see User
  * @see Device
- * @see Connection
  */
 public final class Domain {
 
@@ -52,7 +49,7 @@ public final class Domain {
      *
      * @param domain the string representation of the domain
      * @param srvStorage the storage of the server to get the users and devices
-     * @see Storage
+     *
      * @requires {@code domain != null && srvStorage != null}
      */
     public Domain(String domain, Storage srvStorage) {

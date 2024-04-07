@@ -1,9 +1,8 @@
 package server.communication;
 
-import server.IoTServer;
+import server.components.User;
 import server.components.Device;
 import server.components.Domain;
-import server.components.User;
 import server.persistence.Storage;
 
 import java.io.File;
@@ -17,7 +16,7 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 
 /**
- * Represents a {@code IoTDevice} connection to the {@link IoTServer}.
+ * Represents a {@code IoTDevice} connection to the {@code IoTServer}.
  * This class is responsible to handle communication between the client
  * program and the server program.
  *
@@ -33,7 +32,7 @@ import java.util.ArrayList;
 public final class Connection {
 
     /**
-     * Storage of the {@link IoTServer}
+     * Storage of the {@code IoTServer}
      */
     private final Storage srvStorage;
 

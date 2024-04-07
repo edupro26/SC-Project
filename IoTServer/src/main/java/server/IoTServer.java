@@ -1,17 +1,14 @@
 package server;
 
-import server.communication.Connection;
-import server.components.Device;
-import server.components.Domain;
-import server.components.User;
-import server.persistence.Storage;
-
+import java.net.Socket;
+import java.net.ServerSocket;
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLServerSocket;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
+
+import server.communication.Connection;
+import server.persistence.Storage;
 
 /**
  * Main class of the {@code IoTServer}.This class represents a multithreaded server.
@@ -23,9 +20,6 @@ import java.net.Socket;
  * @author Tiago Oliveira (54979)
  *
  * @see Connection
- * @see User
- * @see Device
- * @see Domain
  * @see Storage
  */
 public class IoTServer {

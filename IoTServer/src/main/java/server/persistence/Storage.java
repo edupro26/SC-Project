@@ -1,17 +1,26 @@
 package server.persistence;
 
-import server.*;
-import server.communication.Codes;
-import server.communication.Connection;
+import java.io.File;
+import java.io.IOException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.Map;
+import java.util.List;
+import java.util.HashMap;
+import java.util.ArrayList;
+
+import server.components.User;
 import server.components.Device;
 import server.components.Domain;
-import server.components.User;
+import server.communication.Codes;
 
-import java.io.*;
-import java.util.*;
 
 /**
- * The storage of the {@link IoTServer}. This class is responsible for
+ * The storage of the {@code IoTServer}. This class is responsible for
  * saving data sent from the {@code IoTDevice}. It holds the data structures
  * where users, domains and devices are saved. It also handles interaction
  * with text files and images (.jpg).
@@ -23,7 +32,6 @@ import java.util.*;
  * @see Domain
  * @see Device
  * @see User
- * @see Connection
  */
 public final class Storage {
 

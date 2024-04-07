@@ -1,6 +1,5 @@
 package server.components;
 
-import server.communication.Connection;
 
 /**
  * Represents a user with a name and a password.
@@ -9,7 +8,6 @@ import server.communication.Connection;
  * @author Manuel Barral (52026)
  * @author Tiago Oliveira (54979)
  *
- * @see Connection
  * @see Device
  */
 public final class User {

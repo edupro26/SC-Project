@@ -1,18 +1,15 @@
 package server.components;
 
-import server.communication.Connection;
-import server.IoTServer;
 
 import java.util.Objects;
 
 /**
- * Represents a {@code IoTDevice} on the side of the {@link IoTServer}.
+ * Represents a {@code IoTDevice} on the side of the {@code IoTServer}.
  *
  * @author Eduardo Proença (57551)
  * @author Manuel Barral (52026)
  * @author Tiago Oliveira (54979)
  *
- * @see Connection
  * @see User
  */
 public final class Device {
