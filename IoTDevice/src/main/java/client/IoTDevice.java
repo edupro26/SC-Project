@@ -45,6 +45,10 @@ public class IoTDevice {
         String userId = args[5];
         String[] server = serverAddress.split(":");
 
+        System.setProperty("javax.net.ssl.trustStore", truststore);
+        System.setProperty("javax.net.ssl.keyStore", keystore);
+        System.setProperty("javax.net.ssl.keyStorePassword", passwordKeystore);
+
         DeviceHandler client = new DeviceHandler(server[0], Integer.parseInt(server[1]));
         try {
             client.connect();
