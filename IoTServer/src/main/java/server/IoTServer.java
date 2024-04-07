@@ -39,11 +39,18 @@ public class IoTServer {
      */
     public static void main(String[] args) {
         int port = 12345;
-        String passwordCipher;
-        String keystore;
-        String passwordKeystore;
-        String apiKey;
+        String passwordCipher = null;
+        String keystore = null;
+        String passwordKeystore = null;
+        String apiKey = null;
 
+        /**
+         * Check if the arguments are valid
+         *
+         * If 5 arguments are given, the first one is the port and the rest are the remaining required arguments
+         * If 4 arguments are given, a default port is used. All 4 arguments are the required arguments
+         * If the arguments are invalid, the program exits with an error message
+         */
         if (args.length == 5) {
             port = Integer.parseInt(args[0]);
             passwordCipher = args[1];
@@ -56,6 +63,11 @@ public class IoTServer {
             passwordKeystore = args[2];
             apiKey = args[3];
         } else {
+            System.out.println("Usage: IoTServer <port> <password-cifra> <keystore> <password-keystore> <2FA-APIKey>");
+            System.exit(1);
+        }
+
+        if (passwordCipher == null || keystore == null || passwordKeystore == null || apiKey == null) {
             System.out.println("Usage: IoTServer <port> <password-cifra> <keystore> <password-keystore> <2FA-APIKey>");
             System.exit(1);
         }
