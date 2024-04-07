@@ -4,6 +4,7 @@ import java.net.Socket;
 import java.net.ServerSocket;
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
@@ -81,13 +82,12 @@ public class IoTServer {
         SSLServerSocket srvSocket = null;
 
         try {
-            ServerSocketFactory ssf = ServerSocketFactory.getDefault();
+            ServerSocketFactory ssf = SSLServerSocketFactory.getDefault();
             srvSocket = (SSLServerSocket) ssf.createServerSocket(port);
             Storage srvStorage = new Storage();
             System.out.println("Waiting for clients...");
             while (true) {
-                Socket cliSocket = srvSocket.accept();
-                new ServerThread(cliSocket, srvStorage).start();
+                new ServerThread(srvSocket.accept(), srvStorage).start();
             }
         } catch (Exception e) {
             System.out.println(e.getMessage());
