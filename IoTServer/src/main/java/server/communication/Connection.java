@@ -259,6 +259,12 @@ public final class Connection {
         System.out.println(result);
     }
 
+    /**
+     * Handles the command MYDOMAINS
+     *
+     * @throws IOException if an error occurred during the
+     *          communication between client and server
+     */
     private void handleMYDOMAINS() throws IOException {
         List<Domain> domains = srvStorage.getDeviceDomains(this.device);
         if (!domains.isEmpty()) {

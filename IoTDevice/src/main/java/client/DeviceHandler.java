@@ -198,6 +198,14 @@ public class DeviceHandler {
         }
     }
 
+    /**
+     * Sends a MYDOMAINS request to the {@code IoTServer}
+     * and handles the response.
+     *
+     * @param args the args of the command. For this command
+     *              {@code args} is supposed to be null
+     * @param command the command in a string format
+     */
     protected void sendReceiveMYDOMAINS(String[] args, String command) {
         if (args.length != 0) {
             System.out.println("Usage: MYDOMAINS");
