@@ -50,6 +50,6 @@ build/
 
 
 ### Keys related files ###
-/keystore.server
-/certServer.cer
-/truststore.client
+/keystore.**
+**.cer
+/truststore.**
