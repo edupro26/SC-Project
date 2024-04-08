@@ -179,7 +179,7 @@ public final class Connection {
                     case "ADD" -> handleADD(parsedMsg[1], parsedMsg[2]);
                     case "RD" -> handleRD(parsedMsg[1]);
                     case "ET" -> handleET(parsedMsg[1]);
-                    case "EI" -> handleEI(parsedMsg[1]);
+                    case "EI" -> handleEI();
                     case "RT" -> handleRT(parsedMsg[1]);
                     case "RI" -> {
                         String[] devParts = parsedMsg[1].split(":");
@@ -282,18 +282,18 @@ public final class Connection {
     /**
      * Handles the command EI
      *
-     * @param filePath the path of the image
      * @throws IOException if an error occurred when receiving the image,
      *         or during the communication between client and server
-     * @see #receiveImage(File)
+     * @see #receiveImage(int)
      * @see Codes
      */
-    private void handleEI(String filePath) throws IOException {
-        File image = new File(filePath);
-        if (image.isFile() && image.exists()) {
-            receiveImage(image);
+    private void handleEI() throws IOException {
+        int size = input.readInt();
+        if (receiveImage(size)) {
             System.out.println("Success: Image received!");
-        } else {
+            output.writeObject(Codes.OK.toString());
+        }
+        else {
             System.out.println("Error: Unable to receive image!");
             output.writeObject(Codes.NOK.toString());
         }
@@ -363,27 +363,28 @@ public final class Connection {
     /**
      * Receives an image sent from the {@code IoTDevice}.
      *
-     * @param image the image file
-     * @throws IOException if an error occurred when receiving the image,
-     *         or during the communication between client and server
      * @see Codes
      */
-    private void receiveImage(File image) throws IOException {
-        output.writeObject(Codes.OK.toString());
+    private boolean receiveImage(int size) {
         String imageName = device.getUser() + "_" + device.getId() + ".jpg";
         File file = new File(new File("images"), imageName);
-        FileOutputStream out = new FileOutputStream(file);
-        BufferedOutputStream bos = new BufferedOutputStream(out);
-        byte[] buffer = new byte[8192];
-        int bytesLeft = (int) image.length();
-        while (bytesLeft > 0) {
-            int bytesRead = input.read(buffer);
-            bos.write(buffer, 0, bytesRead);
-            bytesLeft -= bytesRead;
+        try {
+            FileOutputStream out = new FileOutputStream(file);
+            BufferedOutputStream bos = new BufferedOutputStream(out);
+            byte[] buffer = new byte[8192];
+            int bytesLeft = size;
+            while (bytesLeft > 0) {
+                int bytesRead = input.read(buffer);
+                bos.write(buffer, 0, bytesRead);
+                bytesLeft -= bytesRead;
+            }
+            bos.flush();
+            bos.close();
+            out.close();
+        } catch (Exception e) {
+            return false;
         }
-        bos.flush();
-        bos.close();
-        out.close();
+        return true;
     }
 
     /**

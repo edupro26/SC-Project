@@ -232,13 +232,20 @@ public class DeviceHandler {
             return;
         }
         String msg = parseCommandToSend(command, args);
-        String res = this.sendReceive(msg);
-        if (res.equals(OK)) {
-            String result = sendFile(args[0]) ? "Response: " + OK + " # Image " +
-                    "sent successfully" : "Response: " + NOK + " # Error sending image";
-            System.out.println(result);
-        } else {
-            System.out.println("Response: " + res + " # Error sending image");
+        try {
+            output.writeObject(msg);
+            File image = new File(args[0]);
+            int size = (int) image.length();
+            output.writeInt(size);
+            sendImage(args[0], size);
+            String res = (String) input.readObject();
+            if (res.equals(OK)) {
+                System.out.println("Response: " + OK + " # Image sent successfully");
+            } else {
+                System.out.println("Response: " + res + " # Error sending image");
+            }
+        } catch (Exception e) {
+            System.out.println("Response: NOK # Error sending image");
         }
     }
 
@@ -311,16 +318,15 @@ public class DeviceHandler {
      * Sends a file to the {@code IoTServer}.
      *
      * @param filePath the path of the file to be sent
-     * @return true if the file was sent, false otherwise
      * @requires {@code filePath != null}
      */
-    private boolean sendFile(String filePath) {
+    private void sendImage(String filePath, int size) {
         try {
             File image = new File(filePath);
             FileInputStream in = new FileInputStream(image);
             BufferedInputStream bis = new BufferedInputStream(in);
             byte[] buffer = new byte[8192];
-            int bytesLeft = (int) image.length();
+            int bytesLeft = size;
             while (bytesLeft > 0) {
                 int bytesRead = bis.read(buffer);
                 output.write(buffer, 0, bytesRead);
@@ -329,11 +335,9 @@ public class DeviceHandler {
             output.flush();
             bis.close();
             in.close();
-            return true;
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
-        return false;
     }
 
     /**
