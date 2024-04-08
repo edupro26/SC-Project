@@ -320,6 +320,10 @@ public final class Storage {
         return null;
     }
 
+    public List<Domain> getDeviceDomains(Device device) {
+        return devices.get(device);
+    }
+
     /**
      * Returns a {@code Domain} from the list {@link #domains}
      * of this storage that matches the name given.
