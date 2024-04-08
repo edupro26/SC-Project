@@ -48,6 +48,9 @@ build/
 ### Image Files ###
 /**/*.jpg
 
+### Data Files ###
+/**/*.csv
+/**/*.txt
 
 ### Keys related files ###
 /keystore.**
