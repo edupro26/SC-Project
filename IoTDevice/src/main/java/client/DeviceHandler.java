@@ -9,6 +9,9 @@ import java.io.BufferedOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
@@ -233,16 +236,20 @@ public class DeviceHandler {
         }
         String msg = parseCommandToSend(command, args);
         try {
-            output.writeObject(msg);
-            File image = new File(args[0]);
-            int size = (int) image.length();
-            output.writeInt(size);
-            sendImage(args[0], size);
-            String res = (String) input.readObject();
-            if (res.equals(OK)) {
-                System.out.println("Response: " + OK + " # Image sent successfully");
+            Path imagePath = Paths.get(args[0]);
+            if (Files.exists(imagePath)) {
+                output.writeObject(msg);
+                int size = (int) new File(args[0]).length();
+                output.writeInt(size);
+                sendImage(args[0], size);
+                String res = (String) input.readObject();
+                if (res.equals(OK)) {
+                    System.out.println("Response: " + OK + " # Image sent successfully");
+                } else {
+                    System.out.println("Response: " + res + " # Error sending image");
+                }
             } else {
-                System.out.println("Response: " + res + " # Error sending image");
+                System.out.println("Response: NOK # Image does not exist");
             }
         } catch (Exception e) {
             System.out.println("Response: NOK # Error sending image");
