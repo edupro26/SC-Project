@@ -12,6 +12,8 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.PublicKey;
+import javax.crypto.SecretKey;
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
@@ -153,11 +155,13 @@ public class DeviceHandler {
      * @requires {@code args != null && command != null}
      */
     protected void sendReceiveADD(String[] args, String command) {
-        if (args.length != 2) {
-            System.out.println("Usage: ADD <user1> <dm>");
+        if (args.length != 3) {
+            System.out.println("Usage: ADD <user1> <dm> <password-domain>");
             return;
         }
         String msg = parseCommandToSend(command, args);
+
+        // TODO: Handle first response
         String res = this.sendReceive(msg);
         switch (res) {
             case OK -> System.out.println("Response: "
@@ -170,6 +174,21 @@ public class DeviceHandler {
                     + " # This user does not have permissions");
             default -> System.out.println("Response: NOK # Error adding user");
         }
+
+        PublicKey pk = Encryption.findPublicKeyOnTrustStore(args[0]);
+
+        if (pk == null) {
+            String res2 = this.sendReceive("NO_PK");
+        }
+
+        String keyEncFilename = args[1] + "_" + args[0] + ".key.enc";
+
+        Encryption.encryptKeyWithRSA(Encryption.generateKey(args[2]), pk, keyEncFilename);
+
+        File keyEncFile = new File(keyEncFilename);
+
+        sendImage(keyEncFilename, (int) keyEncFile.length());
+
     }
 
     /**
@@ -186,6 +205,7 @@ public class DeviceHandler {
             return;
         }
         String msg = parseCommandToSend(command, args);
+
         String res = this.sendReceive(msg);
         switch (res) {
             case OK -> System.out.println("Response: "

@@ -177,7 +177,7 @@ public class IoTDevice {
     private static void printMenu() {
         System.out.println("""
                 CREATE <dm>
-                ADD <user1> <dm>
+                ADD <user1> <dm> <password-domain>
                 RD <dm>
                 ET <float>
                 EI <filename.jpg>
