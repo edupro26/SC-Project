@@ -187,7 +187,7 @@ public class DeviceHandler {
 
         File keyEncFile = new File(keyEncFilename);
 
-        sendImage(keyEncFilename, (int) keyEncFile.length());
+        sendFile(keyEncFilename, (int) keyEncFile.length());
 
     }
 
@@ -288,7 +288,7 @@ public class DeviceHandler {
                 output.writeObject(msg);
                 int size = (int) new File(args[0]).length();
                 output.writeInt(size);
-                sendImage(args[0], size);
+                sendFile(args[0], size);
                 String res = (String) input.readObject();
                 if (res.equals(OK)) {
                     System.out.println("Response: " + OK + " # Image sent successfully");
@@ -374,10 +374,10 @@ public class DeviceHandler {
      * @param filePath the path of the file to be sent
      * @requires {@code filePath != null}
      */
-    private void sendImage(String filePath, int size) {
+    private void sendFile(String filePath, int size) {
         try {
-            File image = new File(filePath);
-            FileInputStream in = new FileInputStream(image);
+            File file = new File(filePath);
+            FileInputStream in = new FileInputStream(file);
             BufferedInputStream bis = new BufferedInputStream(in);
             byte[] buffer = new byte[8192];
             int bytesLeft = size;
