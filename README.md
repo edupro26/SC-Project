@@ -93,11 +93,11 @@ Para compilar e executar o projeto, siga os passos abaixo:
 
 2. Dentro do diretório `out`, executar o seguinte comando para iniciar o servidor
 
-         $ java -jar IoTServer.jar <port>
+         $ java -jar IoTServer.jar <port> <password-cifra> <keystore> <password-keystore> <2FA-APIKey>
 
 3. Dentro do diretório `out`, executar o seguinte comando para iniciar o cliente
 
-         $ java -jar IoTDevice.jar <IP/hostname>[:Port] <dev-id> <user-id>
+         $ java -jar IoTDevice.jar <IP/hostname>[:Port] <truststore> <keystore> <passwordkeystore> <dev-id> <user-id>
 
 Caso pertenda apagar a pasta `out` pode executar o script `clean.sh`.
 
