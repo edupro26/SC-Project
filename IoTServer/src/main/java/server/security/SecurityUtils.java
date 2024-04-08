@@ -9,6 +9,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.security.AlgorithmParameters;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Scanner;
@@ -17,6 +18,13 @@ public final class SecurityUtils {
     private static final String API_URL = "https://lmpinto.eu.pythonanywhere.com/2FA";
     private static HttpClient client = HttpClient.newHttpClient();
 
+    // TODO: Make salt secure
+    private static final byte[] salt = { (byte) 0xc9, (byte) 0x36, (byte) 0x78, (byte) 0x99, (byte) 0x52, (byte) 0x3e, (byte) 0xea, (byte) 0xf2 };
+
+    private static final int ITERATION_COUNT = 20;
+
+    private static final File PARAMS_FILE = new File("params.txt");
+
     /**
      * Generates a symmetric key given a cipher-password.
      *
@@ -24,10 +32,9 @@ public final class SecurityUtils {
      * @return the generated key
      */
     public static SecretKey generateKey(String cipherPassword) {
-        // TODO: Make salt secure
-        byte[] salt = { (byte) 0xc9, (byte) 0x36, (byte) 0x78, (byte) 0x99, (byte) 0x52, (byte) 0x3e, (byte) 0xea, (byte) 0xf2 };
 
-        PBEKeySpec keySpec = new PBEKeySpec(cipherPassword.toCharArray(), salt, 20);
+
+        PBEKeySpec keySpec = new PBEKeySpec(cipherPassword.toCharArray(), salt, ITERATION_COUNT);
         try {
             SecretKeyFactory kf = SecretKeyFactory.getInstance("PBEWithHmacSHA256AndAES_128");
             return kf.generateSecret(keySpec);
@@ -43,32 +50,33 @@ public final class SecurityUtils {
 
     public static void encryptDataIntoFile(String data, File file, SecretKey key) {
         try {
-            // Create a Cipher instance and initialize it for encryption using the provided key.
             Cipher cipher = Cipher.getInstance("PBEWithHmacSHA256AndAES_128");
             cipher.init(Cipher.ENCRYPT_MODE, key);
 
-            // Convert the plaintext data to a byte array.
             byte[] inputBytes = data.getBytes();
 
-            // Set up a FileOutputStream to write the encrypted data to a file.
             try (FileOutputStream fos = new FileOutputStream(file);
                  CipherOutputStream cos = new CipherOutputStream(fos, cipher)) {
-                // Write the encrypted data to the file.
+
                 cos.write(inputBytes);
             }
+
+            saveParams(cipher.getParameters().getEncoded());
+
+
         } catch (Exception e) {
-            // Handle exceptions such as NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IOException
             e.printStackTrace();
         }
+
     }
 
     public static String decryptDataFromFile(File file, SecretKey key) {
         try {
-            // Create a Cipher instance and initialize it for decryption using the provided key.
+            AlgorithmParameters p = AlgorithmParameters.getInstance("PBEWithHmacSHA256AndAES_128");
+            p.init(readParams());
             Cipher cipher = Cipher.getInstance("PBEWithHmacSHA256AndAES_128");
-            cipher.init(Cipher.DECRYPT_MODE, key);
+            cipher.init(Cipher.DECRYPT_MODE, key, p);
 
-            // Set up a FileInputStream to read the encrypted data from the file.
             try (FileInputStream fis = new FileInputStream(file);
                  CipherInputStream cis = new CipherInputStream(fis, cipher);
                  Scanner scanner = new Scanner(cis)) {
@@ -76,7 +84,7 @@ public final class SecurityUtils {
                 return scanner.useDelimiter("\\A").next();
             }
         } catch (Exception e) {
-            // Handle exceptions such as NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IOException
+
             e.printStackTrace();
             return null;
         }
