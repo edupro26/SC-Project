@@ -14,6 +14,7 @@ import java.io.BufferedOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Represents a {@code IoTDevice} connection to the {@code IoTServer}.
@@ -178,6 +179,7 @@ public final class Connection {
                     case "CREATE" -> handleCREATE(parsedMsg[1]);
                     case "ADD" -> handleADD(parsedMsg[1], parsedMsg[2]);
                     case "RD" -> handleRD(parsedMsg[1]);
+                    case "MYDOMAINS" -> handleMYDOMAINS();
                     case "ET" -> handleET(parsedMsg[1]);
                     case "EI" -> handleEI();
                     case "RT" -> handleRT(parsedMsg[1]);
@@ -255,6 +257,27 @@ public final class Connection {
         result = result.equals(Codes.OK.toString()) ?
                 "Success: Device registered!" : "Error: Unable to register device!";
         System.out.println(result);
+    }
+
+    /**
+     * Handles the command MYDOMAINS
+     *
+     * @throws IOException if an error occurred during the
+     *          communication between client and server
+     */
+    private void handleMYDOMAINS() throws IOException {
+        List<Domain> domains = srvStorage.getDeviceDomains(this.device);
+        if (!domains.isEmpty()) {
+            output.writeObject(Codes.OK.toString());
+            StringBuilder sb = new StringBuilder("Domains:\n");
+            for (Domain domain : domains)
+                sb.append(domain.toString()).append("\n");
+            output.writeObject(sb.toString());
+            System.out.println("Success: Domains sent!");
+        } else {
+            output.writeObject(Codes.NOK.toString());
+            System.out.println("Error: Device not registered!");
+        }
     }
 
     /**

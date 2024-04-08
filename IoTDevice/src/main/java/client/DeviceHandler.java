@@ -199,6 +199,33 @@ public class DeviceHandler {
     }
 
     /**
+     * Sends a MYDOMAINS request to the {@code IoTServer}
+     * and handles the response.
+     *
+     * @param args the args of the command. For this command
+     *              {@code args} is supposed to be null
+     * @param command the command in a string format
+     */
+    protected void sendReceiveMYDOMAINS(String[] args, String command) {
+        if (args.length != 0) {
+            System.out.println("Usage: MYDOMAINS");
+            return;
+        }
+        String msg = parseCommandToSend(command, args);
+        String res = this.sendReceive(msg);
+        if (res.equals(OK)) {
+            System.out.println("Response: " + OK + " # Printing domains");
+            try {
+                System.out.println((String) input.readObject());
+            } catch (Exception e) {
+                System.out.println("Response: NOK # Error printing domains");
+            }
+        } else {
+            System.out.println("Response: " + NOK + " # Device not registered");
+        }
+    }
+
+    /**
      * Sends an ET request to the {@code IoTServer}
      * and handles the response.
      *

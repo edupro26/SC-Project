@@ -201,6 +201,7 @@ public class IoTDevice {
             case "CREATE" -> handler.sendReceiveCREATE(args, command);
             case "ADD" -> handler.sendReceiveADD(args, command);
             case "RD" -> handler.sendReceiveRD(args, command);
+            case "MYDOMAINS" -> handler.sendReceiveMYDOMAINS(args, command);
             case "ET" -> handler.sendReceiveET(args, command);
             case "EI" -> handler.sendReceiveEI(args, command);
             case "RT" -> handler.sendReceiveRT(args, command);
