@@ -369,6 +369,10 @@ public final class Storage {
          */
         private static final String SERVER_FILES = "server-files";
         private static final String TEMPERATURES = "temperatures";
+
+        private static final String USERS_PUB_KEYS_DIR = "server-files/users_pub_keys";
+        private static final String DOMAIN_KEYS_DIR = "server-files/domain_keys";
+
         private static final String IMAGES = "images";
 
         /**
@@ -523,6 +527,10 @@ public final class Storage {
             if (!temps.isDirectory()) temps.mkdir();
             File images = new File(IMAGES);
             if (!images.isDirectory()) images.mkdir();
+            File usersPubKeys = new File(USERS_PUB_KEYS_DIR);
+            if (!usersPubKeys.isDirectory()) usersPubKeys.mkdir();
+            File domainKeys = new File(DOMAIN_KEYS_DIR);
+            if (!domainKeys.isDirectory()) domainKeys.mkdir();
         }
 
     }
