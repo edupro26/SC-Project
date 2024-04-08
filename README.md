@@ -126,5 +126,11 @@ keytool -exportcert -alias IoTServerKeyPair -file certServer.cer -keystore keyst
 Comando para importar chave pública para truststore do cliente:
 
 ```bash
-keytool -importcert -alias IoTServerKeyPair -file certServer.cer -keystore truststore.client
+keytool -importcert -alias IoTServerKeyPair -file certServer.cer -keystore truststore.userId
+```
+
+Comando para gerar chave assimétrica e armazenar no keystore do cliente:
+
+```bash
+keytool -genkeypair -alias userId -keyalg RSA -keysize 2048 -keystore keystore.userId
 ```
