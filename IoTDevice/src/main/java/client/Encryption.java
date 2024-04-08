@@ -4,12 +4,12 @@ import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.*;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
 import java.security.spec.InvalidKeySpecException;
 
 public class Encryption {
@@ -101,6 +101,29 @@ public class Encryption {
         } catch (Exception e) {
             e.printStackTrace();
             return null;
+        }
+    }
+
+    public static void storePubKeyOnTrustStore(File pubKeyFile, String alias) {
+        try {
+            KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            FileInputStream tsFis = new FileInputStream(System.getProperty("javax.net.ssl.trustStore"));
+            trustStore.load(tsFis, System.getProperty("javax.net.ssl.trustStorePassword").toCharArray());
+            tsFis.close();
+
+            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            InputStream certStream = new FileInputStream(pubKeyFile);
+            Certificate cert = cf.generateCertificate(certStream);
+            certStream.close();
+
+            trustStore.setCertificateEntry(alias, cert);
+
+            FileOutputStream tsFos = new FileOutputStream(System.getProperty("javax.net.ssl.trustStore"));
+            trustStore.store(tsFos, System.getProperty("javax.net.ssl.trustStorePassword").toCharArray());
+            tsFos.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }
