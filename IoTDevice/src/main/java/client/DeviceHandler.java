@@ -177,8 +177,26 @@ public class DeviceHandler {
 
         PublicKey pk = Encryption.findPublicKeyOnTrustStore(args[0]);
 
-        if (pk == null) {
-            String res2 = this.sendReceive("NO_PK");
+        try {
+
+            if (pk == null) {
+                output.writeObject("NO_PK");
+                String findPkRes = (String) input.readObject();
+                if (findPkRes.equals("NOK")) {
+                    System.out.println("Response: NOK # Error adding user. Public key not found on the server.");
+                    return;
+                }
+                output.writeObject("WAITING_PK");
+                receiveFile("server-output/" + args[0] + ".cer");
+                Encryption.storePubKeyOnTrustStore(new File("server-output/" + args[0] + ".cer"), args[0]);
+
+            } else {
+                String res2 = this.sendReceive("PK");
+            }
+
+        } catch (Exception e) {
+            System.out.println("Response: NOK # Error adding user");
+            return;
         }
 
         String keyEncFilename = args[1] + "_" + args[0] + ".key.enc";
@@ -188,6 +206,16 @@ public class DeviceHandler {
         File keyEncFile = new File(keyEncFilename);
 
         sendFile(keyEncFilename, (int) keyEncFile.length());
+
+        try {
+
+            String res3 = (String) input.readObject();
+
+            System.out.println("Response: " + res3 + " # Key sent successfully");
+
+        } catch (Exception e) {
+            System.out.println("Response: NOK # Error adding user");
+        }
 
     }
 

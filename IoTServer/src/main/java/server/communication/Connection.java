@@ -233,13 +233,59 @@ public final class Connection {
      * @see Codes
      */
     private void handleADD(String u, String d) throws IOException {
-        User user = srvStorage.getUser(u);
-        Domain domain = srvStorage.getDomain(d);
-        String result = srvStorage.addUserToDomain(this.devUser, user, domain);
-        output.writeObject(result);
-        result = result.equals(Codes.OK.toString()) ?
-                "Success: User added!" : "Error: Unable to add user!";
-        System.out.println(result);
+        try {
+            User user = srvStorage.getUser(u);
+            if (user == null) {
+                output.writeObject(Codes.NOK.toString());
+                return;
+            }
+            Domain domain = srvStorage.getDomain(d);
+            if (domain == null) {
+                output.writeObject(Codes.NODM.toString());
+                return;
+            }
+            if (!domain.getOwner().equals(devUser)) {
+                output.writeObject(Codes.NOPERM.toString());
+                return;
+            }
+
+            output.writeObject(Codes.OK.toString());
+
+            String hasPK = (String) input.readObject();
+            if (hasPK.equals("NO_PK")) {
+                File file = new File("server-files/users_pub_keys/" + u + ".cer");
+                if (file.isFile() && file.exists()) {
+                    output.writeObject("SENDING_KEY");
+                    input.readObject();
+                    sendFile(file);
+                } else {
+                    output.writeObject("NOK");
+                    return;
+                }
+            } else {
+                output.writeObject("WAITING_KEY");
+            }
+
+            int size = input.readInt();
+            String path = "server-files/domain_keys" + d + "." + u + ".key.cif";
+
+            if (receiveFile(size, path)) {
+                System.out.println("Success: Key received!");
+                output.writeObject(Codes.OK.toString());
+            } else {
+                System.out.println("Error: Unable to receive key!");
+                output.writeObject(Codes.NOK.toString());
+                return;
+            }
+
+            String result = srvStorage.addUserToDomain(this.devUser, user, domain);
+            output.writeObject(result);
+            result = result.equals(Codes.OK.toString()) ?
+                    "Success: User added!" : "Error: Unable to add user!";
+            System.out.println(result);
+        } catch (Exception e) {
+            output.writeObject(Codes.NOK.toString());
+        }
     }
 
     /**
@@ -391,6 +437,34 @@ public final class Connection {
     private boolean receiveImage(int size) {
         String imageName = device.getUser() + "_" + device.getId() + ".jpg";
         File file = new File(new File("images"), imageName);
+        try {
+            FileOutputStream out = new FileOutputStream(file);
+            BufferedOutputStream bos = new BufferedOutputStream(out);
+            byte[] buffer = new byte[8192];
+            int bytesLeft = size;
+            while (bytesLeft > 0) {
+                int bytesRead = input.read(buffer);
+                bos.write(buffer, 0, bytesRead);
+                bytesLeft -= bytesRead;
+            }
+            bos.flush();
+            bos.close();
+            out.close();
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Receives a file and stores it with the given name and path.
+     *
+     * @param size the size of the file to receive
+     * @param path the path to store the file
+     *
+     */
+    private boolean receiveFile(int size, String path) {
+        File file = new File(path);
         try {
             FileOutputStream out = new FileOutputStream(file);
             BufferedOutputStream bos = new BufferedOutputStream(out);
