@@ -52,6 +52,8 @@ public class IoTDevice {
         System.out.println("Keystore: " + keystore);
 
         System.setProperty("javax.net.ssl.trustStore", truststore);
+        // FIXME Dont use the same password for truststore and keystore
+        System.setProperty("javax.net.ssl.trustStorePassword", passwordKeystore);
         System.setProperty("javax.net.ssl.keyStore", keystore);
         System.setProperty("javax.net.ssl.keyStorePassword", passwordKeystore);
 
