@@ -56,6 +56,23 @@ public class Encryption {
         }
     }
 
+    public static SecretKey decryptKeyWithRSA(File keyFile, PublicKey pubKey) {
+        try {
+            Cipher cipher = Cipher.getInstance("RSA");
+            cipher.init(Cipher.UNWRAP_MODE, pubKey);
+
+            byte[] wrappedKey = new byte[(int) keyFile.length()];
+            try (FileInputStream fis = new FileInputStream(keyFile)) {
+                fis.read(wrappedKey);
+            }
+
+            return (SecretKey) cipher.unwrap(wrappedKey, "AES", Cipher.SECRET_KEY);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     public static void saveParams(byte[] params, File paramsFile) {
         try (FileOutputStream fos = new FileOutputStream(paramsFile)) {
             fos.write(params);
