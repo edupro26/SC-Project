@@ -105,4 +105,23 @@ public final class SecurityUtils {
 
         return true;
     }
+
+    public static void saveParams(byte[] params) {
+        try (FileOutputStream fos = new FileOutputStream(PARAMS_FILE)) {
+            fos.write(params);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static byte[] readParams() {
+        try (FileInputStream fis = new FileInputStream(PARAMS_FILE)) {
+            byte[] params = new byte[(int) PARAMS_FILE.length()];
+            fis.read(params);
+            return params;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 }
