@@ -7,6 +7,7 @@ import javax.crypto.spec.PBEKeySpec;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
@@ -86,6 +87,17 @@ public class Encryption {
             byte[] params = new byte[(int) paramsFile.length()];
             fis.read(params);
             return params;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static PublicKey findPublicKeyOnTrustStore(String alias) {
+        try {
+            KeyStore ks = KeyStore.getInstance("JKS");
+            ks.load(new FileInputStream(System.getProperty("javax.net.ssl.trustStore")), System.getProperty("javax.net.ssl.trustStorePassword").toCharArray());
+            return ks.getCertificate(alias).getPublicKey();
         } catch (Exception e) {
             e.printStackTrace();
             return null;
