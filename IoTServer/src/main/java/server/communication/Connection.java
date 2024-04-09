@@ -340,15 +340,15 @@ public final class Connection {
      */
     private void handleET(String t) throws IOException {
         try {
-            device.setLastTemp(Float.parseFloat(t));
-            String result = srvStorage.updateLastTemp(device);
-            output.writeObject(result);
-            result = result.equals(Codes.OK.toString()) ?
+            Float temperature = Float.parseFloat(t);
+            String res = srvStorage.updateLastTemp(device, temperature);
+            String result = res.equals(Codes.OK.toString()) ?
                     "Success: Temperature received!" : "Error: Unable to receive temperature!";
             System.out.println(result);
+            output.writeObject(res);
         } catch (Exception e) {
-            output.writeObject(Codes.NOK.toString());
             System.out.println("Error: Unable to receive temperature!");
+            output.writeObject(Codes.NOK.toString());
         }
     }
 

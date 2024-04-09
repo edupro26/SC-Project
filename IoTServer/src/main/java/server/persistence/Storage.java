@@ -124,10 +124,10 @@ public final class Storage {
         if (getDomain(name) != null) return Codes.NOK.toString();
         try {
             Domain domain = new Domain(name, owner);
-            domains.add(domain);
             BufferedWriter writer = new BufferedWriter(new FileWriter(DOMAINS, true));
             writer.write(domain + "\n");
             writer.close();
+            domains.add(domain);
             return Codes.OK.toString();
         } catch (IOException e) {
             System.out.println(e.getMessage());
@@ -166,16 +166,17 @@ public final class Storage {
     }
 
     /**
-     * Updates the devices.csv file located in the server-files folder with
-     * the last temperature sent from the {@code Device} given.
+     * Saves the last temperature sent from the given {@code Device} and
+     * updates the devices.csv file located in the server-files folder.
      *
      * @param device the {@code Device}
-     * @return "OK" if the method concluded with success, "NOK" otherwise.
+     * @param temperature the last temperature sent
+     * @return "OK" if the method concluded with success, "NOK" otherwise
      * @see FileLoader
      * @see Codes
-     * @requires {@code device != null}
+     * @requires {@code device != null && temperature != null}
      */
-    public synchronized String updateLastTemp(Device device) {
+    public synchronized String updateLastTemp(Device device, Float temperature) {
         try (BufferedReader in = new BufferedReader(new FileReader(DEVICES))) {
             StringBuilder file = new StringBuilder();
             String line;
@@ -183,7 +184,7 @@ public final class Storage {
                 String[] temp = line.split(",");
                 if (temp[0].equals(device.toString())) {
                     file.append(device).append(",")
-                            .append(device.getLastTemp()).append("\n");
+                            .append(temperature).append("\n");
                 } else {
                     file.append(line).append("\n");
                 }
@@ -191,6 +192,7 @@ public final class Storage {
             BufferedWriter out = new BufferedWriter(new FileWriter(DEVICES, false));
             out.write(file.toString());
             out.close();
+            device.setLastTemp(temperature);
         } catch (IOException e) {
             System.out.println(e.getMessage());
             return Codes.NOK.toString();
@@ -247,9 +249,11 @@ public final class Storage {
         if (userToAdd == null) return Codes.NOUSER.toString();
         if (!domain.getOwner().equals(user)) return Codes.NOPERM.toString();
         if (domain.getUsers().contains(userToAdd)) return Codes.NOK.toString();
-
-        domain.addUser(userToAdd);
-        return updateDomainInFile(domain) ? Codes.OK.toString() : Codes.NOK.toString();
+        String res = updateDomainInFile(domain) ? Codes.OK.toString() : Codes.NOK.toString();
+        if (res.equals(Codes.OK.toString())) {
+            domain.addUser(userToAdd);
+        }
+        return res;
     }
 
     /**
@@ -276,10 +280,12 @@ public final class Storage {
             if (!owner.getName().equals(user.getName()))
                 return Codes.NOPERM.toString();
         }
-
-        domain.addDevice(device);
-        devices.get(device).add(domain);
-        return updateDomainInFile(domain) ? Codes.OK.toString() : Codes.NOK.toString();
+        String res = updateDomainInFile(domain) ? Codes.OK.toString() : Codes.NOK.toString();
+        if (res.equals(Codes.OK.toString())) {
+            domain.addDevice(device);
+            devices.get(device).add(domain);
+        }
+        return res;
     }
 
     /**
@@ -384,7 +390,6 @@ public final class Storage {
     public HashMap<Device, List<Domain>> getDevices() {
         return devices;
     }
-
 
     /**
      * Private class used when constructing a new {@code Storage}.
