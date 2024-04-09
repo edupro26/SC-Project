@@ -475,6 +475,7 @@ public final class Connection {
     /**
      * Sends a file to the {@code IoTDevice}.
      *
+     * @param size the size in bytes of the file to send
      * @param file the file to send
      */
     private boolean sendFile(File file, int size) {
