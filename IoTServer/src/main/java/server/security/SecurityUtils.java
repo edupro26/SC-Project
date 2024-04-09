@@ -2,15 +2,12 @@ package server.security;
 
 import javax.crypto.*;
 import javax.crypto.spec.PBEKeySpec;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.*;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.security.AlgorithmParameters;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Scanner;
 
@@ -24,6 +21,8 @@ public final class SecurityUtils {
     private static final int ITERATION_COUNT = 20;
 
     private static final File PARAMS_FILE = new File("params.txt");
+
+    private static final String SERVER_KEYPAIR_ALIAS = "ServerKeyPair";
 
     /**
      * Generates a symmetric key given a cipher-password.
@@ -127,6 +126,79 @@ public final class SecurityUtils {
             byte[] params = new byte[(int) PARAMS_FILE.length()];
             fis.read(params);
             return params;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static PublicKey getPublicKey(String alias) {
+        try {
+            KeyStore ks = KeyStore.getInstance("JKS");
+            ks.load(new FileInputStream(System.getProperty("javax.net.ssl.keyStore")), System.getProperty("javax.net.ssl.keyStorePassword").toCharArray());
+            return ks.getCertificate(alias).getPublicKey();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static PrivateKey getPrivateKey(String alias) {
+        try {
+            KeyStore ks = KeyStore.getInstance("JKS");
+            ks.load(new FileInputStream(System.getProperty("javax.net.ssl.keyStore")), System.getProperty("javax.net.ssl.keyStorePassword").toCharArray());
+            return (PrivateKey) ks.getKey(alias, System.getProperty("javax.net.ssl.keyStorePassword").toCharArray());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /**
+     * Signs a file with the server's private key.
+     *
+     * @param file the file to be signed
+     * @param data the data to be signed
+     */
+    public static void signFile(File file, String data) {
+        try {
+            FileOutputStream fos = new FileOutputStream(file);
+            ObjectOutputStream oos = new ObjectOutputStream(fos);
+            PrivateKey privateKey = getPrivateKey(SERVER_KEYPAIR_ALIAS);
+            Signature signature = Signature.getInstance("SHA256withRSA");
+            signature.initSign(privateKey);
+            byte buffer[] = data.getBytes();
+            signature.update(buffer);
+            oos.writeObject(data);
+            oos.writeObject(signature.sign());
+            fos.close();
+            oos.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Verifies the signature of a file.
+     *
+     * @param file the file to be verified
+     * @return the data if the signature is valid, null otherwise
+     */
+    public static String verifySignature(File file) {
+        try {
+            FileInputStream fis = new FileInputStream(file);
+            ObjectInputStream ois = new ObjectInputStream(fis);
+            String data = (String) ois.readObject();
+            byte[] signature = (byte[]) ois.readObject();
+            PublicKey publicKey = getPublicKey(SERVER_KEYPAIR_ALIAS);
+            Signature sig = Signature.getInstance("SHA256withRSA");
+            sig.initVerify(publicKey);
+            sig.update(data.getBytes());
+            if (sig.verify(signature)) {
+                return data;
+            } else {
+                return null;
+            }
         } catch (Exception e) {
             e.printStackTrace();
             return null;
