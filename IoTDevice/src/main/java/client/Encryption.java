@@ -5,9 +5,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import java.io.*;
-import java.security.KeyStore;
-import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
+import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.spec.InvalidKeySpecException;
@@ -57,17 +55,17 @@ public class Encryption {
         }
     }
 
-    public static SecretKey decryptKeyWithRSA(File keyFile, PublicKey pubKey) {
+    public static Key decryptKeyWithRSA(File keyFile, PrivateKey privateKey) {
         try {
             Cipher cipher = Cipher.getInstance("RSA");
-            cipher.init(Cipher.UNWRAP_MODE, pubKey);
+            cipher.init(Cipher.UNWRAP_MODE, privateKey);
 
             byte[] wrappedKey = new byte[(int) keyFile.length()];
             try (FileInputStream fis = new FileInputStream(keyFile)) {
                 fis.read(wrappedKey);
             }
 
-            return (SecretKey) cipher.unwrap(wrappedKey, "AES", Cipher.SECRET_KEY);
+            return cipher.unwrap(wrappedKey, "PBEWithHmacSHA256AndAES_128", Cipher.SECRET_KEY);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
