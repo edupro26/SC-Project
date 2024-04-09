@@ -350,8 +350,11 @@ public class DeviceHandler {
         switch (res) {
             case OK -> {
                 int received = receiveFile(name);
-                System.out.println("Response: " + res + ", " + received
-                        + " (long), followed by " + received + " bytes of data");
+                String result = received > 0
+                        ? "Response: " + res + ", " + received
+                        + " (long), followed by " + received + " bytes of data"
+                        : "Response: NOK # Error getting image";
+                System.out.println(result);
             }
             case NODM -> System.out.println("Response: " + res
                     + " # Domain does not exist");
@@ -383,8 +386,11 @@ public class DeviceHandler {
         switch (res) {
             case OK -> {
                 int received = receiveFile(name);
-                System.out.println("Response: " + res + ", " + received
-                        + " (long), followed by " + received + " bytes of data");
+                String result = received > 0
+                        ? "Response: " + res + ", " + received
+                        + " (long), followed by " + received + " bytes of data"
+                        : "Response: NOK # Error getting image";
+                System.out.println(result);
             }
             case NODATA -> System.out.println("Response: " + res
                     + " # No image found for this device");
@@ -433,8 +439,9 @@ public class DeviceHandler {
     private int receiveFile(String filePath) {
         File outputFolder = new File(SERVER_OUT);
         if (!outputFolder.isDirectory()) outputFolder.mkdir();
+        int size;
         try {
-            int size = input.readInt();
+            size = input.readInt();
             FileOutputStream out = new FileOutputStream(filePath);
             BufferedOutputStream bos = new BufferedOutputStream(out);
             byte[] buffer = new byte[8192];
@@ -447,11 +454,10 @@ public class DeviceHandler {
             bos.flush();
             bos.close();
             out.close();
-            return size;
         } catch (IOException e) {
-            System.out.println(e.getMessage());
+            return -1;
         }
-        return -1;
+        return size;
     }
 
     /**
