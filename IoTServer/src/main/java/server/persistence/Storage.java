@@ -199,6 +199,34 @@ public final class Storage {
     }
 
     /**
+     * Returns the path of the file containing the temperatures sent
+     * by the devices of the given domain. Creates if it does not
+     * already exist or updates it with the most recent temperatures
+     *
+     * @param domain the {@code Domain}
+     * @return the path of the file containing the temperatures, null
+     *          if there is no data or in case of error
+     * @requires {@code domain != null}
+     */
+    public synchronized String domainTemperaturesFile(Domain domain) {
+        String path = "temperatures/" + domain.getName() + ".txt";
+        try {
+            String temperatures = domain.getDomainTemperatures();
+            if (!temperatures.isEmpty()) {
+                File file = new File(path);
+                if (!file.exists()) file.createNewFile();
+                BufferedWriter out = new BufferedWriter(new FileWriter(file, false));
+                out.write(temperatures);
+                out.close();
+                return path;
+            }
+        } catch (IOException e) {
+            return null;
+        }
+        return null;
+    }
+
+    /**
      * Adds a given {@code User} to a given {@code Domain} of this storage.
      * It also updates the content of the {@code Domain} in the domains.csv
      * file located in the server-files folder.

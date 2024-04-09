@@ -253,13 +253,14 @@ public final class Connection {
 
             String hasPK = (String) input.readObject();
             if (hasPK.equals("NO_PK")) {
-                File file = new File("server-files/users_pub_keys/" + u + ".cer");
+                String path = "server-files/users_pub_keys/" + u + ".cer";
+                File file = new File(path);
                 if (file.isFile() && file.exists()) {
                     output.writeObject("SENDING_KEY");
                     input.readObject();
                     output.writeObject(Codes.OK.toString());
                     output.writeInt((int) file.length());
-                    sendFile(file, (int) file.length());
+                    sendFile(path, (int) file.length());
                     System.out.println("Success: File send successfully!");
                 } else {
                     output.writeObject("NOK");
@@ -379,7 +380,7 @@ public final class Connection {
      * @param d the name of the {@code Domain}
      * @throws IOException if an error occurred when sending the file,
      *         or during the communication between client and server
-     * @see #sendFile(File, int) 
+     * @see #sendFile(String, int)
      * @see Codes
      */
     private void handleRT(String d) throws IOException {
@@ -392,18 +393,18 @@ public final class Connection {
             System.out.println("Error: User does not have permissions!");
             output.writeObject(Codes.NOPERM.toString());
         } else {
-            File temps = domain.getDomainTemperatures();
-            if (temps != null) {
+            String path = srvStorage.domainTemperaturesFile(domain);
+            if (path != null) {
                 output.writeObject(Codes.OK.toString());
-                int size = (int) temps.length();
+                int size = (int) new File(path).length();
                 output.writeInt(size);
-                String result = sendFile(temps, size) ?
+                String result = sendFile(path, size) ?
                         "Success: Temperatures sent successfully!"
                         : "Error: Failed to send temperatures!";
                 System.out.println(result);
             }
             else {
-                System.out.println("Error: No data found for this device!");
+                System.out.println("Error: No data found in this domain!");
                 output.writeObject(Codes.NODATA.toString());
             }
         }
@@ -416,7 +417,7 @@ public final class Connection {
      * @param id the id of the {@code Device}
      * @throws IOException if an error occurred when sending the image,
      *         or during the communication between client and server
-     * @see #sendFile(File, int) 
+     * @see #sendFile(String, int)
      * @see Codes
      */
     private void handleRI(String user, int id) throws IOException {
@@ -429,12 +430,13 @@ public final class Connection {
             output.writeObject(Codes.NOPERM.toString());
         } else {
             String name = device.getUser() + "_" + device.getId() + ".jpg";
-            File image = new File(new File("images"), name);
+            String path = "images/" + name;
+            File image = new File(path);
             if (image.isFile() && image.exists()){
                 output.writeObject(Codes.OK.toString());
                 int size = (int) image.length();
                 output.writeInt(size);
-                String result = sendFile(image, size) ?
+                String result = sendFile(path, size) ?
                         "Success: Image sent successfully!" : "Error: Failed to send image!";
                 System.out.println(result);
             } else {
@@ -475,10 +477,11 @@ public final class Connection {
     /**
      * Sends a file to the {@code IoTDevice}.
      *
+     * @param path the path of the file to send
      * @param size the size in bytes of the file to send
-     * @param file the file to send
      */
-    private boolean sendFile(File file, int size) {
+    private boolean sendFile(String path, int size) {
+        File file = new File(path);
         try {
             FileInputStream in = new FileInputStream(file);
             BufferedInputStream bis = new BufferedInputStream(in);
