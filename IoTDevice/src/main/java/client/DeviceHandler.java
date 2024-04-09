@@ -372,7 +372,7 @@ public class DeviceHandler {
      * @requires {@code args != null && command != null}
      */
     protected void sendReceiveRI(String[] args, String command) {
-        if (args.length != 1) {
+        if (args.length != 1 || !args[0].contains(":")) {
             System.out.println("Usage: RI <user-id>:<dev_id>");
             return;
         }
