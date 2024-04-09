@@ -257,7 +257,10 @@ public final class Connection {
                 if (file.isFile() && file.exists()) {
                     output.writeObject("SENDING_KEY");
                     input.readObject();
-                    sendFile(file);
+                    output.writeObject(Codes.OK.toString());
+                    output.writeInt((int) file.length());
+                    sendFile(file, (int) file.length());
+                    System.out.println("Success: File send successfully!");
                 } else {
                     output.writeObject("NOK");
                     return;
@@ -269,7 +272,7 @@ public final class Connection {
             int size = input.readInt();
             String path = "server-files/domain_keys" + d + "." + u + ".key.cif";
 
-            if (receiveFile(size, path)) {
+            if (receiveFile(path, size)) {
                 System.out.println("Success: Key received!");
                 output.writeObject(Codes.OK.toString());
             } else {
@@ -353,12 +356,14 @@ public final class Connection {
      *
      * @throws IOException if an error occurred when receiving the image,
      *         or during the communication between client and server
-     * @see #receiveImage(int)
+     * @see #receiveFile(String, int)
      * @see Codes
      */
     private void handleEI() throws IOException {
         int size = input.readInt();
-        if (receiveImage(size)) {
+        String name = device.getUser() + "_" + device.getId() + ".jpg";
+        String path = "images/" + name;
+        if (receiveFile(path, size)) {
             System.out.println("Success: Image received!");
             output.writeObject(Codes.OK.toString());
         }
@@ -374,26 +379,32 @@ public final class Connection {
      * @param d the name of the {@code Domain}
      * @throws IOException if an error occurred when sending the file,
      *         or during the communication between client and server
-     * @see #sendFile(File)
+     * @see #sendFile(File, int) 
      * @see Codes
      */
     private void handleRT(String d) throws IOException {
         Domain domain = srvStorage.getDomain(d);
         if (domain == null) {
-            output.writeObject(Codes.NODM.toString());
             System.out.println("Error: Domain does not exist!");
+            output.writeObject(Codes.NODM.toString());
         } else if (!domain.getUsers().contains(devUser) &&
                 !domain.getOwner().equals(devUser)) {
-            output.writeObject(Codes.NOPERM.toString());
             System.out.println("Error: User does not have permissions!");
+            output.writeObject(Codes.NOPERM.toString());
         } else {
-            File file = domain.getDomainTemperatures();
-            if (file == null) {
-                output.writeObject(Codes.NODATA.toString());
-                System.out.println("Error: No data found for this device!");
+            File temps = domain.getDomainTemperatures();
+            if (temps != null) {
+                output.writeObject(Codes.OK.toString());
+                int size = (int) temps.length();
+                output.writeInt(size);
+                String result = sendFile(temps, size) ?
+                        "Success: Temperatures sent successfully!"
+                        : "Error: Failed to send temperatures!";
+                System.out.println(result);
             }
             else {
-                sendFile(file);
+                System.out.println("Error: No data found for this device!");
+                output.writeObject(Codes.NODATA.toString());
             }
         }
     }
@@ -405,65 +416,42 @@ public final class Connection {
      * @param id the id of the {@code Device}
      * @throws IOException if an error occurred when sending the image,
      *         or during the communication between client and server
-     * @see #sendFile(File)
+     * @see #sendFile(File, int) 
      * @see Codes
      */
     private void handleRI(String user, int id) throws IOException {
-        Device received = new Device(user, id);
-        Device device = srvStorage.getDevice(received);
+        Device device = srvStorage.getDevice(new Device(user, id));
         if (device == null) {
-            output.writeObject(Codes.NOID.toString());
             System.out.println("Error: Device id not found!");
+            output.writeObject(Codes.NOID.toString());
         } else if (!srvStorage.hasPerm(devUser, device)) {
-            output.writeObject(Codes.NOPERM.toString());
             System.out.println("Error: User does not have permissions!");
+            output.writeObject(Codes.NOPERM.toString());
         } else {
             String name = device.getUser() + "_" + device.getId() + ".jpg";
             File image = new File(new File("images"), name);
             if (image.isFile() && image.exists()){
-                sendFile(image);
+                output.writeObject(Codes.OK.toString());
+                int size = (int) image.length();
+                output.writeInt(size);
+                String result = sendFile(image, size) ?
+                        "Success: Image sent successfully!" : "Error: Failed to send image!";
+                System.out.println(result);
             } else {
-                output.writeObject(Codes.NODATA.toString());
                 System.out.println("Error: No data found for this device!");
+                output.writeObject(Codes.NODATA.toString());
             }
         }
-    }
-
-    /**
-     * Receives an image sent from the {@code IoTDevice}.
-     *
-     * @see Codes
-     */
-    private boolean receiveImage(int size) {
-        String imageName = device.getUser() + "_" + device.getId() + ".jpg";
-        File file = new File(new File("images"), imageName);
-        try {
-            FileOutputStream out = new FileOutputStream(file);
-            BufferedOutputStream bos = new BufferedOutputStream(out);
-            byte[] buffer = new byte[8192];
-            int bytesLeft = size;
-            while (bytesLeft > 0) {
-                int bytesRead = input.read(buffer);
-                bos.write(buffer, 0, bytesRead);
-                bytesLeft -= bytesRead;
-            }
-            bos.flush();
-            bos.close();
-            out.close();
-        } catch (Exception e) {
-            return false;
-        }
-        return true;
     }
 
     /**
      * Receives a file and stores it with the given name and path.
      *
-     * @param size the size of the file to receive
+     * @param size the size in bytes of the file to receive
      * @param path the path to store the file
      *
      */
-    private boolean receiveFile(int size, String path) {
+    private boolean receiveFile(String path, int size) {
         File file = new File(path);
         try {
             FileOutputStream out = new FileOutputStream(file);
@@ -487,27 +475,27 @@ public final class Connection {
     /**
      * Sends a file to the {@code IoTDevice}.
      *
+     * @param size the size in bytes of the file to send
      * @param file the file to send
-     * @throws IOException if an error occurred when sending the file,
-     *         or during the communication between client and server
-     * @see Codes
      */
-    private void sendFile(File file) throws IOException {
-        output.writeObject(Codes.OK.toString());
-        output.writeInt((int) file.length());
-        System.out.println("Success: File send successfully!");
-        FileInputStream in = new FileInputStream(file);
-        BufferedInputStream bis = new BufferedInputStream(in);
-        byte[] buffer = new byte[8192];
-        int bytesLeft = (int) file.length();
-        while (bytesLeft > 0) {
-            int bytesRead = bis.read(buffer);
-            output.write(buffer, 0, bytesRead);
-            bytesLeft -= bytesRead;
+    private boolean sendFile(File file, int size) {
+        try {
+            FileInputStream in = new FileInputStream(file);
+            BufferedInputStream bis = new BufferedInputStream(in);
+            byte[] buffer = new byte[8192];
+            int bytesLeft = size;
+            while (bytesLeft > 0) {
+                int bytesRead = bis.read(buffer);
+                output.write(buffer, 0, bytesRead);
+                bytesLeft -= bytesRead;
+            }
+            output.flush();
+            bis.close();
+            in.close();
+        } catch (IOException e) {
+            return false;
         }
-        output.flush();
-        bis.close();
-        in.close();
+        return true;
     }
 
 }

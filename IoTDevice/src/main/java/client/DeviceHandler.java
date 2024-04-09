@@ -187,7 +187,8 @@ public class DeviceHandler {
                     return;
                 }
                 output.writeObject("WAITING_PK");
-                receiveFile("server-output/" + args[0] + ".cer");
+                int size = input.readInt();
+                receiveFile("server-output/" + args[0] + ".cer", size);
                 Encryption.storePubKeyOnTrustStore(new File("server-output/" + args[0] + ".cer"), args[0]);
 
             } else {
@@ -349,9 +350,17 @@ public class DeviceHandler {
         String name = SERVER_OUT + args[0] + ".txt";
         switch (res) {
             case OK -> {
-                int received = receiveFile(name);
-                System.out.println("Response: " + res + ", " + received
-                        + " (long), followed by " + received + " bytes of data");
+                try {
+                    int size = input.readInt();
+                    int received = receiveFile(name, size);
+                    String result = received == size
+                            ? "Response: " + res + ", " + received
+                            + " (long), followed by " + received + " bytes of data"
+                            : "Response: NOK # Error getting temperatures";
+                    System.out.println(result);
+                } catch (IOException e) {
+                    System.out.println("Response: NOK # Error getting temperatures");
+                }
             }
             case NODM -> System.out.println("Response: " + res
                     + " # Domain does not exist");
@@ -372,7 +381,7 @@ public class DeviceHandler {
      * @requires {@code args != null && command != null}
      */
     protected void sendReceiveRI(String[] args, String command) {
-        if (args.length != 1) {
+        if (args.length != 1 || !args[0].contains(":")) {
             System.out.println("Usage: RI <user-id>:<dev_id>");
             return;
         }
@@ -382,9 +391,17 @@ public class DeviceHandler {
         String name = SERVER_OUT + temp[0] + "_" + temp[1] + ".jpg";
         switch (res) {
             case OK -> {
-                int received = receiveFile(name);
-                System.out.println("Response: " + res + ", " + received
-                        + " (long), followed by " + received + " bytes of data");
+                try {
+                    int size = input.readInt();
+                    int received = receiveFile(name, size);
+                    String result = received == size
+                            ? "Response: " + res + ", " + received
+                            + " (long), followed by " + received + " bytes of data"
+                            : "Response: NOK # Error getting image";
+                    System.out.println(result);
+                } catch (IOException e) {
+                    System.out.println("Response: NOK # Error getting image");
+                }
             }
             case NODATA -> System.out.println("Response: " + res
                     + " # No image found for this device");
@@ -400,6 +417,7 @@ public class DeviceHandler {
      * Sends a file to the {@code IoTServer}.
      *
      * @param filePath the path of the file to be sent
+     * @param size the size of the file to send
      * @requires {@code filePath != null}
      */
     private void sendFile(String filePath, int size) {
@@ -427,31 +445,32 @@ public class DeviceHandler {
      * in the output folder.
      *
      * @param filePath the path where the file will be saved
+     * @param size the size of the file to receive
      * @return file size if the file was received, -1 otherwise
      * @requires {@code filePath != null}
      */
-    private int receiveFile(String filePath) {
+    private int receiveFile(String filePath, int size) {
         File outputFolder = new File(SERVER_OUT);
         if (!outputFolder.isDirectory()) outputFolder.mkdir();
+        int bytesRead = 0;
         try {
-            int size = input.readInt();
             FileOutputStream out = new FileOutputStream(filePath);
             BufferedOutputStream bos = new BufferedOutputStream(out);
             byte[] buffer = new byte[8192];
             int bytesLeft = size;
             while (bytesLeft > 0) {
-                int bytesRead = input.read(buffer);
-                bos.write(buffer, 0, bytesRead);
-                bytesLeft -= bytesRead;
+                int bytes = input.read(buffer);
+                bytesRead += bytes;
+                bos.write(buffer, 0, bytes);
+                bytesLeft -= bytes;
             }
             bos.flush();
             bos.close();
             out.close();
-            return size;
         } catch (IOException e) {
-            System.out.println(e.getMessage());
+            return -1;
         }
-        return -1;
+        return bytesRead;
     }
 
     /**
