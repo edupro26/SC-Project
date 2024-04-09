@@ -42,10 +42,10 @@ public final class Storage {
     /**
      * File paths
      */
-    private static final String INFO = "device_info.csv";
-    private static final String USERS = "server-files/users.csv";
-    private static final String DOMAINS = "server-files/domains.csv";
-    private static final String DEVICES = "server-files/devices.csv";
+    private static final String INFO = "device_info.txt";
+    private static final String USERS = "server-files/users.txt";
+    private static final String DOMAINS = "server-files/domains.txt";
+    private static final String DEVICES = "server-files/devices.txt";
 
     /**
      * Data structures
@@ -72,7 +72,7 @@ public final class Storage {
 
     /**
      * Saves the given {@code User} to the list {@link #users} of this
-     * storage. It also writes the user to a users.csv file located
+     * storage. It also writes the user to a users.txt file located
      * in the server-files folder.
      *
      * @param user the {@code User} to be saved
@@ -90,7 +90,7 @@ public final class Storage {
     /**
      * Saves the {@code Device} as the key, and a list of domains as the value,
      * to the map {@link #devices} of this storage. It also writes the device
-     * to a devices.csv file located in the server-files folder.
+     * to a devices.txt file located in the server-files folder.
      *
      * @param device the {@code Device} to be saved
      * @param domains a list of {@code Domains} where the {@code Device} is registered
@@ -109,7 +109,7 @@ public final class Storage {
     /**
      * Creates a new {@code Domain} with the {@code name} and {@code owner}
      * given and saves it the list {@link #domains} of this storage.
-     * It also writes the domain to a domains.csv file located in the
+     * It also writes the domain to a domains.txt file located in the
      * server-files folder.
      *
      * @param name the name of the {@code Domain}
@@ -136,7 +136,7 @@ public final class Storage {
     }
 
     /**
-     * Updates the domains.csv file located in the server-files
+     * Updates the domains.txt file located in the server-files
      * folder in the {@code Domain} given.
      *
      * @param domain the {@code Domain} to write in file
@@ -167,7 +167,7 @@ public final class Storage {
 
     /**
      * Saves the last temperature sent from the given {@code Device} and
-     * updates the devices.csv file located in the server-files folder.
+     * updates the devices.txt file located in the server-files folder.
      *
      * @param device the {@code Device}
      * @param temperature the last temperature sent
@@ -230,7 +230,7 @@ public final class Storage {
 
     /**
      * Adds a given {@code User} to a given {@code Domain} of this storage.
-     * It also updates the content of the {@code Domain} in the domains.csv
+     * It also updates the content of the {@code Domain} in the domains.txt
      * file located in the server-files folder.
      *
      * @param user the {@code User} of the current {@code Device}
@@ -258,7 +258,7 @@ public final class Storage {
 
     /**
      * Adds a given {@code Device} to a given {@code Domain} of this storage.
-     * It also updates the content of the {@code Domain} in the domains.csv
+     * It also updates the content of the {@code Domain} in the domains.txt
      * file located in the server-files folder.
      *
      * @param user the {@code User} of the current {@code Device}
@@ -428,9 +428,9 @@ public final class Storage {
          * If they already exist, then loads their content to the
          * data structures of this storage.
          *
-         * @param users the users.csv file
-         * @param domains the domains.csv file
-         * @param temps the devices.csv file
+         * @param users the users.txt file
+         * @param domains the domains.txt file
+         * @param temps the devices.txt file
          * @param srvStorage this storage
          * @see #loadUsers(Storage)
          * @see #loadDomains(Storage)
@@ -452,7 +452,7 @@ public final class Storage {
         }
 
         /**
-         * Loads the data from users.csv file to the list
+         * Loads the data from users.txt file to the list
          * {@link #users} of this storage
          *
          * @param srvStorage this storage
@@ -469,7 +469,7 @@ public final class Storage {
         }
 
         /**
-         * Loads the data from domains.csv file to the list
+         * Loads the data from domains.txt file to the list
          * {@link #domains} of this storage
          *
          * @param srvStorage this storage
@@ -495,7 +495,7 @@ public final class Storage {
         }
 
         /**
-         * Loads the data from devices.csv file to the map
+         * Loads the data from devices.txt file to the map
          * {@link #devices} of this storage
          *
          * @param srvStorage this storage
