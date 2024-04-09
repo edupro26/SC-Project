@@ -104,6 +104,17 @@ public class Encryption {
         }
     }
 
+    public static PrivateKey findPrivateKeyOnKeyStore(String alias) {
+        try {
+            KeyStore ks = KeyStore.getInstance("JKS");
+            ks.load(new FileInputStream(System.getProperty("javax.net.ssl.keyStore")), System.getProperty("javax.net.ssl.keyStorePassword").toCharArray());
+            return (PrivateKey) ks.getKey(alias, System.getProperty("javax.net.ssl.keyStorePassword").toCharArray());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     public static void storePubKeyOnTrustStore(File pubKeyFile, String alias) {
         try {
             KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
