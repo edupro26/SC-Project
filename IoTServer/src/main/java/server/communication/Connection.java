@@ -353,12 +353,14 @@ public final class Connection {
      *
      * @throws IOException if an error occurred when receiving the image,
      *         or during the communication between client and server
-     * @see #receiveImage(int)
+     * @see #receiveFile(int, String) 
      * @see Codes
      */
     private void handleEI() throws IOException {
         int size = input.readInt();
-        if (receiveImage(size)) {
+        String name = device.getUser() + "_" + device.getId() + ".jpg";
+        String path = "images/" + name;
+        if (receiveFile(size, path)) {
             System.out.println("Success: Image received!");
             output.writeObject(Codes.OK.toString());
         }
@@ -430,36 +432,9 @@ public final class Connection {
     }
 
     /**
-     * Receives an image sent from the {@code IoTDevice}.
-     *
-     * @see Codes
-     */
-    private boolean receiveImage(int size) {
-        String imageName = device.getUser() + "_" + device.getId() + ".jpg";
-        File file = new File(new File("images"), imageName);
-        try {
-            FileOutputStream out = new FileOutputStream(file);
-            BufferedOutputStream bos = new BufferedOutputStream(out);
-            byte[] buffer = new byte[8192];
-            int bytesLeft = size;
-            while (bytesLeft > 0) {
-                int bytesRead = input.read(buffer);
-                bos.write(buffer, 0, bytesRead);
-                bytesLeft -= bytesRead;
-            }
-            bos.flush();
-            bos.close();
-            out.close();
-        } catch (Exception e) {
-            return false;
-        }
-        return true;
-    }
-
-    /**
      * Receives a file and stores it with the given name and path.
      *
-     * @param size the size of the file to receive
+     * @param size the size in bytes of the file to receive
      * @param path the path to store the file
      *
      */
