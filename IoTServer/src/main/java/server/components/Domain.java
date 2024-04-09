@@ -77,25 +77,23 @@ public final class Domain {
     }
 
     /**
-     * Returns a file with the temperatures sent from the {@code Devices} of this domain.
+     * Returns a string containing the temperatures
+     * sent by the devices of this {@code Domain}.
+     * This string can be empty.
      *
-     * @return a file with the temperatures sent from the {@code Devices} of this domain.
+     * @return Returns a string containing the temperatures
+     *          sent by the devices of this {@code Domain}
      */
-    public File getDomainTemperatures() {
-        File file = new File( "temperatures/" + name + ".txt");
-        try (BufferedWriter out = new BufferedWriter(new FileWriter(file, false))) {
-            StringBuilder content = new StringBuilder();
-            for (Device device : devices) {
-                if (device.getLastTemp() != null)
-                    content.append(device).append(" -> ")
-                        .append(device.getLastTemp()).append("\n");
-            }
-            out.write(content.toString());
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-            return null;
+    public String getDomainTemperatures() {
+        StringBuilder temps = new StringBuilder();
+        for (Device device : devices) {
+            if(device.getLastTemp() != null)
+                temps.append(device)
+                        .append(",")
+                        .append(device.getLastTemp())
+                        .append("\n");
         }
-        return file.length() > 0 ? file : null;
+        return temps.toString();
     }
 
     /**

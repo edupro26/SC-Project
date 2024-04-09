@@ -392,18 +392,19 @@ public final class Connection {
             System.out.println("Error: User does not have permissions!");
             output.writeObject(Codes.NOPERM.toString());
         } else {
-            File temps = domain.getDomainTemperatures();
-            if (temps != null) {
+            String path = srvStorage.domainTemperaturesFile(domain);
+            if (path != null) {
                 output.writeObject(Codes.OK.toString());
-                int size = (int) temps.length();
+                File file = new File(path);
+                int size = (int) file.length();
                 output.writeInt(size);
-                String result = sendFile(temps, size) ?
+                String result = sendFile(file, size) ?
                         "Success: Temperatures sent successfully!"
                         : "Error: Failed to send temperatures!";
                 System.out.println(result);
             }
             else {
-                System.out.println("Error: No data found for this device!");
+                System.out.println("Error: No data found in this domain!");
                 output.writeObject(Codes.NODATA.toString());
             }
         }
