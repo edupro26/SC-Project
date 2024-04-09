@@ -12,6 +12,8 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.PublicKey;
+import javax.crypto.SecretKey;
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
@@ -153,11 +155,13 @@ public class DeviceHandler {
      * @requires {@code args != null && command != null}
      */
     protected void sendReceiveADD(String[] args, String command) {
-        if (args.length != 2) {
-            System.out.println("Usage: ADD <user1> <dm>");
+        if (args.length != 3) {
+            System.out.println("Usage: ADD <user1> <dm> <password-domain>");
             return;
         }
         String msg = parseCommandToSend(command, args);
+
+        // TODO: Handle first response
         String res = this.sendReceive(msg);
         switch (res) {
             case OK -> System.out.println("Response: "
@@ -170,6 +174,49 @@ public class DeviceHandler {
                     + " # This user does not have permissions");
             default -> System.out.println("Response: NOK # Error adding user");
         }
+
+        PublicKey pk = Encryption.findPublicKeyOnTrustStore(args[0]);
+
+        try {
+
+            if (pk == null) {
+                output.writeObject("NO_PK");
+                String findPkRes = (String) input.readObject();
+                if (findPkRes.equals("NOK")) {
+                    System.out.println("Response: NOK # Error adding user. Public key not found on the server.");
+                    return;
+                }
+                output.writeObject("WAITING_PK");
+                receiveFile("server-output/" + args[0] + ".cer");
+                Encryption.storePubKeyOnTrustStore(new File("server-output/" + args[0] + ".cer"), args[0]);
+
+            } else {
+                String res2 = this.sendReceive("PK");
+            }
+
+        } catch (Exception e) {
+            System.out.println("Response: NOK # Error adding user");
+            return;
+        }
+
+        String keyEncFilename = args[1] + "_" + args[0] + ".key.enc";
+
+        Encryption.encryptKeyWithRSA(Encryption.generateKey(args[2]), pk, keyEncFilename);
+
+        File keyEncFile = new File(keyEncFilename);
+
+        sendFile(keyEncFilename, (int) keyEncFile.length());
+
+        try {
+
+            String res3 = (String) input.readObject();
+
+            System.out.println("Response: " + res3 + " # Key sent successfully");
+
+        } catch (Exception e) {
+            System.out.println("Response: NOK # Error adding user");
+        }
+
     }
 
     /**
@@ -186,6 +233,7 @@ public class DeviceHandler {
             return;
         }
         String msg = parseCommandToSend(command, args);
+
         String res = this.sendReceive(msg);
         switch (res) {
             case OK -> System.out.println("Response: "
@@ -268,7 +316,7 @@ public class DeviceHandler {
                 output.writeObject(msg);
                 int size = (int) new File(args[0]).length();
                 output.writeInt(size);
-                sendImage(args[0], size);
+                sendFile(args[0], size);
                 String res = (String) input.readObject();
                 if (res.equals(OK)) {
                     System.out.println("Response: " + OK + " # Image sent successfully");
@@ -354,10 +402,10 @@ public class DeviceHandler {
      * @param filePath the path of the file to be sent
      * @requires {@code filePath != null}
      */
-    private void sendImage(String filePath, int size) {
+    private void sendFile(String filePath, int size) {
         try {
-            File image = new File(filePath);
-            FileInputStream in = new FileInputStream(image);
+            File file = new File(filePath);
+            FileInputStream in = new FileInputStream(file);
             BufferedInputStream bis = new BufferedInputStream(in);
             byte[] buffer = new byte[8192];
             int bytesLeft = size;

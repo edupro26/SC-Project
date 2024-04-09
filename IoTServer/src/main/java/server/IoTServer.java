@@ -84,7 +84,7 @@ public class IoTServer {
         try {
             ServerSocketFactory ssf = SSLServerSocketFactory.getDefault();
             srvSocket = (SSLServerSocket) ssf.createServerSocket(port);
-            Storage srvStorage = new Storage();
+            Storage srvStorage = new Storage(passwordCipher);
             System.out.println("Waiting for clients...");
             while (true) {
                 new ServerThread(srvSocket.accept(), srvStorage).start();

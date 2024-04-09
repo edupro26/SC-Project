@@ -18,6 +18,10 @@ import server.components.Device;
 import server.components.Domain;
 import server.communication.Codes;
 
+import javax.crypto.SecretKey;
+
+import static server.security.SecurityUtils.*;
+
 
 /**
  * The storage of the {@code IoTServer}. This class is responsible for
@@ -51,12 +55,18 @@ public final class Storage {
     private final HashMap<Device, List<Domain>> devices;
 
     /**
+     * SecretKey for encrypt data files
+     */
+    private final SecretKey secretKey;
+
+    /**
      * Initiates a new Storage for the IoTServer
      */
-    public Storage() {
+    public Storage(String passwordCypher) {
         users = new ArrayList<>();
         domains = new ArrayList<>();
         devices = new HashMap<>();
+        secretKey = generateKey(passwordCypher);
         new FileLoader(this);
     }
 
@@ -70,12 +80,11 @@ public final class Storage {
      * @see FileLoader
      */
     public synchronized void saveUser(User user) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(USERS, true))) {
-            writer.write(user + "\n");
-            users.add(user);
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
+        File usersFile = new File(USERS);
+        String currentUsersData = usersFile.exists() ? decryptDataFromFile(usersFile, this.secretKey) : "";
+        currentUsersData += user + "\n";
+        users.add(user);
+        encryptDataIntoFile(currentUsersData, usersFile, this.secretKey);
     }
 
     /**
@@ -360,6 +369,10 @@ public final class Storage {
          */
         private static final String SERVER_FILES = "server-files";
         private static final String TEMPERATURES = "temperatures";
+
+        private static final String USERS_PUB_KEYS_DIR = "server-files/users_pub_keys";
+        private static final String DOMAIN_KEYS_DIR = "server-files/domain_keys";
+
         private static final String IMAGES = "images";
 
         /**
@@ -391,8 +404,7 @@ public final class Storage {
          * @see #loadTemps(Storage)
          */
         private void start(File users, File domains, File temps, Storage srvStorage) {
-            if (!createFile(users, "Users"))
-                loadUsers(srvStorage);
+            loadUsers(srvStorage);
             if (!createFile(domains, "Domains"))
                 loadDomains(srvStorage);
             if (!createFile(temps, "Temperatures"))
@@ -413,16 +425,13 @@ public final class Storage {
          * @param srvStorage this storage
          */
         private void loadUsers(Storage srvStorage) {
-            try (BufferedReader in = new BufferedReader(new FileReader(USERS))) {
-                String line;
-                while ((line = in.readLine()) != null) {
-                    String[] data = line.split(",");
-                    srvStorage.users.add(new User(data[0],data[1]));
-                }
-                System.out.println("Users text file loaded successfully");
-            } catch (IOException e) {
-                System.out.println(e.getMessage());
-                System.out.println("Unable to load users text file");
+            File usersFile = new File(USERS);
+            if (!usersFile.exists()) return;
+            String usersData = decryptDataFromFile(usersFile, srvStorage.secretKey);
+            String[] users = usersData.split("\n");
+            for (String user : users) {
+                String[] data = user.split(",");
+                srvStorage.users.add(new User(data[0],data[1]));
             }
         }
 
@@ -518,6 +527,10 @@ public final class Storage {
             if (!temps.isDirectory()) temps.mkdir();
             File images = new File(IMAGES);
             if (!images.isDirectory()) images.mkdir();
+            File usersPubKeys = new File(USERS_PUB_KEYS_DIR);
+            if (!usersPubKeys.isDirectory()) usersPubKeys.mkdir();
+            File domainKeys = new File(DOMAIN_KEYS_DIR);
+            if (!domainKeys.isDirectory()) domainKeys.mkdir();
         }
 
     }

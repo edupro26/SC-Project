@@ -53,6 +53,6 @@ build/
 /**/*.txt
 
 ### Keys related files ###
-/keystore.**
+**/keystore.**
 **.cer
-/truststore.**
+**/truststore.**
