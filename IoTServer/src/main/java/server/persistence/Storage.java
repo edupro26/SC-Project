@@ -211,7 +211,7 @@ public final class Storage {
      * @requires {@code domain != null}
      */
     public synchronized String domainTemperaturesFile(Domain domain) {
-        String path = "temperatures/" + domain.getName() + ".txt";
+        String path = "server-files/temperatures/" + domain.getName() + ".txt";
         try {
             String temperatures = domain.getDomainTemperatures();
             if (!temperatures.isEmpty()) {
@@ -401,12 +401,10 @@ public final class Storage {
          * Folder names
          */
         private static final String SERVER_FILES = "server-files";
-        private static final String TEMPERATURES = "temperatures";
-
+        private static final String TEMPERATURES = "server-files/temperatures";
+        private static final String IMAGES = "server-files/images";
         private static final String USERS_PUB_KEYS_DIR = "server-files/users_pub_keys";
         private static final String DOMAIN_KEYS_DIR = "server-files/domain_keys";
-
-        private static final String IMAGES = "images";
 
         /**
          * Constructs a new {@code FileLoader}.

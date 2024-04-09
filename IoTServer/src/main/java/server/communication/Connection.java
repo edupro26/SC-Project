@@ -363,7 +363,7 @@ public final class Connection {
     private void handleEI() throws IOException {
         int size = input.readInt();
         String name = device.getUser() + "_" + device.getId() + ".jpg";
-        String path = "images/" + name;
+        String path = "server-files/images/" + name;
         if (receiveFile(path, size)) {
             System.out.println("Success: Image received!");
             output.writeObject(Codes.OK.toString());
@@ -430,7 +430,7 @@ public final class Connection {
             output.writeObject(Codes.NOPERM.toString());
         } else {
             String name = device.getUser() + "_" + device.getId() + ".jpg";
-            String path = "images/" + name;
+            String path = "server-files/images/" + name;
             File image = new File(path);
             if (image.isFile() && image.exists()){
                 output.writeObject(Codes.OK.toString());
