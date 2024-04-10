@@ -204,4 +204,37 @@ public final class SecurityUtils {
             return null;
         }
     }
+
+    public static boolean verifySignature(PublicKey publicKey, SignedObject signedObject) {
+        try {
+            String algorithm = signedObject.getAlgorithm();
+            Signature signature = Signature.getInstance(algorithm);
+            signature.initVerify(publicKey);
+            return signedObject.verify(publicKey, signature);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public static void savePublicKeyToFile(PublicKey publicKey, File file) {
+        try (FileOutputStream fos = new FileOutputStream(file);
+             ObjectOutputStream oos = new ObjectOutputStream(fos)) {
+            oos.writeObject(publicKey);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static PublicKey readPublicKeyFromFile(File file) {
+        try (FileInputStream fis = new FileInputStream(file);
+             ObjectInputStream ois = new ObjectInputStream(fis)) {
+            return (PublicKey) ois.readObject();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
 }
