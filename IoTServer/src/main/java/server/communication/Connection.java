@@ -13,7 +13,6 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -121,7 +120,7 @@ public final class Connection {
                     }
                     else {
                         device.setConnected(true);
-                        srvStorage.saveDevice(device, new ArrayList<>());
+                        srvStorage.saveDevice(device);
                         output.writeObject(Codes.OKDEVID.toString());
                         System.out.println("Device ID validated!");
                         return true;

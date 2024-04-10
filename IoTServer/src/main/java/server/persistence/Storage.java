@@ -93,16 +93,14 @@ public final class Storage {
     }
 
     /**
-     * Saves the {@code Device} as the key, and a list of domains as the value,
-     * to the map {@link #devices} of this storage. It also writes the device
+     * Saves a new {@code Device} to this storage. It also writes the device
      * to a devices.txt file located in the server-files folder.
      *
      * @param device the {@code Device} to be saved
-     * @param domains a list of {@code Domains} where the {@code Device} is registered
-     * @requires {@code device != null && domains != null}
+     * @requires {@code device != null}
      */
-    public synchronized void saveDevice(Device device, List<Domain> domains) {
-        deviceManager.saveDevice(device, domains);
+    public synchronized void saveDevice(Device device) {
+        deviceManager.saveDevice(device, new ArrayList<>());
     }
 
     /**
@@ -246,8 +244,8 @@ public final class Storage {
     }
 
     /**
-     * Returns a {@code Device} from the map {@link #devices}
-     * of this storage that matches the {@code Device} given, used as a key.
+     * Returns a {@code Device} from this storage that matches
+     * the {@code Device} given, used as a key.
      *
      * @param device the {@code Device} used as key for the search
      * @return a {@code Device}, if the key matched, null otherwise
@@ -278,9 +276,9 @@ public final class Storage {
     }
 
     /**
-     * Returns the map {@link #devices} of this storage.
+     * Returns the map of devices of this storage.
      *
-     * @return the map {@link #devices} of this storage.
+     * @return the map of devices of this storage.
      */
     public HashMap<Device, List<Domain>> getDevices() {
         return deviceManager.getDevices();
@@ -387,8 +385,8 @@ public final class Storage {
         }
 
         /**
-         * Loads the data from devices.txt file to the map
-         * {@link #devices} of this storage
+         * Loads the temperatures from devices.txt file to
+         * the devices of this storage
          *
          * @param srvStorage this storage
          */
