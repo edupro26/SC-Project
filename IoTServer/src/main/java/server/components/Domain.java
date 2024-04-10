@@ -93,26 +93,6 @@ public final class Domain {
     }
 
     /**
-     * Adds a {@code User} to this domain.
-     *
-     * @param user the {@code User} to be added
-     * @requires {@code user != null}
-     */
-    public void addUser(User user) {
-        users.add(user);
-    }
-
-    /**
-     * Adds a {@code Device} to this domain.
-     *
-     * @param device the {@code Device} to be added
-     * @requires {@code device != null}
-     */
-    public void addDevice(Device device) {
-        devices.add(device);
-    }
-
-    /**
      * Returns the name of this domain.
      *
      * @return the name of this domain

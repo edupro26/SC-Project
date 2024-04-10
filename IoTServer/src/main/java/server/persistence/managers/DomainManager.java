@@ -138,9 +138,11 @@ public final class DomainManager {
         if (userToAdd == null) return Codes.NOUSER.toString();
         if (!domain.getOwner().equals(user)) return Codes.NOPERM.toString();
         if (domain.getUsers().contains(userToAdd)) return Codes.NOK.toString();
+
+        domain.getUsers().add(userToAdd);
         String res = updateDomainInFile(domain) ? Codes.OK.toString() : Codes.NOK.toString();
-        if (res.equals(Codes.OK.toString())) {
-            domain.addUser(userToAdd);
+        if (res.equals(Codes.NOK.toString())) {
+            domain.getUsers().remove(userToAdd);
         }
         return res;
     }
@@ -167,9 +169,11 @@ public final class DomainManager {
             if (!owner.getName().equals(user.getName()))
                 return Codes.NOPERM.toString();
         }
+
+        domain.getDevices().add(device);
         String res = updateDomainInFile(domain) ? Codes.OK.toString() : Codes.NOK.toString();
-        if (res.equals(Codes.OK.toString())) {
-            domain.addDevice(device);
+        if (res.equals(Codes.NOK.toString())) {
+            domain.getDevices().remove(device);
         }
         return res;
     }
