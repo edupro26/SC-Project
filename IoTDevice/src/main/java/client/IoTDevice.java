@@ -5,8 +5,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.security.CodeSource;
-import java.security.ProtectionDomain;
 import java.util.Arrays;
 import java.util.Scanner;
 
@@ -57,9 +55,9 @@ public class IoTDevice {
         System.setProperty("javax.net.ssl.keyStore", keystore);
         System.setProperty("javax.net.ssl.keyStorePassword", passwordKeystore);
 
-        DeviceHandler client = new DeviceHandler(server[0], Integer.parseInt(server[1]));
+        DeviceHandler client = new DeviceHandler(server[0], Integer.parseInt(server[1]),keystore,passwordKeystore,userId);
         try {
-            client.connect();
+            client.connect(userId,keystore,passwordKeystore);
             deviceLogIn(client, userId, devId);
             printMenu();
 

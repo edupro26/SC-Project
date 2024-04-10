@@ -1,19 +1,13 @@
 package client;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.PublicKey;
-import javax.crypto.SecretKey;
+import java.security.*;
+import java.security.cert.Certificate;
+import java.util.Scanner;
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
@@ -53,6 +47,12 @@ public class DeviceHandler {
     private ObjectOutputStream output;
     private ObjectInputStream input;
 
+    private KeyStore keyStore;
+
+    private PrivateKey privateKey;
+
+    private Certificate certificate;
+
     /**
      * DeviceHandler attributes
      */
@@ -67,23 +67,74 @@ public class DeviceHandler {
      * @param port the port of the {@code IoTServer}
      * @requires {@code address != null && port != null}
      */
-    protected DeviceHandler(String address, int port) {
+    protected DeviceHandler(String address, int port,String keystore,String keystorePass,String userId) {
         this.address = address;
         this.port = port;
+        try {
+            FileInputStream fis = new FileInputStream(keystore);
+            this.keyStore = KeyStore.getInstance("JKS");
+            this.keyStore.load(fis, keystorePass.toCharArray());
+            KeyStore.PrivateKeyEntry privateKeyEntry = (KeyStore.PrivateKeyEntry) keyStore.getEntry(userId, new KeyStore.PasswordProtection(keystorePass.toCharArray()));
+            this.privateKey = privateKeyEntry.getPrivateKey();
+            this.certificate = this.keyStore.getCertificate(userId);
+            fis.close();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            System.exit(1);
+        }
+
     }
 
     /**
      * Connects opens a {@link Socket} to the {@code IoTServer}
      * and its input and output streams
      */
-    protected void connect() {
+    protected void connect(String userId, String keystore, String keystorePass) {
         try {
+
             SocketFactory sf = SSLSocketFactory.getDefault();
             socket = (SSLSocket) sf.createSocket(address, port);
-            System.out.println("Connected to server: " + address + ":" + port);
-
             this.output = new ObjectOutputStream(socket.getOutputStream());
             this.input = new ObjectInputStream(socket.getInputStream());
+            boolean firstStep = false;
+            Signature signature = Signature.getInstance("SHA256withRSA");
+            signature.initSign(privateKey);
+
+            System.out.println("Sending user id:" + userId);
+
+            Message res =  this.sendReceiveMessage(new Message(userId));
+
+            if(res == null) return ;
+
+            //assumir que a resposta é do tipo nonce:Flag ou só nonce
+            if(!res.getFlag()){
+
+                long nonce = res.getNonce();
+                SignedObject signedObject = new SignedObject(Long.toString(nonce), this.privateKey,signature);
+                res = sendReceiveMessage(new Message(signedObject, this.certificate, nonce));
+
+                firstStep = res.getUserId().equals("OK"); //maybe rename userId in Message - Rethink message
+
+            }
+            else{
+                //manda o long assinado com a private key
+                long nonce = res.getNonce();
+                SignedObject signedObject = new SignedObject(Long.toString(nonce),privateKey,signature);
+
+                res = sendReceiveMessage(new Message(signedObject));
+
+                firstStep = res.getUserId().equals("OK"); //maybe rename userId in Message - Rethink message
+            }
+
+            System.out.println("Introduza o código enviado pelo servidor:”");
+            if(firstStep){
+                Scanner scanner = new Scanner(System.in);
+                String input = scanner.nextLine();
+
+                this.output.writeObject(input);
+            }
+
+
         } catch (Exception e) {
             System.out.println(e.getMessage());
             System.exit(1);
@@ -121,7 +172,17 @@ public class DeviceHandler {
 
         return null;
     }
+    protected Message sendReceiveMessage(Message msg) {
+        try {
+            this.output.writeObject(msg);
 
+            return (Message) this.input.readObject();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+
+        return null;
+    }
     /**
      * Sends a CREATE request to the {@code IoTServer}
      * and handles the response.

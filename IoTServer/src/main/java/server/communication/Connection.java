@@ -1,5 +1,6 @@
 package server.communication;
 
+import server.Message;
 import server.components.User;
 import server.components.Device;
 import server.components.Domain;
@@ -13,6 +14,11 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.security.Signature;
+import java.security.SignedObject;
+import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -73,29 +79,60 @@ public final class Connection {
      */
     private void userAuthentication() {
         try {
-            String in = (String) input.readObject();
-            String[] userParts = in.split(",");
-            User logIn = new User(userParts[0], userParts[1]);
 
-            devUser = srvStorage.getUser(logIn.getName());
-            if (devUser == null) {
-                srvStorage.saveUser(logIn);
-                devUser = logIn;
-                output.writeObject(Codes.OKNEWUSER.toString());
+            client.Message in = (client.Message) input.readObject();
+            SecureRandom secureRandom = new SecureRandom();
+            long nonce = secureRandom.nextLong();
+
+            if (srvStorage.getUser(in.getUserId()) == null) {
+                //TODO adicionar os users nos ficheiros
+
+                client.Message mes = sendReceiveMessage(new client.Message(nonce, false));
+
+                assert mes != null;
+                SignedObject signedNonce = mes.getSignedObject();
+                long clientNonce = mes.getNonce();
+                PublicKey clientPK = mes.getCertificate().getPublicKey();
+
+                String algorithm = signedNonce.getAlgorithm();
+
+                Signature signature = Signature.getInstance(algorithm);
+
+                signature.initVerify(clientPK);
+
+                boolean verified = signedNonce.verify(clientPK, signature);
+
+                if(clientNonce == nonce && verified){ // && verified
+                    output.writeObject(new client.Message("OK"));
+                    System.out.println("Sucess");
+                }
+                else {
+                    output.writeObject(new client.Message("ERROR"));
+                }
+                //decripta o nonce com a chave publica recebida na mensagem
+
             }
             else {
-                while (!logIn.getPassword().equals(devUser.getPassword())) {
-                    output.writeObject(Codes.WRONGPWD.toString());
-                    String password = ((String) input.readObject()).split(",")[1];
-                    logIn.setPassword(password);
-                }
-                output.writeObject(Codes.OKUSER.toString());
+                //mandar só o nonce
+                client.Message mes = sendReceiveMessage(new client.Message(nonce, false));
+                //TODO ir ao ficheiro buscar a chave publica e
             }
-            this.device = new Device(devUser.getName(), -1);
         } catch (Exception e) {
             System.out.println("Error receiving user password!");
         }
     }
+    protected client.Message sendReceiveMessage(client.Message msg) {
+        try {
+            this.output.writeObject(msg);
+
+            return (client.Message) this.input.readObject();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+
+        return null;
+    }
+
 
     /**
      * Validates the {@code Device} id of this connection.
