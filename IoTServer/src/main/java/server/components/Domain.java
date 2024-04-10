@@ -16,7 +16,7 @@ import server.persistence.Storage;
  * @see User
  * @see Device
  */
-public final class Domain {
+public class Domain {
 
     /**
      * Domain attributes

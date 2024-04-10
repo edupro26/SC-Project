@@ -30,7 +30,7 @@ import static server.security.SecurityUtils.*;
  * @see Device
  * @see User
  */
-public final class Storage {
+public class Storage {
 
     /**
      * File paths
