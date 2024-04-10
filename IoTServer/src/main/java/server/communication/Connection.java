@@ -340,15 +340,15 @@ public final class Connection {
      */
     private void handleET(String t) throws IOException {
         try {
-            device.setLastTemp(Float.parseFloat(t));
-            String result = srvStorage.updateLastTemp(device);
-            output.writeObject(result);
-            result = result.equals(Codes.OK.toString()) ?
+            Float temperature = Float.parseFloat(t);
+            String res = srvStorage.updateLastTemp(device, temperature);
+            String result = res.equals(Codes.OK.toString()) ?
                     "Success: Temperature received!" : "Error: Unable to receive temperature!";
             System.out.println(result);
+            output.writeObject(res);
         } catch (Exception e) {
-            output.writeObject(Codes.NOK.toString());
             System.out.println("Error: Unable to receive temperature!");
+            output.writeObject(Codes.NOK.toString());
         }
     }
 
@@ -363,7 +363,7 @@ public final class Connection {
     private void handleEI() throws IOException {
         int size = input.readInt();
         String name = device.getUser() + "_" + device.getId() + ".jpg";
-        String path = "images/" + name;
+        String path = "server-files/images/" + name;
         if (receiveFile(path, size)) {
             System.out.println("Success: Image received!");
             output.writeObject(Codes.OK.toString());
@@ -430,7 +430,7 @@ public final class Connection {
             output.writeObject(Codes.NOPERM.toString());
         } else {
             String name = device.getUser() + "_" + device.getId() + ".jpg";
-            String path = "images/" + name;
+            String path = "server-files/images/" + name;
             File image = new File(path);
             if (image.isFile() && image.exists()){
                 output.writeObject(Codes.OK.toString());
