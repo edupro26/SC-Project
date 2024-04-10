@@ -51,8 +51,14 @@ public final class Storage {
      * Data structures
      */
     private final List<User> users;
-    private final List<Domain> domains;
     private final HashMap<Device, List<Domain>> devices;
+
+    /**
+     * Storage managers
+     */
+    private static DomainManager domainManager;
+    // TODO private static UserManager userManager;
+    // TODO private static DeviceManager deviceManager;
 
     /**
      * SecretKey for encrypt data files
@@ -63,8 +69,8 @@ public final class Storage {
      * Initiates a new Storage for the IoTServer
      */
     public Storage(String passwordCypher) {
+        domainManager = DomainManager.getInstance(DOMAINS);
         users = new ArrayList<>();
-        domains = new ArrayList<>();
         devices = new HashMap<>();
         secretKey = generateKey(passwordCypher);
         new FileLoader(this);
@@ -120,49 +126,7 @@ public final class Storage {
      * @see Codes
      */
     public synchronized String createDomain(String name, User owner) {
-        if (owner == null) return Codes.NOK.toString();
-        if (getDomain(name) != null) return Codes.NOK.toString();
-        try {
-            Domain domain = new Domain(name, owner);
-            BufferedWriter writer = new BufferedWriter(new FileWriter(DOMAINS, true));
-            writer.write(domain + "\n");
-            writer.close();
-            domains.add(domain);
-            return Codes.OK.toString();
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-            return Codes.NOK.toString();
-        }
-    }
-
-    /**
-     * Updates the domains.txt file located in the server-files
-     * folder in the {@code Domain} given.
-     *
-     * @param domain the {@code Domain} to write in file
-     * @return true if the method concluded with success, false otherwise
-     * @see FileLoader
-     * @requires {@code domain != null}
-     */
-    private boolean updateDomainInFile(Domain domain) {
-        try (BufferedReader in = new BufferedReader(new FileReader(DOMAINS))) {
-            StringBuilder file = new StringBuilder();
-            String line;
-            while ((line = in.readLine()) != null) {
-                String[] temp = line.split(",");
-                if (temp[0].equals(domain.getName()))
-                    file.append(domain).append("\n");
-                else
-                    file.append(line).append("\n");
-            }
-            BufferedWriter out = new BufferedWriter(new FileWriter(DOMAINS, false));
-            out.write(file.toString());
-            out.close();
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-            return false;
-        }
-        return true;
+        return domainManager.createDomain(name, owner);
     }
 
     /**
@@ -211,21 +175,7 @@ public final class Storage {
      * @requires {@code domain != null}
      */
     public synchronized String domainTemperaturesFile(Domain domain) {
-        String path = "server-files/temperatures/" + domain.getName() + ".txt";
-        try {
-            String temperatures = domain.getDomainTemperatures();
-            if (!temperatures.isEmpty()) {
-                File file = new File(path);
-                if (!file.exists()) file.createNewFile();
-                BufferedWriter out = new BufferedWriter(new FileWriter(file, false));
-                out.write(temperatures);
-                out.close();
-                return path;
-            }
-        } catch (IOException e) {
-            return null;
-        }
-        return null;
+        return domainManager.domainTemperaturesFile(domain);
     }
 
     /**
@@ -241,19 +191,11 @@ public final class Storage {
      *         "NOPERM" if the {@code user} does not have permission,
      *         "NOK" if there was an error writing to the file,
      *         "OK" if the method concluded with success.
-     * @see #updateDomainInFile(Domain)
+     *
      * @see Codes
      */
     public synchronized String addUserToDomain(User user, User userToAdd, Domain domain) {
-        if (domain == null) return Codes.NODM.toString();
-        if (userToAdd == null) return Codes.NOUSER.toString();
-        if (!domain.getOwner().equals(user)) return Codes.NOPERM.toString();
-        if (domain.getUsers().contains(userToAdd)) return Codes.NOK.toString();
-        String res = updateDomainInFile(domain) ? Codes.OK.toString() : Codes.NOK.toString();
-        if (res.equals(Codes.OK.toString())) {
-            domain.addUser(userToAdd);
-        }
-        return res;
+        return domainManager.addUserToDomain(user, userToAdd, domain);
     }
 
     /**
@@ -269,20 +211,13 @@ public final class Storage {
      *         "NOK" if the {@code device} is already in the {@code domain},
      *              or there was an error writing to the file,
      *         "OK" if the method concluded with success.
-     * @see #updateDomainInFile(Domain)
+     *
      * @see Codes
      */
     public synchronized String addDeviceToDomain(Domain domain, Device device, User user) {
-        if(domain == null) return Codes.NODM.toString();
-        if(domain.getDevices().contains(device)) return Codes.NOK.toString();
-        User owner = domain.getOwner();
-        if(!domain.getUsers().contains(user)) {
-            if (!owner.getName().equals(user.getName()))
-                return Codes.NOPERM.toString();
-        }
-        String res = updateDomainInFile(domain) ? Codes.OK.toString() : Codes.NOK.toString();
+        String res = domainManager.addDeviceToDomain(domain, device, user);
+        // TODO Use DevicesManager
         if (res.equals(Codes.OK.toString())) {
-            domain.addDevice(device);
             devices.get(device).add(domain);
         }
         return res;
@@ -382,11 +317,7 @@ public final class Storage {
      * @return a {@code Domain}, if the name matched, null otherwise
      */
     public Domain getDomain(String name) {
-        for (Domain domain : domains) {
-            if (name.equals(domain.getName()))
-                return domain;
-        }
-        return null;
+        return domainManager.getDomain(name);
     }
 
     /**
@@ -449,7 +380,7 @@ public final class Storage {
                 loadTemps(srvStorage);
 
             StringBuilder sb = new StringBuilder();
-            for (Domain domain : srvStorage.domains)
+            for (Domain domain : Storage.domainManager.getDomains())
                 sb.append("Domain ").append(domain.getName()).append(" -> ")
                         .append(domain).append(" ").append("\n");
             System.out.println("Printing server domains...");
@@ -483,9 +414,9 @@ public final class Storage {
             try (BufferedReader in = new BufferedReader(new FileReader(DOMAINS))) {
                 String line;
                 while ((line = in.readLine()) != null) {
-                    srvStorage.domains.add(new Domain(line, srvStorage));
+                    Storage.domainManager.getDomains().add(new Domain(line, srvStorage));
                 }
-                for (Domain domain : srvStorage.domains){
+                for (Domain domain : Storage.domainManager.getDomains()){
                     for(Device device: domain.getDevices()) {
                         List<Domain> domains = srvStorage.devices.get(device);
                         domains.add(domain);
