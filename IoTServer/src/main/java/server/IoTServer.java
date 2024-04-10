@@ -149,9 +149,7 @@ public class IoTServer {
                 }
 
                 System.out.println("Validating device ID... ");
-                System.out.println("!!! DEV ID VALIDATION DISABLED !!!");
-                // FIXME: Enable dev id validation later after implementation
-                boolean validID = true; //connection.validateDevID();
+                boolean validID = connection.validateDevID();
 
 
                 if (validID /*&& validInfo*/) {
@@ -159,7 +157,6 @@ public class IoTServer {
                     System.out.println("Active connections: " + ++counter);
                     connection.handleRequests();
                     System.out.println("Active connections: " + --counter);
-
                 }
 
                 output.close();

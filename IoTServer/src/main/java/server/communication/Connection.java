@@ -88,14 +88,20 @@ public final class Connection {
                 if(clientNonce == nonce && verified) {
                     String userPublicKeyPath = "server-files/users_pub_keys/" + userId + ".cer";
                     SecurityUtils.savePublicKeyToFile(msg.getCertificate().getPublicKey(), new File(userPublicKeyPath));
+
+                    // TODO: 2FA Auth
+
                     this.devUser = new User(userId, userPublicKeyPath);
                     srvStorage.saveUser(this.devUser);
-                    output.writeObject(Codes.OKNEWUSER);
+                    output.writeObject(Codes.OKNEWUSER.toString());
+
+
+
 
                     return true;
                 }
                 else {
-                    output.writeObject(Codes.NOK);
+                    output.writeObject(Codes.NOK.toString());
                     return false;
                 }
 
@@ -114,11 +120,11 @@ public final class Connection {
                 boolean verified = SecurityUtils.verifySignature(userPublicKey, msg.getSignedObject());
 
                 if(clientNonce == nonce && verified) { // && verified
-                    output.writeObject(Codes.OKUSER);
+                    output.writeObject(Codes.OKUSER.toString());
                     this.devUser = srvStorage.getUser(userId);
                     return true;
                 } else {
-                    output.writeObject(Codes.NOK);
+                    output.writeObject(Codes.NOK.toString());
                     return false;
                 }
             }
@@ -134,34 +140,36 @@ public final class Connection {
      * @return true if validated, false otherwise
      */
     public boolean validateDevID() {
-
         try {
-            while (device.getId() < 0) {
-                String msg = (String) input.readObject();
-                int id = Integer.parseInt(msg);
-                if (id >= 0) {
-                    device.setId(id);
-                    Device exits = srvStorage.getDevice(device);
-                    if (exits != null) {
-                        if (!exits.isConnected()) {
-                            device = exits;
-                            device.setConnected(true);
-                            output.writeObject(Codes.OKDEVID.toString());
-                            System.out.println("Device ID validated!");
-                            return true;
-                        }
-                    }
-                    else {
-                        device.setConnected(true);
-                        srvStorage.saveDevice(device, new ArrayList<>());
-                        output.writeObject(Codes.OKDEVID.toString());
-                        System.out.println("Device ID validated!");
-                        return true;
-                    }
-                }
+            //int devId = Integer.parseInt((String) input.readObject());
+            String strDevId = (String) input.readObject();
+            int devId = Integer.parseInt(strDevId);
+            if (devId < 0) {
                 output.writeObject(Codes.NOKDEVID.toString());
-                device.setId(-1);
+                return false;
             }
+            this.device = new Device(devUser.getName(), devId);
+
+            Device exists = srvStorage.getDevice(device);
+            if (exists != null) {
+                if (!exists.isConnected()) {
+                    device = exists;
+                } else {
+                    output.writeObject(Codes.NOKDEVID.toString());
+                    return false;
+                }
+            }
+            else {
+                srvStorage.saveDevice(device, new ArrayList<>());
+            }
+
+            // TODO: Remote attestation
+
+            device.setConnected(true);
+            output.writeObject(Codes.OKDEVID.toString());
+            System.out.println("Device ID validated!");
+            return true;
+
         } catch (Exception e) {
             System.out.println("Something went wrong!");
         }

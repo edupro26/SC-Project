@@ -102,28 +102,26 @@ public class DeviceHandler {
             String flag = resSplit[0];
             long nonce = Long.parseLong(resSplit[1]);
 
-            String authRes = null;
-
             // If the user is not registered
             if(flag.equals(NEWUSER)){
                 SignedObject signedObject = new SignedObject(Long.toString(nonce), Encryption.findPrivateKeyOnKeyStore(userId), Signature.getInstance("SHA256withRSA"));
                 Message signedMessage = new Message(signedObject, Encryption.getOwnCertificate(userId));
                 output.writeObject(signedMessage);
-                authRes = (String) input.readObject();
-
             }
             else { // If the user is registered
                 SignedObject signedObject = new SignedObject(Long.toString(nonce), Encryption.findPrivateKeyOnKeyStore(userId), Signature.getInstance("SHA256withRSA"));
                 Message signedMessage = new Message(signedObject, Encryption.getOwnCertificate(userId));
                 output.writeObject(signedMessage);
-
-                authRes = (String) input.readObject();
             }
 
-            if (!authRes.equals("OK")) {
+            String authRes = (String) input.readObject();
+
+            if (!authRes.equals("OK-USER") && !authRes.equals("NOK-USER")) {
                 System.out.println("Authentication failed. Certificate not valid.");
                 System.exit(1);
             }
+
+            // TODO: 2FA Auth
 
             // 2FA Process
             /*
@@ -137,7 +135,7 @@ public class DeviceHandler {
             this.output.writeObject(input);
             */
 
-
+            System.out.println("Authentication successful");
 
         } catch (Exception e) {
             System.out.println(e.getMessage());

@@ -84,17 +84,20 @@ public class IoTDevice {
      * @see DeviceHandler
      */
     private static void deviceLogIn(DeviceHandler handler, String userId, String devId) throws URISyntaxException {
+        // Regex of me
+
         String res = handler.sendReceive(devId);
         if (res.equals("NOK-DEVID")) {
             System.out.println("Response: NOK-DEVID # Invalid device id");
             System.exit(1);
-        } else if (res.equals("OK-DEVID")) {
-            // TODO: Make remote attestation
-
-        } else {
-            System.out.println("Response: NOK # Invalid response");
+        }
+        String resSplit[] = res.split(";");
+        if (!resSplit[0].equals("OK-DEVID")) {
+            System.out.println("Response: NOK-DEVID # Invalid device id");
             System.exit(1);
         }
+
+        // TODO: Remote attestation
     }
 
     /**
