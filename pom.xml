@@ -15,6 +15,7 @@
     <modules>
         <module>IoTDevice</module>
         <module>IoTServer</module>
+        <module>Common</module>
     </modules>
 
     <properties>
