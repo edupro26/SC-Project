@@ -43,9 +43,9 @@ public final class Storage {
     /**
      * Storage managers
      */
-    private static UserManager userManager;
-    private static DomainManager domainManager;
-    private static DeviceManager deviceManager;
+    private final UserManager userManager;
+    private final DomainManager domainManager;
+    private final DeviceManager deviceManager;
 
     /**
      * Initiates a new Storage for the IoTServer
@@ -310,7 +310,7 @@ public final class Storage {
                 loadTemps(srvStorage);
 
             StringBuilder sb = new StringBuilder();
-            for (Domain domain : Storage.domainManager.getDomains())
+            for (Domain domain : srvStorage.domainManager.getDomains())
                 sb.append("Domain ").append(domain.getName()).append(" -> ")
                         .append(domain).append(" ").append("\n");
             System.out.println("Printing server domains...");
@@ -325,11 +325,11 @@ public final class Storage {
         private void loadUsers(Storage srvStorage) {
             File usersFile = new File(USERS);
             if (!usersFile.exists()) return;
-            String usersData = decryptDataFromFile(usersFile, Storage.userManager.getSecretKey());
+            String usersData = decryptDataFromFile(usersFile, srvStorage.userManager.getSecretKey());
             String[] users = usersData.split("\n");
             for (String user : users) {
                 String[] data = user.split(",");
-                Storage.userManager.getUsers().add(new User(data[0],data[1]));
+                srvStorage.userManager.getUsers().add(new User(data[0],data[1]));
             }
         }
 
@@ -342,13 +342,13 @@ public final class Storage {
             try (BufferedReader in = new BufferedReader(new FileReader(DOMAINS))) {
                 String line;
                 while ((line = in.readLine()) != null) {
-                    Storage.domainManager.getDomains().add(new Domain(line, srvStorage));
+                    srvStorage.domainManager.getDomains().add(new Domain(line, srvStorage));
                 }
-                for (Domain domain : Storage.domainManager.getDomains()){
+                for (Domain domain : srvStorage.domainManager.getDomains()){
                     for(Device device: domain.getDevices()) {
-                        List<Domain> domains = Storage.deviceManager.getDevices().get(device);
+                        List<Domain> domains = srvStorage.deviceManager.getDevices().get(device);
                         domains.add(domain);
-                        Storage.deviceManager.getDevices().put(device, domains);
+                        srvStorage.getDevices().put(device, domains);
                     }
                 }
                 System.out.println("Domains text file loaded successfully");
@@ -372,16 +372,16 @@ public final class Storage {
                     Device device = new Device(fileData[0], fileData[1]);
                     Device exits = srvStorage.getDevice(device);
                     if (exits != null) {
-                        List<Domain> domains = Storage.deviceManager.getDevices().get(exits);
-                        Storage.deviceManager.getDevices().remove(exits);
+                        List<Domain> domains = srvStorage.getDevices().get(exits);
+                        srvStorage.getDevices().remove(exits);
                         for (Domain domain : domains) {
                             domain.getDevices().remove(exits);
                             domain.getDevices().add(device);
                         }
-                        Storage.deviceManager.getDevices().put(device, domains);
+                        srvStorage.getDevices().put(device, domains);
                     }
                     else {
-                        Storage.deviceManager.getDevices().put(device, new ArrayList<>());
+                        srvStorage.getDevices().put(device, new ArrayList<>());
                     }
                 }
                 System.out.println("Temperatures text file loaded successfully");
