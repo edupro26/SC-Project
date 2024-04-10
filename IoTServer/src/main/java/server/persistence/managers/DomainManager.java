@@ -1,4 +1,4 @@
-package server.persistence;
+package server.persistence.managers;
 
 import server.communication.Codes;
 import server.components.Device;

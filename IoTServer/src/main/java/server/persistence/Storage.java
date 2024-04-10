@@ -17,6 +17,7 @@ import server.components.User;
 import server.components.Device;
 import server.components.Domain;
 import server.communication.Codes;
+import server.persistence.managers.DomainManager;
 
 import javax.crypto.SecretKey;
 
