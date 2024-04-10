@@ -1,6 +1,5 @@
 package client;
 
-import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
@@ -85,45 +84,16 @@ public class IoTDevice {
      * @see DeviceHandler
      */
     private static void deviceLogIn(DeviceHandler handler, String userId, String devId) throws URISyntaxException {
-        Scanner scanner = new Scanner(System.in);
-        while (true) {
-            System.out.print("Password: ");
-            String pw = scanner.nextLine();
-            String logIn = handler.sendReceive(userId + "," + pw);
-            System.out.println("Response: " + logIn);
-            if (logIn.equals("OK-USER") || logIn.equals("OK-NEW-USER")){
-                while (true) {
-                    System.out.println("Sending device ID to the server...");
-                    String id = handler.sendReceive(devId);
-                    System.out.println("Response: " + id);
-                    if(id.equals("NOK-DEVID")) {
-                        try {
-                            System.out.print("Enter new ID: ");
-                            devId = scanner.nextLine();
-                            Integer.parseInt(devId);
-                        } catch (Exception e) {
-                            System.out.println("Error: <dev-id> must be an Integer");
-                            System.exit(1);
-                        }
-                    }
-                    if(id.equals("OK-DEVID")) {
-                        // FIXME Enable client verification later
-                        /*System.out.println("Sending application size to the server...");
-                        ProtectionDomain protectionDomain = IoTDevice.class.getProtectionDomain();
-                        CodeSource codeSource = protectionDomain.getCodeSource();
-                        File exec = new File(codeSource.getLocation().toURI().getPath());
-                        String res = handler.sendReceive(exec.getName() + "," + exec.length());
-                        System.out.println("Response: " + res + "\n");
-                        if (res.equals("NOK-TESTED")) {
-                            System.exit(1);
-                        }
-                        if (res.equals("OK-TESTED")) {
-                            return;
-                        }*/
-                        return;
-                    }
-                }
-            }
+        String res = handler.sendReceive(devId);
+        if (res.equals("NOK-DEVID")) {
+            System.out.println("Response: NOK-DEVID # Invalid device id");
+            System.exit(1);
+        } else if (res.equals("OK-DEVID")) {
+            // TODO: Make remote attestation
+
+        } else {
+            System.out.println("Response: NOK # Invalid response");
+            System.exit(1);
         }
     }
 

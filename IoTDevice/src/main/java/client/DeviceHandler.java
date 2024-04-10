@@ -1,16 +1,18 @@
 package client;
 
+import common.Message;
+
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 import java.io.*;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.*;
-import java.security.cert.Certificate;
-import java.util.Scanner;
-import javax.net.SocketFactory;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.SignedObject;
 
 /**
  *
@@ -28,6 +30,8 @@ public class DeviceHandler {
     /**
      * Response codes received by the {@code IoTServer}
      */
+    private static final String NEWUSER = "NEW-USER";
+    private static final String FOUNDUSER = "FOUND-USER";
     private static final String OK = "OK";
     private static final String NODM = "NODM";
     private static final String NOID = "NOID";
@@ -47,12 +51,6 @@ public class DeviceHandler {
     private ObjectOutputStream output;
     private ObjectInputStream input;
 
-    private KeyStore keyStore;
-
-    private PrivateKey privateKey;
-
-    private Certificate certificate;
-
     /**
      * DeviceHandler attributes
      */
@@ -70,18 +68,6 @@ public class DeviceHandler {
     protected DeviceHandler(String address, int port,String keystore,String keystorePass,String userId) {
         this.address = address;
         this.port = port;
-        try {
-            FileInputStream fis = new FileInputStream(keystore);
-            this.keyStore = KeyStore.getInstance("JKS");
-            this.keyStore.load(fis, keystorePass.toCharArray());
-            KeyStore.PrivateKeyEntry privateKeyEntry = (KeyStore.PrivateKeyEntry) keyStore.getEntry(userId, new KeyStore.PasswordProtection(keystorePass.toCharArray()));
-            this.privateKey = privateKeyEntry.getPrivateKey();
-            this.certificate = this.keyStore.getCertificate(userId);
-            fis.close();
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-            System.exit(1);
-        }
 
     }
 
@@ -96,43 +82,61 @@ public class DeviceHandler {
             socket = (SSLSocket) sf.createSocket(address, port);
             this.output = new ObjectOutputStream(socket.getOutputStream());
             this.input = new ObjectInputStream(socket.getInputStream());
-            boolean firstStep = false;
-            Signature signature = Signature.getInstance("SHA256withRSA");
-            signature.initSign(privateKey);
 
             System.out.println("Sending user id:" + userId);
 
-            Message res =  this.sendReceiveMessage(new Message(userId));
+            String res = (String) this.sendReceive(userId);
 
-            if(res == null) return ;
-
-            //assumir que a resposta é do tipo nonce:Flag ou só nonce
-            if(!res.getFlag()){
-
-                long nonce = res.getNonce();
-                SignedObject signedObject = new SignedObject(Long.toString(nonce), this.privateKey,signature);
-                res = sendReceiveMessage(new Message(signedObject, this.certificate, nonce));
-
-                firstStep = res.getUserId().equals("OK"); //maybe rename userId in Message - Rethink message
-
-            }
-            else{
-                //manda o long assinado com a private key
-                long nonce = res.getNonce();
-                SignedObject signedObject = new SignedObject(Long.toString(nonce),privateKey,signature);
-
-                res = sendReceiveMessage(new Message(signedObject));
-
-                firstStep = res.getUserId().equals("OK"); //maybe rename userId in Message - Rethink message
+            if(res == null) {
+                System.out.println("Error in the response");
+                System.exit(1);
             }
 
+            String[] resSplit = res.split(";");
+
+            if (resSplit.length != 2) {
+                System.out.println("Error in the response");
+                System.exit(1);
+            }
+
+            String flag = resSplit[0];
+            long nonce = Long.parseLong(resSplit[1]);
+
+            String authRes = null;
+
+            // If the user is not registered
+            if(flag.equals(NEWUSER)){
+                SignedObject signedObject = new SignedObject(Long.toString(nonce), Encryption.findPrivateKeyOnKeyStore(userId), Signature.getInstance("SHA256withRSA"));
+                Message signedMessage = new Message(signedObject, Encryption.getOwnCertificate(userId));
+                output.writeObject(signedMessage);
+                authRes = (String) input.readObject();
+
+            }
+            else { // If the user is registered
+                SignedObject signedObject = new SignedObject(Long.toString(nonce), Encryption.findPrivateKeyOnKeyStore(userId), Signature.getInstance("SHA256withRSA"));
+                Message signedMessage = new Message(signedObject, Encryption.getOwnCertificate(userId));
+                output.writeObject(signedMessage);
+
+                authRes = (String) input.readObject();
+            }
+
+            if (!authRes.equals("OK")) {
+                System.out.println("Authentication failed. Certificate not valid.");
+                System.exit(1);
+            }
+
+            // 2FA Process
+            /*
             System.out.println("Introduza o código enviado pelo servidor:”");
-            if(firstStep){
-                Scanner scanner = new Scanner(System.in);
-                String input = scanner.nextLine();
 
-                this.output.writeObject(input);
-            }
+
+
+            Scanner scanner = new Scanner(System.in);
+            String input = scanner.nextLine();
+
+            this.output.writeObject(input);
+            */
+
 
 
         } catch (Exception e) {

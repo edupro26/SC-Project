@@ -1,23 +1,15 @@
 package server.communication;
 
-import server.components.User;
+import common.Message;
 import server.components.Device;
 import server.components.Domain;
+import server.components.User;
 import server.persistence.Storage;
+import server.security.SecurityUtils;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.security.PublicKey;
 import java.security.SecureRandom;
-import java.security.Signature;
-import java.security.SignedObject;
-import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -70,68 +62,71 @@ public final class Connection {
         this.clientIP = clientIP;
         this.devUser = null;
         this.device = null;
-        userAuthentication();
     }
 
     /**
      * Authenticates the {@code User} of this connection.
      */
-    private void userAuthentication() {
+    public boolean userAuthentication() {
         try {
-
-            client.Message in = (client.Message) input.readObject();
+            String userId = (String) input.readObject();
             SecureRandom secureRandom = new SecureRandom();
             long nonce = secureRandom.nextLong();
 
-            if (srvStorage.getUser(in.getUserId()) == null) {
-                //TODO adicionar os users nos ficheiros
+            if (srvStorage.getUser(userId) == null) {
 
-                client.Message mes = sendReceiveMessage(new client.Message(nonce, false));
+                String newUserRes = Codes.NEWUSER + ";" + nonce;
 
-                assert mes != null;
-                SignedObject signedNonce = mes.getSignedObject();
-                long clientNonce = mes.getNonce();
-                PublicKey clientPK = mes.getCertificate().getPublicKey();
+                output.writeObject(newUserRes);
+                Message msg = (Message) input.readObject();
 
-                String algorithm = signedNonce.getAlgorithm();
 
-                Signature signature = Signature.getInstance(algorithm);
+                long clientNonce = Long.parseLong((String) msg.getSignedObject().getObject());
 
-                signature.initVerify(clientPK);
+                boolean verified = SecurityUtils.verifySignature(msg.getCertificate().getPublicKey(), msg.getSignedObject());
 
-                boolean verified = signedNonce.verify(clientPK, signature);
+                if(clientNonce == nonce && verified) {
+                    String userPublicKeyPath = "server-files/users_pub_keys/" + userId + ".cer";
+                    SecurityUtils.savePublicKeyToFile(msg.getCertificate().getPublicKey(), new File(userPublicKeyPath));
+                    this.devUser = new User(userId, userPublicKeyPath);
+                    srvStorage.saveUser(this.devUser);
+                    output.writeObject(Codes.OKNEWUSER);
 
-                if(clientNonce == nonce && verified){ // && verified
-                    output.writeObject(new client.Message("OK"));
-                    System.out.println("Sucess");
+                    return true;
                 }
                 else {
-                    output.writeObject(new client.Message("ERROR"));
+                    output.writeObject(Codes.NOK);
+                    return false;
                 }
-                //decripta o nonce com a chave publica recebida na mensagem
+
 
             }
             else {
-                //mandar só o nonce
-                client.Message mes = sendReceiveMessage(new client.Message(nonce, false));
-                //TODO ir ao ficheiro buscar a chave publica e
+                String foundUserRes = Codes.FOUNDUSER + ";" + nonce;
+
+                output.writeObject(foundUserRes);
+                Message msg = (Message) input.readObject();
+
+                long clientNonce = Long.parseLong((String) msg.getSignedObject().getObject());
+
+                PublicKey userPublicKey = SecurityUtils.readPublicKeyFromFile(new File("server-files/users_pub_keys/" + userId + ".cer"));
+
+                boolean verified = SecurityUtils.verifySignature(userPublicKey, msg.getSignedObject());
+
+                if(clientNonce == nonce && verified) { // && verified
+                    output.writeObject(Codes.OKUSER);
+                    this.devUser = srvStorage.getUser(userId);
+                    return true;
+                } else {
+                    output.writeObject(Codes.NOK);
+                    return false;
+                }
             }
         } catch (Exception e) {
-            System.out.println("Error receiving user password!");
+            System.out.println("Error on auth process!");
+            return false;
         }
     }
-    protected client.Message sendReceiveMessage(client.Message msg) {
-        try {
-            this.output.writeObject(msg);
-
-            return (client.Message) this.input.readObject();
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-        }
-
-        return null;
-    }
-
 
     /**
      * Validates the {@code Device} id of this connection.
@@ -139,6 +134,7 @@ public final class Connection {
      * @return true if validated, false otherwise
      */
     public boolean validateDevID() {
+
         try {
             while (device.getId() < 0) {
                 String msg = (String) input.readObject();

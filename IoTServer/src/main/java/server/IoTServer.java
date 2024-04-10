@@ -1,15 +1,15 @@
 package server;
 
-import java.net.Socket;
-import java.net.ServerSocket;
+import server.communication.Connection;
+import server.persistence.Storage;
+
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-
-import server.communication.Connection;
-import server.persistence.Storage;
+import java.net.ServerSocket;
+import java.net.Socket;
 
 /**
  * Main class of the {@code IoTServer}.This class represents a multithreaded server.
@@ -138,13 +138,21 @@ public class IoTServer {
                 ObjectOutputStream output = new ObjectOutputStream(cliSocket.getOutputStream());
 
                 Connection connection = new Connection(input, output, srvStorage, clientAddress);
+                boolean auth = connection.userAuthentication();
 
-                System.out.print("Validating device ID... ");
-                boolean validID = connection.validateDevID();
+                if (!auth) {
+                    System.out.println("Client not authenticated (" + clientAddress + ")");
+                    output.close();
+                    input.close();
+                    cliSocket.close();
+                    return;
+                }
 
-                // FIXME Enable client verification later
-                /*System.out.print("Validating device info...");
-                boolean validInfo = connection.validateConnection();*/
+                System.out.println("Validating device ID... ");
+                System.out.println("!!! DEV ID VALIDATION DISABLED !!!");
+                // FIXME: Enable dev id validation later after implementation
+                boolean validID = true; //connection.validateDevID();
+
 
                 if (validID /*&& validInfo*/) {
                     System.out.println("Client connected (" + clientAddress + ")");
