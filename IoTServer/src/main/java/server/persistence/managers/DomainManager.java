@@ -151,7 +151,7 @@ public final class DomainManager {
      * in the server-files folder. Returns "NODM" if the {@code domain} does not exist,
      * "NOPERM" if the {@code user} does not have permission, "NOK" if the {@code device}
      * is already in the {@code domain} or there was an error writing to the file, "OK"
-     * if themethod concluded with success.
+     * if the method concluded with success.
      *
      * @param user the {@code User} of the current {@code Device}
      * @param device the {@code Device} to add to the {@code Domain}
