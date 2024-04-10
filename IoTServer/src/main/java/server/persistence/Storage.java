@@ -3,12 +3,9 @@ package server.persistence;
 import java.io.File;
 import java.io.IOException;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.Map;
 import java.util.List;
 import java.util.HashMap;
 import java.util.ArrayList;
@@ -17,6 +14,7 @@ import server.components.User;
 import server.components.Device;
 import server.components.Domain;
 import server.communication.Codes;
+import server.persistence.managers.DeviceManager;
 import server.persistence.managers.DomainManager;
 
 import javax.crypto.SecretKey;
@@ -52,14 +50,13 @@ public final class Storage {
      * Data structures
      */
     private final List<User> users;
-    private final HashMap<Device, List<Domain>> devices;
 
     /**
      * Storage managers
      */
     private static DomainManager domainManager;
+    private static DeviceManager deviceManager;
     // TODO private static UserManager userManager;
-    // TODO private static DeviceManager deviceManager;
 
     /**
      * SecretKey for encrypt data files
@@ -73,8 +70,8 @@ public final class Storage {
      */
     public Storage(String passwordCypher) {
         domainManager = DomainManager.getInstance(DOMAINS);
+        deviceManager = DeviceManager.getInstance(DEVICES);
         users = new ArrayList<>();
-        devices = new HashMap<>();
         secretKey = generateKey(passwordCypher);
         new FileLoader(this);
     }
@@ -105,12 +102,7 @@ public final class Storage {
      * @requires {@code device != null && domains != null}
      */
     public synchronized void saveDevice(Device device, List<Domain> domains) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(DEVICES, true))) {
-            writer.write(device + "," + device.getLastTemp() + "\n");
-            devices.put(device, domains);
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
+        deviceManager.saveDevice(device, domains);
     }
 
     /**
@@ -142,27 +134,7 @@ public final class Storage {
      * @requires {@code device != null && temperature != null}
      */
     public synchronized String updateLastTemp(Device device, Float temperature) {
-        try (BufferedReader in = new BufferedReader(new FileReader(DEVICES))) {
-            StringBuilder file = new StringBuilder();
-            String line;
-            while ((line = in.readLine()) != null) {
-                String[] temp = line.split(",");
-                if (temp[0].equals(device.toString())) {
-                    file.append(device).append(",")
-                            .append(temperature).append("\n");
-                } else {
-                    file.append(line).append("\n");
-                }
-            }
-            BufferedWriter out = new BufferedWriter(new FileWriter(DEVICES, false));
-            out.write(file.toString());
-            out.close();
-            device.setLastTemp(temperature);
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-            return Codes.NOK.toString();
-        }
-        return Codes.OK.toString();
+        return deviceManager.updateLastTemp(device, temperature);
     }
 
     /**
@@ -215,9 +187,8 @@ public final class Storage {
      */
     public synchronized String addDeviceToDomain(Domain domain, Device device, User user) {
         String res = domainManager.addDeviceToDomain(domain, device, user);
-        // TODO Use DevicesManager
         if (res.equals(Codes.OK.toString())) {
-            devices.get(device).add(domain);
+            deviceManager.addDomainToDevice(device, domain);
         }
         return res;
     }
@@ -231,15 +202,7 @@ public final class Storage {
      * @return true, if the user has permission, false otherwise
      */
     public boolean hasPerm(User user, Device device) {
-        for (Map.Entry<Device, List<Domain>> entry : devices.entrySet()) {
-            if (entry.getKey().equals(device)) {
-                for (Domain domain : entry.getValue()) {
-                    if (domain.getUsers().contains(user) || domain.getOwner().equals(user))
-                        return true;
-                }
-            }
-        }
-        return false;
+        return deviceManager.hasPerm(user, device);
     }
 
     /**
@@ -290,11 +253,7 @@ public final class Storage {
      * @return a {@code Device}, if the key matched, null otherwise
      */
     public Device getDevice(Device device) {
-        for (Map.Entry<Device, List<Domain>> entry : devices.entrySet()) {
-            if (entry.getKey().equals(device))
-                return entry.getKey();
-        }
-        return null;
+        return deviceManager.getDevice(device);
     }
 
     /**
@@ -305,7 +264,7 @@ public final class Storage {
      * @return a list of {@code Domains}
      */
     public List<Domain> getDeviceDomains(Device device) {
-        return devices.get(device);
+        return deviceManager.getDeviceDomains(device);
     }
 
     /**
@@ -324,7 +283,7 @@ public final class Storage {
      * @return the map {@link #devices} of this storage.
      */
     public HashMap<Device, List<Domain>> getDevices() {
-        return devices;
+        return deviceManager.getDevices();
     }
 
     /**
@@ -415,9 +374,9 @@ public final class Storage {
                 }
                 for (Domain domain : Storage.domainManager.getDomains()){
                     for(Device device: domain.getDevices()) {
-                        List<Domain> domains = srvStorage.devices.get(device);
+                        List<Domain> domains = Storage.deviceManager.getDevices().get(device);
                         domains.add(domain);
-                        srvStorage.devices.put(device, domains);
+                        Storage.deviceManager.getDevices().put(device, domains);
                     }
                 }
                 System.out.println("Domains text file loaded successfully");
@@ -441,16 +400,16 @@ public final class Storage {
                     Device device = new Device(fileData[0], fileData[1]);
                     Device exits = srvStorage.getDevice(device);
                     if (exits != null) {
-                        List<Domain> domains = srvStorage.devices.get(exits);
-                        srvStorage.devices.remove(exits);
+                        List<Domain> domains = Storage.deviceManager.getDevices().get(exits);
+                        Storage.deviceManager.getDevices().remove(exits);
                         for (Domain domain : domains) {
                             domain.getDevices().remove(exits);
                             domain.getDevices().add(device);
                         }
-                        srvStorage.devices.put(device, domains);
+                        Storage.deviceManager.getDevices().put(device, domains);
                     }
                     else {
-                        srvStorage.devices.put(device, new ArrayList<>());
+                        Storage.deviceManager.getDevices().put(device, new ArrayList<>());
                     }
                 }
                 System.out.println("Temperatures text file loaded successfully");
