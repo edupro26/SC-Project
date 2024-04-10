@@ -23,7 +23,7 @@ import java.util.List;
  *
  * @see Domain
  */
-public final class DomainManager {
+public class DomainManager {
 
     /**
      * The instance of {@code DomainManager}

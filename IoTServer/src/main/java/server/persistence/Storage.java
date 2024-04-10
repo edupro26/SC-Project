@@ -10,15 +10,9 @@ import java.util.List;
 import java.util.HashMap;
 import java.util.ArrayList;
 
-import server.components.User;
-import server.components.Device;
-import server.components.Domain;
+import server.components.*;
+import server.persistence.managers.*;
 import server.communication.Codes;
-import server.persistence.managers.DeviceManager;
-import server.persistence.managers.DomainManager;
-
-import javax.crypto.SecretKey;
-
 import static server.security.SecurityUtils.*;
 
 
@@ -47,49 +41,34 @@ public final class Storage {
     private static final String DEVICES = "server-files/devices.txt";
 
     /**
-     * Data structures
-     */
-    private final List<User> users;
-
-    /**
      * Storage managers
      */
+    private static UserManager userManager;
     private static DomainManager domainManager;
     private static DeviceManager deviceManager;
-    // TODO private static UserManager userManager;
-
-    /**
-     * SecretKey for encrypt data files
-     */
-    private final SecretKey secretKey;
 
     /**
      * Initiates a new Storage for the IoTServer
      *
+     * @param passwordCypher password used for encryption
      * @see FileLoader
      */
     public Storage(String passwordCypher) {
+        userManager = UserManager.getInstance(USERS, passwordCypher);
         domainManager = DomainManager.getInstance(DOMAINS);
         deviceManager = DeviceManager.getInstance(DEVICES);
-        users = new ArrayList<>();
-        secretKey = generateKey(passwordCypher);
         new FileLoader(this);
     }
 
     /**
-     * Saves the given {@code User} to the list {@link #users} of this
-     * storage. It also writes the user to a users.txt file located
-     * in the server-files folder.
+     * Saves the given {@code User} to this storage. It also writes
+     * the user to a users.txt file located in the server-files folder.
      *
      * @param user the {@code User} to be saved
      * @requires {@code user != null}
      */
     public synchronized void saveUser(User user) {
-        File usersFile = new File(USERS);
-        String currentUsersData = usersFile.exists() ? decryptDataFromFile(usersFile, this.secretKey) : "";
-        currentUsersData += user + "\n";
-        users.add(user);
-        encryptDataIntoFile(currentUsersData, usersFile, this.secretKey);
+        userManager.saveUser(user);
     }
 
     /**
@@ -229,18 +208,14 @@ public final class Storage {
     }
 
     /**
-     * Returns a {@code User} from the list {@link #users}
-     * of this storage that matches the username given.
+     * Returns a {@code User} from this storage
+     * that matches the username given.
      *
      * @param username the username of the {@code User}
      * @return a {@code User}, if the username was found, null otherwise
      */
     public User getUser(String username) {
-        for (User user : users) {
-            if (username.equals(user.getName()))
-                return user;
-        }
-        return null;
+        return userManager.getUser(username);
     }
 
     /**
@@ -343,19 +318,18 @@ public final class Storage {
         }
 
         /**
-         * Loads the data from users.txt file to the list
-         * {@link #users} of this storage
+         * Loads the data from users.txt file to this storage
          *
          * @param srvStorage this storage
          */
         private void loadUsers(Storage srvStorage) {
             File usersFile = new File(USERS);
             if (!usersFile.exists()) return;
-            String usersData = decryptDataFromFile(usersFile, srvStorage.secretKey);
+            String usersData = decryptDataFromFile(usersFile, Storage.userManager.getSecretKey());
             String[] users = usersData.split("\n");
             for (String user : users) {
                 String[] data = user.split(",");
-                srvStorage.users.add(new User(data[0],data[1]));
+                Storage.userManager.getUsers().add(new User(data[0],data[1]));
             }
         }
 
