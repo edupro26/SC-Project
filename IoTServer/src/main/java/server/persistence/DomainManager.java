@@ -90,7 +90,8 @@ public final class DomainManager {
 
     /**
      * Updates the domains.txt file located in the server-files
-     * folder in the {@code Domain} given.
+     * folder, with the {@code Domain} given. If it already exists
+     * in the file, replaces it.
      *
      * @param domain the {@code Domain} to write in file
      * @return true if the method concluded with success, false otherwise
@@ -119,19 +120,17 @@ public final class DomainManager {
     }
 
     /**
-     * Adds a given {@code User} to a given {@code Domain} of this storage.
-     * It also updates the content of the {@code Domain} in the domains.txt
-     * file located in the server-files folder.
+     * Adds a given {@code User} to a given {@code Domain} of the list {@link #domains}.
+     * It also updates the content of the {@code Domain} in the domains.txt file located
+     * in the server-files folder. Returns "NODM" if the {@code domain} does not exist,
+     * "NOUSER" if the {@code userToAdd} does not exist, "NOPERM" if the {@code user}
+     * does not have permission, "NOK" if there was an error writing to the file, "OK"
+     * if the method concluded with success.
      *
      * @param user the {@code User} of the current {@code Device}
      * @param userToAdd the {@code User} to add to the {@code Domain}
      * @param domain the {@code Domain}
-     * @return "NODM" if the {@code domain} does not exist,
-     *         "NOUSER" if the {@code userToAdd} does not exist,
-     *         "NOPERM" if the {@code user} does not have permission,
-     *         "NOK" if there was an error writing to the file,
-     *         "OK" if the method concluded with success.
-     *
+     * @return status code
      * @see Codes
      */
     public synchronized String addUserToDomain(User user, User userToAdd, Domain domain) {
@@ -147,19 +146,17 @@ public final class DomainManager {
     }
 
     /**
-     * Adds a given {@code Device} to a given {@code Domain} of this storage.
-     * It also updates the content of the {@code Domain} in the domains.txt
-     * file located in the server-files folder.
+     * Adds a given {@code Device} to a given {@code Domain} of the list {@link #domains}.
+     * It also updates the content of the {@code Domain} in the domains.txt file located
+     * in the server-files folder. Returns "NODM" if the {@code domain} does not exist,
+     * "NOPERM" if the {@code user} does not have permission, "NOK" if the {@code device}
+     * is already in the {@code domain} or there was an error writing to the file, "OK"
+     * if themethod concluded with success.
      *
      * @param user the {@code User} of the current {@code Device}
      * @param device the {@code Device} to add to the {@code Domain}
      * @param domain the {@code Domain}
-     * @return "NODM" if the {@code domain} does not exist,
-     *         "NOPERM" if the {@code user} does not have permission,
-     *         "NOK" if the {@code device} is already in the {@code domain},
-     *              or there was an error writing to the file,
-     *         "OK" if the method concluded with success.
-     *
+     * @return status code
      * @see Codes
      */
     public synchronized String addDeviceToDomain(Domain domain, Device device, User user) {

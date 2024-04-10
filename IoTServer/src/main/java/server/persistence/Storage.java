@@ -33,7 +33,7 @@ import static server.security.SecurityUtils.*;
  * @author Manuel Barral (52026)
  * @author Tiago Oliveira (54979)
  *
- * @see Domain
+ * @see DomainManager
  * @see Device
  * @see User
  */
@@ -67,6 +67,8 @@ public final class Storage {
 
     /**
      * Initiates a new Storage for the IoTServer
+     *
+     * @see FileLoader
      */
     public Storage(String passwordCypher) {
         domainManager = DomainManager.getInstance(DOMAINS);
@@ -83,7 +85,6 @@ public final class Storage {
      *
      * @param user the {@code User} to be saved
      * @requires {@code user != null}
-     * @see FileLoader
      */
     public synchronized void saveUser(User user) {
         File usersFile = new File(USERS);
@@ -101,7 +102,6 @@ public final class Storage {
      * @param device the {@code Device} to be saved
      * @param domains a list of {@code Domains} where the {@code Device} is registered
      * @requires {@code device != null && domains != null}
-     * @see FileLoader
      */
     public synchronized void saveDevice(Device device, List<Domain> domains) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(DEVICES, true))) {
@@ -114,15 +114,15 @@ public final class Storage {
 
     /**
      * Creates a new {@code Domain} with the {@code name} and {@code owner}
-     * given and saves it the list {@link #domains} of this storage.
-     * It also writes the domain to a domains.txt file located in the
-     * server-files folder.
+     * given and saves it in this storage. It also writes the domain to a
+     * domains.txt file located in the server-files folder. Returns "OK" if
+     * the method concluded with success, "NOK" otherwise.
      *
      * @param name the name of the {@code Domain}
      * @param owner the owner of the {@code Domain}
      * @requires {@code name != null}
-     * @return "OK" if the method concluded with success, "NOK" otherwise.
-     * @see FileLoader
+     * @return status code
+     *
      * @see Codes
      */
     public synchronized String createDomain(String name, User owner) {
@@ -132,11 +132,11 @@ public final class Storage {
     /**
      * Saves the last temperature sent from the given {@code Device} and
      * updates the devices.txt file located in the server-files folder.
+     * Returns "OK" if the method concluded with success, "NOK" otherwise
      *
      * @param device the {@code Device}
      * @param temperature the last temperature sent
-     * @return "OK" if the method concluded with success, "NOK" otherwise
-     * @see FileLoader
+     * @return status code
      * @see Codes
      * @requires {@code device != null && temperature != null}
      */
@@ -165,8 +165,8 @@ public final class Storage {
     }
 
     /**
-     * Returns the path of the file containing the temperatures sent
-     * by the devices of the given domain. Creates if it does not
+     * Returns the path of the file containing the temperatures sent by
+     * the devices of the given {@code Domain}. Creates if it does not
      * already exist or updates it with the most recent temperatures
      *
      * @param domain the {@code Domain}
@@ -181,17 +181,16 @@ public final class Storage {
     /**
      * Adds a given {@code User} to a given {@code Domain} of this storage.
      * It also updates the content of the {@code Domain} in the domains.txt
-     * file located in the server-files folder.
+     * file located in the server-files folder. Returns "NODM" if the
+     * {@code domain} does not exist, "NOUSER" if the {@code userToAdd} does
+     * not exist, "NOPERM" if the {@code user} does not have permission, "NOK"
+     * if there was an error writing to the file, "OK" if the method concluded
+     * with success.
      *
      * @param user the {@code User} of the current {@code Device}
      * @param userToAdd the {@code User} to add to the {@code Domain}
      * @param domain the {@code Domain}
-     * @return "NODM" if the {@code domain} does not exist,
-     *         "NOUSER" if the {@code userToAdd} does not exist,
-     *         "NOPERM" if the {@code user} does not have permission,
-     *         "NOK" if there was an error writing to the file,
-     *         "OK" if the method concluded with success.
-     *
+     * @return status code
      * @see Codes
      */
     public synchronized String addUserToDomain(User user, User userToAdd, Domain domain) {
@@ -201,17 +200,16 @@ public final class Storage {
     /**
      * Adds a given {@code Device} to a given {@code Domain} of this storage.
      * It also updates the content of the {@code Domain} in the domains.txt
-     * file located in the server-files folder.
+     * file located in the server-files folder. Returns "NODM" if the
+     * {@code domain} does not exist, "NOPERM" if the {@code user} does not
+     * have permission, "NOK" if the {@code device} is already in the
+     * {@code domain} or there was an error writing to the file, "OK" if the
+     * method concluded with success.
      *
      * @param user the {@code User} of the current {@code Device}
      * @param device the {@code Device} to add to the {@code Domain}
      * @param domain the {@code Domain}
-     * @return "NODM" if the {@code domain} does not exist,
-     *         "NOPERM" if the {@code user} does not have permission,
-     *         "NOK" if the {@code device} is already in the {@code domain},
-     *              or there was an error writing to the file,
-     *         "OK" if the method concluded with success.
-     *
+     * @return status code
      * @see Codes
      */
     public synchronized String addDeviceToDomain(Domain domain, Device device, User user) {
@@ -310,8 +308,7 @@ public final class Storage {
     }
 
     /**
-     * Returns a {@code Domain} from the list {@link #domains}
-     * of this storage that matches the name given.
+     * Returns a {@code Domain} from this storage, that matches the name given.
      *
      * @param name the name of the {@code Domain}
      * @return a {@code Domain}, if the name matched, null otherwise
@@ -405,8 +402,7 @@ public final class Storage {
         }
 
         /**
-         * Loads the data from domains.txt file to the list
-         * {@link #domains} of this storage
+         * Loads the data from domains.txt file to this storage
          *
          * @param srvStorage this storage
          */
