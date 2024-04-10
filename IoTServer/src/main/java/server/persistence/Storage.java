@@ -363,6 +363,13 @@ public final class Storage {
         return null;
     }
 
+    /**
+     * Returns a list of {@code Domains} containing all the
+     * domains where the given {@code Device} is registered
+     *
+     * @param device the {@code Device}
+     * @return a list of {@code Domains}
+     */
     public List<Domain> getDeviceDomains(Device device) {
         return devices.get(device);
     }
