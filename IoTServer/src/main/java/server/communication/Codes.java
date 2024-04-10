@@ -17,6 +17,8 @@ public enum Codes {
     NOUSER("NOUSER"),
     NOPERM("NOPERM"),
     NODATA("NODATA"),
+    FOUNDUSER("FOUND-USER"),
+    NEWUSER("NEW-USER"),
     OKNEWUSER("OK-NEW-USER"),
     OKUSER("OK-USER"),
     OKDEVID("OK-DEVID"),
