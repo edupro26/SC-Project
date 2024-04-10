@@ -1,6 +1,5 @@
 package server.communication;
 
-import server.Message;
 import server.components.User;
 import server.components.Device;
 import server.components.Domain;
