@@ -85,7 +85,6 @@ public class DeviceManager {
             } catch (IOException e) {
                 System.out.println(e.getMessage());
             }
-            try { Thread.sleep(3000); } catch (InterruptedException ignored) {}
         }
     }
 
@@ -118,7 +117,6 @@ public class DeviceManager {
                 out.write(file.toString());
                 out.close();
                 device.setLastTemp(temperature);
-                try { Thread.sleep(3000); } catch (InterruptedException ignored) {}
             }
         } catch (IOException e) {
             System.out.println(e.getMessage());
