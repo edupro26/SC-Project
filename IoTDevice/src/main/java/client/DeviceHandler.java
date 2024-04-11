@@ -226,17 +226,30 @@ public class DeviceHandler {
         String msg = parseCommandToSend(command, args);
 
         // TODO: Handle first response
+
         String res = this.sendReceive(msg);
         switch (res) {
-            case OK -> System.out.println("Response: "
-                    + OK + " # User added successfully");
-            case NODM -> System.out.println("Response: " + res
-                    + " # Domain does not exist");
-            case NOUSER -> System.out.println("Response: " + res
+            case OK -> {}
+            case NODM -> {
+                System.out.println("Response: " + res
+                        + " # Domain does not exist");
+                return;
+            }
+
+            case NOUSER -> {
+                System.out.println("Response: " + res
                     + " # User does not exist");
-            case NOPERM -> System.out.println("Response: " + res
-                    + " # This user does not have permissions");
-            default -> System.out.println("Response: NOK # Error adding user");
+                return;
+            }
+            case NOPERM -> {
+                System.out.println("Response: " + res
+                        + " # This user does not have permissions");
+                return;
+            }
+            default -> {
+                System.out.println("Response: NOK # Error adding user");
+                return;
+            }
         }
 
         PublicKey pk = Encryption.findPublicKeyOnTrustStore(args[0]);
@@ -270,13 +283,17 @@ public class DeviceHandler {
 
         File keyEncFile = new File(keyEncFilename);
 
-        sendFile(keyEncFilename, (int) keyEncFile.length());
-
         try {
+            output.writeInt((int) keyEncFile.length());
+
+            sendFile(keyEncFilename, (int) keyEncFile.length());
+
+
 
             String res3 = (String) input.readObject();
+            // FIXME: Stuck here
 
-            System.out.println("Response: " + res3 + " # Key sent successfully");
+            System.out.println("Response: " + res3 + " # User added successfully");
 
         } catch (Exception e) {
             System.out.println("Response: NOK # Error adding user");

@@ -310,7 +310,11 @@ public class Connection {
             }
 
             int size = input.readInt();
-            String path = "server-files/domain_keys" + d + "." + u + ".key.cif";
+            File domainDir = new File("server-files/domain_keys/" + d);
+            if (!domainDir.exists()) {
+                domainDir.mkdirs();
+            }
+            String path = "server-files/domain_keys/" + d + "/" + u + ".key.cif";
 
             if (receiveFile(path, size)) {
                 System.out.println("Success: Key received!");
