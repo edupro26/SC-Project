@@ -219,7 +219,7 @@ public class DeviceHandler {
      * @requires {@code args != null && command != null}
      */
     protected void sendReceiveADD(String[] args, String command) {
-        if (args.length != 3) {
+           if (args.length != 3) {
             System.out.println("Usage: ADD <user1> <dm> <password-domain>");
             return;
         }
