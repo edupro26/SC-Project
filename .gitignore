@@ -56,3 +56,7 @@ build/
 **/keystore.**
 **.cer
 **/truststore.**
+
+### Encrypted Files ###
+**/*.enc
+**/*.cif
