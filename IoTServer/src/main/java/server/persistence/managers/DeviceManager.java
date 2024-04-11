@@ -32,6 +32,11 @@ public class DeviceManager {
     private static DeviceManager instance = null;
 
     /**
+     * {@code Object} lock to control concurrency
+     */
+    private final Object devicesLock;
+
+    /**
      * Data structures
      */
     private final String devicesFile;
@@ -45,6 +50,7 @@ public class DeviceManager {
     private DeviceManager(String filePath) {
         devicesFile = filePath;
         devices = new HashMap<>();
+        devicesLock = new Object();
     }
 
     /**
@@ -70,12 +76,16 @@ public class DeviceManager {
      * @param domains a list of {@code Domains} where the {@code Device} is registered
      * @requires {@code device != null && domains != null}
      */
-    public synchronized void saveDevice(Device device, List<Domain> domains) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(devicesFile, true))) {
-            writer.write(device + "," + device.getLastTemp() + "\n");
-            devices.put(device, domains);
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
+    public void saveDevice(Device device, List<Domain> domains) {
+        // FIXME might have relations with the bug in UserManager
+        synchronized (devicesLock) {
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(devicesFile, true))) {
+                writer.write(device + "," + device.getLastTemp() + "\n");
+                devices.put(device, domains);
+            } catch (IOException e) {
+                System.out.println(e.getMessage());
+            }
+            try { Thread.sleep(3000); } catch (InterruptedException ignored) {}
         }
     }
 
@@ -90,7 +100,7 @@ public class DeviceManager {
      * @see Codes
      * @requires {@code device != null && temperature != null}
      */
-    public synchronized String updateLastTemp(Device device, Float temperature) {
+    public String updateLastTemp(Device device, Float temperature) {
         try (BufferedReader in = new BufferedReader(new FileReader(devicesFile))) {
             StringBuilder file = new StringBuilder();
             String line;
@@ -103,10 +113,13 @@ public class DeviceManager {
                     file.append(line).append("\n");
                 }
             }
-            BufferedWriter out = new BufferedWriter(new FileWriter(devicesFile, false));
-            out.write(file.toString());
-            out.close();
-            device.setLastTemp(temperature);
+            synchronized (devicesLock) {
+                BufferedWriter out = new BufferedWriter(new FileWriter(devicesFile, false));
+                out.write(file.toString());
+                out.close();
+                device.setLastTemp(temperature);
+                try { Thread.sleep(3000); } catch (InterruptedException ignored) {}
+            }
         } catch (IOException e) {
             System.out.println(e.getMessage());
             return Codes.NOK.toString();
