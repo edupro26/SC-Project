@@ -33,8 +33,8 @@ public class DomainManager {
     /**
      * {@code Object} locks to control concurrency
      */
-    private final Object createLock;
-    private final Object writeLock;
+    private final Object domainsLock;
+    private final Object tempsLock;
 
     /**
      * Data structures
@@ -50,8 +50,8 @@ public class DomainManager {
     private DomainManager(String filePath) {
         domainsFile = filePath;
         domains = new ArrayList<>();
-        createLock = new Object();
-        writeLock = new Object();
+        domainsLock = new Object();
+        tempsLock = new Object();
     }
 
     /**
@@ -84,7 +84,7 @@ public class DomainManager {
         if (owner == null) return Codes.NOK.toString();
         Domain domain = new Domain(name, owner);
         try {
-            synchronized (createLock) {
+            synchronized (domainsLock) {
                 if (getDomain(name) != null) return Codes.NOK.toString();
                 BufferedWriter writer = new BufferedWriter(new FileWriter(domainsFile, true));
                 writer.write(domain + "\n");
@@ -148,8 +148,8 @@ public class DomainManager {
         if (userToAdd == null) return Codes.NOUSER.toString();
         if (!domain.getOwner().equals(user)) return Codes.NOPERM.toString();
         List<User> domainUsers = domain.getUsers();
-        synchronized (writeLock) {
-            if (domainUsers.contains(userToAdd)) return Codes.NOK.toString();
+        if (domainUsers.contains(userToAdd)) return Codes.NOK.toString();
+        synchronized (domainsLock) {
             domainUsers.add(userToAdd);
             String res = updateDomainInFile(domain)
                     ? Codes.OK.toString() : Codes.NOK.toString();
@@ -181,7 +181,7 @@ public class DomainManager {
         if (!owner.equals(user.getName())) {
             if(!domain.getUsers().contains(user)) return Codes.NOPERM.toString();
         }
-        synchronized (writeLock) {
+        synchronized (domainsLock) {
             domain.getDevices().add(device);
             String res = updateDomainInFile(domain) ? Codes.OK.toString() : Codes.NOK.toString();
             if (res.equals(Codes.NOK.toString())) {
@@ -206,14 +206,20 @@ public class DomainManager {
         try {
             String temperatures = domain.getDomainTemperatures();
             if (!temperatures.isEmpty()) {
-                File file = new File(path);
-                if (!file.exists()) file.createNewFile();
-                BufferedWriter out = new BufferedWriter(new FileWriter(file, false));
-                out.write(temperatures);
-                out.close();
+                // FIXME Exception when executing RT D1 for example on
+                //  client1, then sleep the thread and execute RT D1 on
+                //  client2
+                synchronized (tempsLock) {
+                    File file = new File(path);
+                    if (!file.exists()) file.createNewFile();
+                    BufferedWriter out = new BufferedWriter(new FileWriter(file, false));
+                    out.write(temperatures);
+                    out.close();
+                }
                 return path;
             }
         } catch (IOException e) {
+            System.out.println(e.getMessage());
             return null;
         }
         return null;
