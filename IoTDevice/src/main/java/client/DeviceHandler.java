@@ -65,7 +65,7 @@ public class DeviceHandler {
      * @param port the port of the {@code IoTServer}
      * @requires {@code address != null && port != null}
      */
-    protected DeviceHandler(String address, int port,String keystore,String keystorePass,String userId) {
+    protected DeviceHandler(String address, int port) {
         this.address = address;
         this.port = port;
 

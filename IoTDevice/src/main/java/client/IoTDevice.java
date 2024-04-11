@@ -54,7 +54,7 @@ public class IoTDevice {
         System.setProperty("javax.net.ssl.keyStore", keystore);
         System.setProperty("javax.net.ssl.keyStorePassword", passwordKeystore);
 
-        DeviceHandler client = new DeviceHandler(server[0], Integer.parseInt(server[1]),keystore,passwordKeystore,userId);
+        DeviceHandler client = new DeviceHandler(server[0], Integer.parseInt(server[1]));
         try {
             client.connect(userId,keystore,passwordKeystore);
             deviceLogIn(client, userId, devId);
