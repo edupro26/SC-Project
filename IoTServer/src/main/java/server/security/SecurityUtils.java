@@ -13,7 +13,7 @@ import java.util.Scanner;
 
 public class SecurityUtils {
     private static final String API_URL = "https://lmpinto.eu.pythonanywhere.com/2FA";
-    private static HttpClient client = HttpClient.newHttpClient();
+    private static final HttpClient client = HttpClient.newHttpClient();
 
     // TODO: Make salt secure
     private static final byte[] salt = { (byte) 0xc9, (byte) 0x36, (byte) 0x78, (byte) 0x99, (byte) 0x52, (byte) 0x3e, (byte) 0xea, (byte) 0xf2 };
@@ -25,48 +25,41 @@ public class SecurityUtils {
     private static final String SERVER_KEYPAIR_ALIAS = "ServerKeyPair";
 
     /**
+     * Utility class should not be constructed
+     */
+    private SecurityUtils() {}
+
+    /**
      * Generates a symmetric key given a cipher-password.
      *
      * @param cipherPassword the password to be used to generate the key
      * @return the generated key
      */
     public static SecretKey generateKey(String cipherPassword) {
-
-
         PBEKeySpec keySpec = new PBEKeySpec(cipherPassword.toCharArray(), salt, ITERATION_COUNT);
         try {
             SecretKeyFactory kf = SecretKeyFactory.getInstance("PBEWithHmacSHA256AndAES_128");
             return kf.generateSecret(keySpec);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-            return null;
-        } catch (InvalidKeySpecException e) {
-            e.printStackTrace();
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            System.out.println(e.getMessage());
             return null;
         }
-
     }
 
     public static void encryptDataIntoFile(String data, File file, SecretKey key) {
         try {
             Cipher cipher = Cipher.getInstance("PBEWithHmacSHA256AndAES_128");
             cipher.init(Cipher.ENCRYPT_MODE, key);
-
             byte[] inputBytes = data.getBytes();
-
             try (FileOutputStream fos = new FileOutputStream(file);
                  CipherOutputStream cos = new CipherOutputStream(fos, cipher)) {
 
                 cos.write(inputBytes);
             }
-
             saveParams(cipher.getParameters().getEncoded());
-
-
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
-
     }
 
     public static String decryptDataFromFile(File file, SecretKey key) {
@@ -83,8 +76,7 @@ public class SecurityUtils {
                 return scanner.useDelimiter("\\A").next();
             }
         } catch (Exception e) {
-
-            e.printStackTrace();
+            System.out.println(e.getMessage());
             return null;
         }
     }
@@ -102,14 +94,12 @@ public class SecurityUtils {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(API_URL + "?e=" + email + "&c=" + code + "&a=" + apiKey))
                 .build();
-
         try {
             client.send(request, HttpResponse.BodyHandlers.ofString());
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
             return false;
         }
-
         return true;
     }
 
@@ -117,7 +107,7 @@ public class SecurityUtils {
         try (FileOutputStream fos = new FileOutputStream(PARAMS_FILE)) {
             fos.write(params);
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
     }
 
@@ -127,7 +117,7 @@ public class SecurityUtils {
             fis.read(params);
             return params;
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
             return null;
         }
     }
@@ -138,7 +128,7 @@ public class SecurityUtils {
             ks.load(new FileInputStream(System.getProperty("javax.net.ssl.keyStore")), System.getProperty("javax.net.ssl.keyStorePassword").toCharArray());
             return ks.getCertificate(alias).getPublicKey();
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
             return null;
         }
     }
@@ -149,7 +139,7 @@ public class SecurityUtils {
             ks.load(new FileInputStream(System.getProperty("javax.net.ssl.keyStore")), System.getProperty("javax.net.ssl.keyStorePassword").toCharArray());
             return (PrivateKey) ks.getKey(alias, System.getProperty("javax.net.ssl.keyStorePassword").toCharArray());
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
             return null;
         }
     }
@@ -167,14 +157,14 @@ public class SecurityUtils {
             PrivateKey privateKey = getPrivateKey(SERVER_KEYPAIR_ALIAS);
             Signature signature = Signature.getInstance("SHA256withRSA");
             signature.initSign(privateKey);
-            byte buffer[] = data.getBytes();
+            byte[] buffer = data.getBytes();
             signature.update(buffer);
             oos.writeObject(data);
             oos.writeObject(signature.sign());
             fos.close();
             oos.close();
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
     }
 
@@ -200,7 +190,7 @@ public class SecurityUtils {
                 return null;
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
             return null;
         }
     }
