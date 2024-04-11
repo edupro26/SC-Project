@@ -11,7 +11,7 @@ import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Scanner;
 
-public final class SecurityUtils {
+public class SecurityUtils {
     private static final String API_URL = "https://lmpinto.eu.pythonanywhere.com/2FA";
     private static HttpClient client = HttpClient.newHttpClient();
 

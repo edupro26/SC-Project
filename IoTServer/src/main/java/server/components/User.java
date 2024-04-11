@@ -10,7 +10,7 @@ package server.components;
  *
  * @see Device
  */
-public final class User {
+public class User {
 
     /**
      * User attributes

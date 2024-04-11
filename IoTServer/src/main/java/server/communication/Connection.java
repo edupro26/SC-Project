@@ -27,7 +27,7 @@ import java.util.List;
  * @see Device
  * @see User
  */
-public final class Connection {
+public class Connection {
 
     /**
      * Storage of the {@code IoTServer}

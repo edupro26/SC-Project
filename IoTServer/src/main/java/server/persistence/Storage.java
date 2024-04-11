@@ -1,26 +1,19 @@
 package server.persistence;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.Map;
-import java.util.List;
-import java.util.HashMap;
-import java.util.ArrayList;
-
-import server.components.User;
+import server.communication.Codes;
 import server.components.Device;
 import server.components.Domain;
-import server.communication.Codes;
+import server.components.User;
+import server.persistence.managers.DeviceManager;
+import server.persistence.managers.DomainManager;
+import server.persistence.managers.UserManager;
 
-import javax.crypto.SecretKey;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
-import static server.security.SecurityUtils.*;
+import static server.security.SecurityUtils.decryptDataFromFile;
 
 
 /**
@@ -33,11 +26,11 @@ import static server.security.SecurityUtils.*;
  * @author Manuel Barral (52026)
  * @author Tiago Oliveira (54979)
  *
- * @see Domain
+ * @see DomainManager
  * @see Device
  * @see User
  */
-public final class Storage {
+public class Storage {
 
     /**
      * File paths
@@ -48,161 +41,82 @@ public final class Storage {
     private static final String DEVICES = "server-files/devices.txt";
 
     /**
-     * Data structures
+     * Storage managers
      */
-    private final List<User> users;
-    private final List<Domain> domains;
-    private final HashMap<Device, List<Domain>> devices;
-
-    /**
-     * SecretKey for encrypt data files
-     */
-    private final SecretKey secretKey;
+    private final UserManager userManager;
+    private final DomainManager domainManager;
+    private final DeviceManager deviceManager;
 
     /**
      * Initiates a new Storage for the IoTServer
+     *
+     * @param passwordCypher password used for encryption
+     * @see FileLoader
      */
     public Storage(String passwordCypher) {
-        users = new ArrayList<>();
-        domains = new ArrayList<>();
-        devices = new HashMap<>();
-        secretKey = generateKey(passwordCypher);
+        userManager = UserManager.getInstance(USERS, passwordCypher);
+        domainManager = DomainManager.getInstance(DOMAINS);
+        deviceManager = DeviceManager.getInstance(DEVICES);
         new FileLoader(this);
     }
 
     /**
-     * Saves the given {@code User} to the list {@link #users} of this
-     * storage. It also writes the user to a users.txt file located
-     * in the server-files folder.
+     * Saves the given {@code User} to this storage. It also writes
+     * the user to a users.txt file located in the server-files folder.
      *
      * @param user the {@code User} to be saved
      * @requires {@code user != null}
-     * @see FileLoader
      */
     public synchronized void saveUser(User user) {
-        File usersFile = new File(USERS);
-        String currentUsersData = usersFile.exists() ? decryptDataFromFile(usersFile, this.secretKey) : "";
-        currentUsersData += user + "\n";
-        users.add(user);
-        encryptDataIntoFile(currentUsersData, usersFile, this.secretKey);
+        userManager.saveUser(user);
     }
 
     /**
-     * Saves the {@code Device} as the key, and a list of domains as the value,
-     * to the map {@link #devices} of this storage. It also writes the device
+     * Saves a new {@code Device} to this storage. It also writes the device
      * to a devices.txt file located in the server-files folder.
      *
      * @param device the {@code Device} to be saved
-     * @param domains a list of {@code Domains} where the {@code Device} is registered
-     * @requires {@code device != null && domains != null}
-     * @see FileLoader
+     * @requires {@code device != null}
      */
-    public synchronized void saveDevice(Device device, List<Domain> domains) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(DEVICES, true))) {
-            writer.write(device + "," + device.getLastTemp() + "\n");
-            devices.put(device, domains);
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
+    public synchronized void saveDevice(Device device) {
+        deviceManager.saveDevice(device, new ArrayList<>());
     }
 
     /**
      * Creates a new {@code Domain} with the {@code name} and {@code owner}
-     * given and saves it the list {@link #domains} of this storage.
-     * It also writes the domain to a domains.txt file located in the
-     * server-files folder.
+     * given and saves it in this storage. It also writes the domain to a
+     * domains.txt file located in the server-files folder. Returns "OK" if
+     * the method concluded with success, "NOK" otherwise.
      *
      * @param name the name of the {@code Domain}
      * @param owner the owner of the {@code Domain}
      * @requires {@code name != null}
-     * @return "OK" if the method concluded with success, "NOK" otherwise.
-     * @see FileLoader
+     * @return status code
+     *
      * @see Codes
      */
     public synchronized String createDomain(String name, User owner) {
-        if (owner == null) return Codes.NOK.toString();
-        if (getDomain(name) != null) return Codes.NOK.toString();
-        try {
-            Domain domain = new Domain(name, owner);
-            BufferedWriter writer = new BufferedWriter(new FileWriter(DOMAINS, true));
-            writer.write(domain + "\n");
-            writer.close();
-            domains.add(domain);
-            return Codes.OK.toString();
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-            return Codes.NOK.toString();
-        }
-    }
-
-    /**
-     * Updates the domains.txt file located in the server-files
-     * folder in the {@code Domain} given.
-     *
-     * @param domain the {@code Domain} to write in file
-     * @return true if the method concluded with success, false otherwise
-     * @see FileLoader
-     * @requires {@code domain != null}
-     */
-    private boolean updateDomainInFile(Domain domain) {
-        try (BufferedReader in = new BufferedReader(new FileReader(DOMAINS))) {
-            StringBuilder file = new StringBuilder();
-            String line;
-            while ((line = in.readLine()) != null) {
-                String[] temp = line.split(",");
-                if (temp[0].equals(domain.getName()))
-                    file.append(domain).append("\n");
-                else
-                    file.append(line).append("\n");
-            }
-            BufferedWriter out = new BufferedWriter(new FileWriter(DOMAINS, false));
-            out.write(file.toString());
-            out.close();
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-            return false;
-        }
-        return true;
+        return domainManager.createDomain(name, owner);
     }
 
     /**
      * Saves the last temperature sent from the given {@code Device} and
      * updates the devices.txt file located in the server-files folder.
+     * Returns "OK" if the method concluded with success, "NOK" otherwise
      *
      * @param device the {@code Device}
      * @param temperature the last temperature sent
-     * @return "OK" if the method concluded with success, "NOK" otherwise
-     * @see FileLoader
+     * @return status code
      * @see Codes
      * @requires {@code device != null && temperature != null}
      */
     public synchronized String updateLastTemp(Device device, Float temperature) {
-        try (BufferedReader in = new BufferedReader(new FileReader(DEVICES))) {
-            StringBuilder file = new StringBuilder();
-            String line;
-            while ((line = in.readLine()) != null) {
-                String[] temp = line.split(",");
-                if (temp[0].equals(device.toString())) {
-                    file.append(device).append(",")
-                            .append(temperature).append("\n");
-                } else {
-                    file.append(line).append("\n");
-                }
-            }
-            BufferedWriter out = new BufferedWriter(new FileWriter(DEVICES, false));
-            out.write(file.toString());
-            out.close();
-            device.setLastTemp(temperature);
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-            return Codes.NOK.toString();
-        }
-        return Codes.OK.toString();
+        return deviceManager.updateLastTemp(device, temperature);
     }
 
     /**
-     * Returns the path of the file containing the temperatures sent
-     * by the devices of the given domain. Creates if it does not
+     * Returns the path of the file containing the temperatures sent by
+     * the devices of the given {@code Domain}. Creates if it does not
      * already exist or updates it with the most recent temperatures
      *
      * @param domain the {@code Domain}
@@ -211,79 +125,47 @@ public final class Storage {
      * @requires {@code domain != null}
      */
     public synchronized String domainTemperaturesFile(Domain domain) {
-        String path = "server-files/temperatures/" + domain.getName() + ".txt";
-        try {
-            String temperatures = domain.getDomainTemperatures();
-            if (!temperatures.isEmpty()) {
-                File file = new File(path);
-                if (!file.exists()) file.createNewFile();
-                BufferedWriter out = new BufferedWriter(new FileWriter(file, false));
-                out.write(temperatures);
-                out.close();
-                return path;
-            }
-        } catch (IOException e) {
-            return null;
-        }
-        return null;
+        return domainManager.domainTemperaturesFile(domain);
     }
 
     /**
      * Adds a given {@code User} to a given {@code Domain} of this storage.
      * It also updates the content of the {@code Domain} in the domains.txt
-     * file located in the server-files folder.
+     * file located in the server-files folder. Returns "NODM" if the
+     * {@code domain} does not exist, "NOUSER" if the {@code userToAdd} does
+     * not exist, "NOPERM" if the {@code user} does not have permission, "NOK"
+     * if there was an error writing to the file, "OK" if the method concluded
+     * with success.
      *
      * @param user the {@code User} of the current {@code Device}
      * @param userToAdd the {@code User} to add to the {@code Domain}
      * @param domain the {@code Domain}
-     * @return "NODM" if the {@code domain} does not exist,
-     *         "NOUSER" if the {@code userToAdd} does not exist,
-     *         "NOPERM" if the {@code user} does not have permission,
-     *         "NOK" if there was an error writing to the file,
-     *         "OK" if the method concluded with success.
-     * @see #updateDomainInFile(Domain)
+     * @return status code
      * @see Codes
      */
     public synchronized String addUserToDomain(User user, User userToAdd, Domain domain) {
-        if (domain == null) return Codes.NODM.toString();
-        if (userToAdd == null) return Codes.NOUSER.toString();
-        if (!domain.getOwner().equals(user)) return Codes.NOPERM.toString();
-        if (domain.getUsers().contains(userToAdd)) return Codes.NOK.toString();
-        String res = updateDomainInFile(domain) ? Codes.OK.toString() : Codes.NOK.toString();
-        if (res.equals(Codes.OK.toString())) {
-            domain.addUser(userToAdd);
-        }
-        return res;
+        return domainManager.addUserToDomain(user, userToAdd, domain);
     }
 
     /**
      * Adds a given {@code Device} to a given {@code Domain} of this storage.
      * It also updates the content of the {@code Domain} in the domains.txt
-     * file located in the server-files folder.
+     * file located in the server-files folder. Returns "NODM" if the
+     * {@code domain} does not exist, "NOPERM" if the {@code user} does not
+     * have permission, "NOK" if the {@code device} is already in the
+     * {@code domain} or there was an error writing to the file, "OK" if the
+     * method concluded with success.
      *
      * @param user the {@code User} of the current {@code Device}
      * @param device the {@code Device} to add to the {@code Domain}
      * @param domain the {@code Domain}
-     * @return "NODM" if the {@code domain} does not exist,
-     *         "NOPERM" if the {@code user} does not have permission,
-     *         "NOK" if the {@code device} is already in the {@code domain},
-     *              or there was an error writing to the file,
-     *         "OK" if the method concluded with success.
-     * @see #updateDomainInFile(Domain)
+     * @return status code
      * @see Codes
      */
     public synchronized String addDeviceToDomain(Domain domain, Device device, User user) {
-        if(domain == null) return Codes.NODM.toString();
-        if(domain.getDevices().contains(device)) return Codes.NOK.toString();
-        User owner = domain.getOwner();
-        if(!domain.getUsers().contains(user)) {
-            if (!owner.getName().equals(user.getName()))
-                return Codes.NOPERM.toString();
-        }
-        String res = updateDomainInFile(domain) ? Codes.OK.toString() : Codes.NOK.toString();
+        String res = domainManager.addDeviceToDomain(domain, device, user);
         if (res.equals(Codes.OK.toString())) {
-            domain.addDevice(device);
-            devices.get(device).add(domain);
+            deviceManager.addDomainToDevice(device, domain);
         }
         return res;
     }
@@ -297,15 +179,7 @@ public final class Storage {
      * @return true, if the user has permission, false otherwise
      */
     public boolean hasPerm(User user, Device device) {
-        for (Map.Entry<Device, List<Domain>> entry : devices.entrySet()) {
-            if (entry.getKey().equals(device)) {
-                for (Domain domain : entry.getValue()) {
-                    if (domain.getUsers().contains(user) || domain.getOwner().equals(user))
-                        return true;
-                }
-            }
-        }
-        return false;
+        return deviceManager.hasPerm(user, device);
     }
 
     /**
@@ -334,61 +208,55 @@ public final class Storage {
     }
 
     /**
-     * Returns a {@code User} from the list {@link #users}
-     * of this storage that matches the username given.
+     * Returns a {@code User} from this storage
+     * that matches the username given.
      *
      * @param username the username of the {@code User}
      * @return a {@code User}, if the username was found, null otherwise
      */
     public User getUser(String username) {
-        for (User user : users) {
-            if (username.equals(user.getName()))
-                return user;
-        }
-        return null;
+        return userManager.getUser(username);
     }
 
     /**
-     * Returns a {@code Device} from the map {@link #devices}
-     * of this storage that matches the {@code Device} given, used as a key.
+     * Returns a {@code Device} from this storage that matches
+     * the {@code Device} given, used as a key.
      *
      * @param device the {@code Device} used as key for the search
      * @return a {@code Device}, if the key matched, null otherwise
      */
     public Device getDevice(Device device) {
-        for (Map.Entry<Device, List<Domain>> entry : devices.entrySet()) {
-            if (entry.getKey().equals(device))
-                return entry.getKey();
-        }
-        return null;
-    }
-
-    public List<Domain> getDeviceDomains(Device device) {
-        return devices.get(device);
+        return deviceManager.getDevice(device);
     }
 
     /**
-     * Returns a {@code Domain} from the list {@link #domains}
-     * of this storage that matches the name given.
+     * Returns a list of {@code Domains} containing all the
+     * domains where the given {@code Device} is registered
+     *
+     * @param device the {@code Device}
+     * @return a list of {@code Domains}
+     */
+    public List<Domain> getDeviceDomains(Device device) {
+        return deviceManager.getDeviceDomains(device);
+    }
+
+    /**
+     * Returns a {@code Domain} from this storage, that matches the name given.
      *
      * @param name the name of the {@code Domain}
      * @return a {@code Domain}, if the name matched, null otherwise
      */
     public Domain getDomain(String name) {
-        for (Domain domain : domains) {
-            if (name.equals(domain.getName()))
-                return domain;
-        }
-        return null;
+        return domainManager.getDomain(name);
     }
 
     /**
-     * Returns the map {@link #devices} of this storage.
+     * Returns the map of devices of this storage.
      *
-     * @return the map {@link #devices} of this storage.
+     * @return the map of devices of this storage.
      */
     public HashMap<Device, List<Domain>> getDevices() {
-        return devices;
+        return deviceManager.getDevices();
     }
 
     /**
@@ -442,7 +310,7 @@ public final class Storage {
                 loadTemps(srvStorage);
 
             StringBuilder sb = new StringBuilder();
-            for (Domain domain : srvStorage.domains)
+            for (Domain domain : srvStorage.domainManager.getDomains())
                 sb.append("Domain ").append(domain.getName()).append(" -> ")
                         .append(domain).append(" ").append("\n");
             System.out.println("Printing server domains...");
@@ -450,25 +318,23 @@ public final class Storage {
         }
 
         /**
-         * Loads the data from users.txt file to the list
-         * {@link #users} of this storage
+         * Loads the data from users.txt file to this storage
          *
          * @param srvStorage this storage
          */
         private void loadUsers(Storage srvStorage) {
             File usersFile = new File(USERS);
             if (!usersFile.exists()) return;
-            String usersData = decryptDataFromFile(usersFile, srvStorage.secretKey);
+            String usersData = decryptDataFromFile(usersFile, srvStorage.userManager.getSecretKey());
             String[] users = usersData.split("\n");
             for (String user : users) {
                 String[] data = user.split(",");
-                srvStorage.users.add(new User(data[0],data[1]));
+                srvStorage.userManager.getUsers().add(new User(data[0],data[1]));
             }
         }
 
         /**
-         * Loads the data from domains.txt file to the list
-         * {@link #domains} of this storage
+         * Loads the data from domains.txt file to this storage
          *
          * @param srvStorage this storage
          */
@@ -476,13 +342,13 @@ public final class Storage {
             try (BufferedReader in = new BufferedReader(new FileReader(DOMAINS))) {
                 String line;
                 while ((line = in.readLine()) != null) {
-                    srvStorage.domains.add(new Domain(line, srvStorage));
+                    srvStorage.domainManager.getDomains().add(new Domain(line, srvStorage));
                 }
-                for (Domain domain : srvStorage.domains){
+                for (Domain domain : srvStorage.domainManager.getDomains()){
                     for(Device device: domain.getDevices()) {
-                        List<Domain> domains = srvStorage.devices.get(device);
+                        List<Domain> domains = srvStorage.deviceManager.getDevices().get(device);
                         domains.add(domain);
-                        srvStorage.devices.put(device, domains);
+                        srvStorage.getDevices().put(device, domains);
                     }
                 }
                 System.out.println("Domains text file loaded successfully");
@@ -493,8 +359,8 @@ public final class Storage {
         }
 
         /**
-         * Loads the data from devices.txt file to the map
-         * {@link #devices} of this storage
+         * Loads the temperatures from devices.txt file to
+         * the devices of this storage
          *
          * @param srvStorage this storage
          */
@@ -506,16 +372,16 @@ public final class Storage {
                     Device device = new Device(fileData[0], fileData[1]);
                     Device exits = srvStorage.getDevice(device);
                     if (exits != null) {
-                        List<Domain> domains = srvStorage.devices.get(exits);
-                        srvStorage.devices.remove(exits);
+                        List<Domain> domains = srvStorage.getDevices().get(exits);
+                        srvStorage.getDevices().remove(exits);
                         for (Domain domain : domains) {
                             domain.getDevices().remove(exits);
                             domain.getDevices().add(device);
                         }
-                        srvStorage.devices.put(device, domains);
+                        srvStorage.getDevices().put(device, domains);
                     }
                     else {
-                        srvStorage.devices.put(device, new ArrayList<>());
+                        srvStorage.getDevices().put(device, new ArrayList<>());
                     }
                 }
                 System.out.println("Temperatures text file loaded successfully");

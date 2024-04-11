@@ -12,7 +12,7 @@ import java.util.Objects;
  *
  * @see User
  */
-public final class Device {
+public class Device {
 
     /**
      * Device attributes

@@ -1,10 +1,10 @@
 package server.components;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.StringJoiner;
-
 import server.persistence.Storage;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringJoiner;
 
 /**
  * Represents a domain in the {@code IoTServer} with its users and devices.
@@ -16,7 +16,7 @@ import server.persistence.Storage;
  * @see User
  * @see Device
  */
-public final class Domain {
+public class Domain {
 
     /**
      * Domain attributes
@@ -90,26 +90,6 @@ public final class Domain {
                         .append("\n");
         }
         return temps.toString();
-    }
-
-    /**
-     * Adds a {@code User} to this domain.
-     *
-     * @param user the {@code User} to be added
-     * @requires {@code user != null}
-     */
-    public void addUser(User user) {
-        users.add(user);
-    }
-
-    /**
-     * Adds a {@code Device} to this domain.
-     *
-     * @param device the {@code Device} to be added
-     * @requires {@code device != null}
-     */
-    public void addDevice(Device device) {
-        devices.add(device);
     }
 
     /**
