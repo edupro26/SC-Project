@@ -28,6 +28,11 @@ public class UserManager {
     private static UserManager instance = null;
 
     /**
+     * {@code Object} lock to control concurrency
+     */
+    private final Object usersLock;
+
+    /**
      * Data structures
      */
     private final String usersFile;
@@ -48,6 +53,7 @@ public class UserManager {
         usersFile = filePath;
         secretKey = generateKey(passwordCypher);
         users = new ArrayList<>();
+        usersLock = new Object();
     }
 
     /**
@@ -73,12 +79,18 @@ public class UserManager {
      * @param user the {@code User} to be saved
      * @requires {@code user != null}
      */
-    public synchronized void saveUser(User user) {
+    public void saveUser(User user) {
         File file = new File(usersFile);
         String currentUsersData = file.exists() ? decryptDataFromFile(file, this.secretKey) : "";
         currentUsersData += user + "\n";
-        users.add(user);
-        encryptDataIntoFile(currentUsersData, file, this.secretKey);
+        synchronized (usersLock) {
+            //FIXME this keeps the server from saving a repeated user
+            // but it still allows to register 2 equal devices
+            if (getUser(user.getName()) == null) {
+                users.add(user);
+                encryptDataIntoFile(currentUsersData, file, this.secretKey);
+            }
+        }
     }
 
     /**
