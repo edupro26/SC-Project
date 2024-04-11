@@ -275,7 +275,7 @@ public class Connection {
         try {
             User user = srvStorage.getUser(u);
             if (user == null) {
-                output.writeObject(Codes.NOK.toString());
+                output.writeObject(Codes.NOUSER.toString());
                 return;
             }
             Domain domain = srvStorage.getDomain(d);
@@ -292,6 +292,9 @@ public class Connection {
 
             String hasPK = (String) input.readObject();
             if (hasPK.equals("NO_PK")) {
+                output.writeObject("NOK");
+                return;
+                /*
                 String path = "server-files/users_pub_keys/" + u + ".cer";
                 File file = new File(path);
                 if (file.isFile() && file.exists()) {
@@ -301,10 +304,12 @@ public class Connection {
                     output.writeInt((int) file.length());
                     sendFile(path, (int) file.length());
                     System.out.println("Success: File send successfully!");
+
                 } else {
                     output.writeObject("NOK");
                     return;
                 }
+                */
             } else {
                 output.writeObject("WAITING_KEY");
             }
@@ -325,11 +330,17 @@ public class Connection {
                 return;
             }
 
+            input.readObject();
+
             String result = srvStorage.addUserToDomain(this.devUser, user, domain);
+
             output.writeObject(result);
+
             result = result.equals(Codes.OK.toString()) ?
                     "Success: User added!" : "Error: Unable to add user!";
             System.out.println(result);
+
+
         } catch (Exception e) {
             output.writeObject(Codes.NOK.toString());
         }

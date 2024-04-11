@@ -257,6 +257,9 @@ public class DeviceHandler {
         try {
 
             if (pk == null) {
+                String resNoPk = this.sendReceive("NO_PK");
+                System.out.println("Response: NOK # Error adding user. Public key not found to encrypt the key.");
+                /*
                 output.writeObject("NO_PK");
                 String findPkRes = (String) input.readObject();
                 if (findPkRes.equals("NOK")) {
@@ -267,9 +270,9 @@ public class DeviceHandler {
                 int size = input.readInt();
                 receiveFile("server-output/" + args[0] + ".cer", size);
                 Encryption.storePubKeyOnTrustStore(new File("server-output/" + args[0] + ".cer"), args[0]);
-
+                */
             } else {
-                String res2 = this.sendReceive("PK");
+                String resFoundPk = this.sendReceive("SENDING_PK");
             }
 
         } catch (Exception e) {
@@ -288,12 +291,27 @@ public class DeviceHandler {
 
             sendFile(keyEncFilename, (int) keyEncFile.length());
 
+            String resKeySent = (String) input.readObject();
 
+            if (keyEncFile.exists()) {
+                keyEncFile.delete();
+            }
 
-            String res3 = (String) input.readObject();
-            // FIXME: Stuck here
+            if (!resKeySent.equals("OK")) {
+                System.out.println("Response: NOK # Error adding user");
+                return;
+            }
 
-            System.out.println("Response: " + res3 + " # User added successfully");
+            output.writeObject("WAITING_FINAL_RES");
+
+            String finalRes = (String) input.readObject();
+
+            if (finalRes.equals("OK")) {
+                System.out.println("Response: " + finalRes + " # User added successfully");
+                return;
+            }
+
+            System.out.println("Response: NOK # Error adding user");
 
         } catch (Exception e) {
             System.out.println("Response: NOK # Error adding user");
