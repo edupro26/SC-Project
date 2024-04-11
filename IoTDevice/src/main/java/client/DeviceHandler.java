@@ -1,22 +1,14 @@
 package client;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import java.io.*;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.PublicKey;
-import javax.crypto.SecretKey;
-import javax.net.SocketFactory;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
 
 /**
  *
@@ -155,24 +147,37 @@ public class DeviceHandler {
      * @requires {@code args != null && command != null}
      */
     protected void sendReceiveADD(String[] args, String command) {
-        if (args.length != 3) {
+           if (args.length != 3) {
             System.out.println("Usage: ADD <user1> <dm> <password-domain>");
             return;
         }
         String msg = parseCommandToSend(command, args);
 
         // TODO: Handle first response
+
         String res = this.sendReceive(msg);
         switch (res) {
-            case OK -> System.out.println("Response: "
-                    + OK + " # User added successfully");
-            case NODM -> System.out.println("Response: " + res
-                    + " # Domain does not exist");
-            case NOUSER -> System.out.println("Response: " + res
+            case OK -> {}
+            case NODM -> {
+                System.out.println("Response: " + res
+                        + " # Domain does not exist");
+                return;
+            }
+
+            case NOUSER -> {
+                System.out.println("Response: " + res
                     + " # User does not exist");
-            case NOPERM -> System.out.println("Response: " + res
-                    + " # This user does not have permissions");
-            default -> System.out.println("Response: NOK # Error adding user");
+                return;
+            }
+            case NOPERM -> {
+                System.out.println("Response: " + res
+                        + " # This user does not have permissions");
+                return;
+            }
+            default -> {
+                System.out.println("Response: NOK # Error adding user");
+                return;
+            }
         }
 
         PublicKey pk = Encryption.findPublicKeyOnTrustStore(args[0]);
@@ -180,6 +185,9 @@ public class DeviceHandler {
         try {
 
             if (pk == null) {
+                String resNoPk = this.sendReceive("NO_PK");
+                System.out.println("Response: NOK # Error adding user. Public key not found to encrypt the key.");
+                /*
                 output.writeObject("NO_PK");
                 String findPkRes = (String) input.readObject();
                 if (findPkRes.equals("NOK")) {
@@ -190,9 +198,9 @@ public class DeviceHandler {
                 int size = input.readInt();
                 receiveFile("server-output/" + args[0] + ".cer", size);
                 Encryption.storePubKeyOnTrustStore(new File("server-output/" + args[0] + ".cer"), args[0]);
-
+                */
             } else {
-                String res2 = this.sendReceive("PK");
+                String resFoundPk = this.sendReceive("SENDING_PK");
             }
 
         } catch (Exception e) {
@@ -206,13 +214,32 @@ public class DeviceHandler {
 
         File keyEncFile = new File(keyEncFilename);
 
-        sendFile(keyEncFilename, (int) keyEncFile.length());
-
         try {
+            output.writeInt((int) keyEncFile.length());
 
-            String res3 = (String) input.readObject();
+            sendFile(keyEncFilename, (int) keyEncFile.length());
 
-            System.out.println("Response: " + res3 + " # Key sent successfully");
+            String resKeySent = (String) input.readObject();
+
+            if (keyEncFile.exists()) {
+                keyEncFile.delete();
+            }
+
+            if (!resKeySent.equals("OK")) {
+                System.out.println("Response: NOK # Error adding user");
+                return;
+            }
+
+            output.writeObject("WAITING_FINAL_RES");
+
+            String finalRes = (String) input.readObject();
+
+            if (finalRes.equals("OK")) {
+                System.out.println("Response: " + finalRes + " # User added successfully");
+                return;
+            }
+
+            System.out.println("Response: NOK # Error adding user");
 
         } catch (Exception e) {
             System.out.println("Response: NOK # Error adding user");
