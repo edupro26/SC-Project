@@ -10,7 +10,6 @@ import server.security.SecurityUtils;
 import java.io.*;
 import java.security.PublicKey;
 import java.security.SecureRandom;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -160,7 +159,7 @@ public class Connection {
                 }
             }
             else {
-                srvStorage.saveDevice(device, new ArrayList<>());
+                srvStorage.saveDevice(device);
             }
 
             // TODO: Remote attestation
