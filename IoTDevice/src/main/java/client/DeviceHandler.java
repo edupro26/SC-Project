@@ -116,7 +116,7 @@ public class DeviceHandler {
 
             String authRes = (String) input.readObject();
 
-            if (!authRes.equals("OK-USER") && !authRes.equals("NOK-USER")) {
+            if (!authRes.equals("OK-USER") && !authRes.equals("OK-NEW-USER")) {
                 System.out.println("Authentication failed. Certificate not valid.");
                 System.exit(1);
             }
@@ -135,7 +135,8 @@ public class DeviceHandler {
             this.output.writeObject(input);
             */
 
-            System.out.println("Authentication successful");
+            System.out.println(authRes);
+            System.out.println("Authentication successful!");
 
         } catch (Exception e) {
             System.out.println(e.getMessage());
