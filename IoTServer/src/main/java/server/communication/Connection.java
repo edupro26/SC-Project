@@ -524,28 +524,54 @@ public class Connection {
      * @see Codes
      */
     private void handleRI(String user, int id) throws IOException {
-        Device device = srvStorage.getDevice(new Device(user, id));
-        if (device == null) {
-            System.out.println("Error: Device id not found!");
-            output.writeObject(Codes.NOID.toString());
-        } else if (!srvStorage.hasPerm(devUser, device)) {
-            System.out.println("Error: User does not have permissions!");
-            output.writeObject(Codes.NOPERM.toString());
-        } else {
-            String name = device.getUser() + "_" + device.getId() + ".jpg";
-            String path = "server-files/images/" + name;
-            File image = new File(path);
-            if (image.isFile() && image.exists()){
-                output.writeObject(Codes.OK.toString());
-                int size = (int) image.length();
-                output.writeInt(size);
-                String result = sendFile(path, size) ?
-                        "Success: Image sent successfully!" : "Error: Failed to send image!";
-                System.out.println(result);
+        try {
+            Device device = srvStorage.getDevice(new Device(user, id));
+            if (device == null) {
+                System.out.println("Error: Device id not found!");
+                output.writeObject(Codes.NOID.toString());
+            } else if (!srvStorage.hasPerm(devUser, device)) {
+                System.out.println("Error: User does not have permissions!");
+                output.writeObject(Codes.NOPERM.toString());
             } else {
-                System.out.println("Error: No data found for this device!");
-                output.writeObject(Codes.NODATA.toString());
+                List<Domain> domainsDevice = srvStorage.getDeviceDomains(device);
+                for (Domain d : domainsDevice) {
+                    if (d.getUsers().contains(devUser) || d.getOwner().equals(devUser)) {
+                        // Domain key
+                        File domainKeyEnc = new File("server-files/domain_keys/" + d + "/" + devUser.getName() + ".key.cif");
+                        if (!domainKeyEnc.exists()) continue;
+
+                        // Image encrypted
+                        File imageEnc = new File("server-files/images/" + device.getUser() + "_" + device.getId() + "_" + d.getName() + ".jpg.cif");
+                        if (!imageEnc.exists()) continue;
+
+                        // Image encryption params
+                        File imageEncParams = new File("server-files/images/" + device.getUser() + "_" + device.getId() + "_" + d.getName() + ".params");
+                        if (!imageEncParams.exists()) continue;
+
+                        output.writeObject("SENDING_FILES"); // Warn client that server is going to send the files
+
+                        input.readObject(); // Client is ready to receive the key
+                        output.writeInt((int) domainKeyEnc.length());
+                        sendFile(domainKeyEnc.getPath(), (int) domainKeyEnc.length());
+
+                        input.readObject(); // Client is ready to receive the image
+                        output.writeInt((int) imageEnc.length());
+                        sendFile(imageEnc.getPath(), (int) imageEnc.length());
+
+                        input.readObject(); // Client is ready to receive the image encryption params
+                        output.writeInt((int) imageEncParams.length());
+                        sendFile(imageEncParams.getPath(), (int) imageEncParams.length());
+
+                        input.readObject();
+                        output.writeObject("OK");
+
+                        break;
+                    }
+
+                }
             }
+        } catch (Exception e) {
+            output.writeObject(Codes.NOK);
         }
     }
 
