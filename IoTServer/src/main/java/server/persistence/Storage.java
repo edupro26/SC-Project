@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import server.components.*;
 import server.persistence.managers.*;
 import server.communication.Codes;
+import server.security.IntegrityVerifier;
+
 import static server.security.SecurityUtils.*;
 
 
@@ -39,6 +41,7 @@ public class Storage {
     private static final String USERS = "server-files/users.txt";
     private static final String DOMAINS = "server-files/domains.txt";
     private static final String DEVICES = "server-files/devices.txt";
+    private static final String CHECKSUMS = "server-files/checksums.txt";
 
     /**
      * Storage managers
@@ -46,6 +49,11 @@ public class Storage {
     private final UserManager userManager;
     private final DomainManager domainManager;
     private final DeviceManager deviceManager;
+
+    /**
+     * Used for file integrity verification
+     */
+    private final IntegrityVerifier fileVerifier;
 
     /**
      * Initiates a new Storage for the IoTServer
@@ -58,6 +66,8 @@ public class Storage {
         domainManager = DomainManager.getInstance(DOMAINS);
         deviceManager = DeviceManager.getInstance(DEVICES);
         new FileLoader(this);
+
+        fileVerifier = new IntegrityVerifier(CHECKSUMS);
     }
 
     /**
@@ -80,6 +90,8 @@ public class Storage {
      */
     public synchronized void saveDevice(Device device) {
         deviceManager.saveDevice(device, new ArrayList<>());
+        String checksum = fileVerifier.calculateChecksum(new File(DEVICES));
+        fileVerifier.updateChecksum(DEVICES, checksum);
     }
 
     /**
@@ -96,7 +108,10 @@ public class Storage {
      * @see Codes
      */
     public synchronized String createDomain(String name, User owner) {
-        return domainManager.createDomain(name, owner);
+        String result = domainManager.createDomain(name, owner);
+        String checksum = fileVerifier.calculateChecksum(new File(DOMAINS));
+        fileVerifier.updateChecksum(DOMAINS, checksum);
+        return result;
     }
 
     /**
@@ -144,7 +159,10 @@ public class Storage {
      * @see Codes
      */
     public synchronized String addUserToDomain(User user, User userToAdd, Domain domain) {
-        return domainManager.addUserToDomain(user, userToAdd, domain);
+        String res = domainManager.addUserToDomain(user, userToAdd, domain);
+        String checksum = fileVerifier.calculateChecksum(new File(DOMAINS));
+        fileVerifier.updateChecksum(DOMAINS, checksum);
+        return res;
     }
 
     /**
@@ -167,6 +185,8 @@ public class Storage {
         if (res.equals(Codes.OK.toString())) {
             deviceManager.addDomainToDevice(device, domain);
         }
+        String checksum = fileVerifier.calculateChecksum(new File(DOMAINS));
+        fileVerifier.updateChecksum(DOMAINS, checksum);
         return res;
     }
 
