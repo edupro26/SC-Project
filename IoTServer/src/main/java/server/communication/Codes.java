@@ -21,6 +21,7 @@ public enum Codes {
     NEWUSER("NEW-USER"),
     OKNEWUSER("OK-NEW-USER"),
     OKUSER("OK-USER"),
+    OK2FA("OK-2FA"),
     OKDEVID("OK-DEVID"),
     OKTESTED("OK-TESTED"),
     WRONGPWD("WRONG-PWD"),

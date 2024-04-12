@@ -66,7 +66,7 @@ public class Connection {
     /**
      * Authenticates the {@code User} of this connection.
      */
-    public boolean userAuthentication() {
+    public boolean userAuthentication(String apiKey) {
         try {
             String userId = (String) input.readObject();
             SecureRandom secureRandom = new SecureRandom();
@@ -88,14 +88,28 @@ public class Connection {
                     String userPublicKeyPath = "server-files/users_pub_keys/" + userId + ".cer";
                     SecurityUtils.savePublicKeyToFile(msg.getCertificate().getPublicKey(), new File(userPublicKeyPath));
 
-                    // TODO: 2FA Auth
+                    output.writeObject(Codes.OKNEWUSER.toString());
+
+                    long fiveDigitCode = secureRandom.nextInt(90000) + 10000;
+                    SecurityUtils.send2FACode(String.valueOf(fiveDigitCode), userId, apiKey);
+
+                    String codeStr = (String) input.readObject();
+                    try {
+                        int code = Integer.parseInt(codeStr);
+                        if (code != fiveDigitCode) {
+                            output.writeObject(Codes.NOK.toString());
+                            return false;
+                        }
+                    } catch (NumberFormatException e) {
+                        output.writeObject(Codes.NOK.toString());
+                        return false;
+                    }
+
+                    output.writeObject(Codes.OK2FA.toString());
+
 
                     this.devUser = new User(userId, userPublicKeyPath);
                     srvStorage.saveUser(this.devUser);
-                    output.writeObject(Codes.OKNEWUSER.toString());
-
-
-
 
                     return true;
                 }
@@ -120,6 +134,24 @@ public class Connection {
 
                 if(clientNonce == nonce && verified) { // && verified
                     output.writeObject(Codes.OKUSER.toString());
+
+                    long fiveDigitCode = secureRandom.nextInt(90000) + 10000;
+                    SecurityUtils.send2FACode(String.valueOf(fiveDigitCode), userId, apiKey);
+
+                    String codeStr = (String) input.readObject();
+                    try {
+                        int code = Integer.parseInt(codeStr);
+                        if (code != fiveDigitCode) {
+                            output.writeObject(Codes.NOK.toString());
+                            return false;
+                        }
+                    } catch (NumberFormatException e) {
+                        output.writeObject(Codes.NOK.toString());
+                        return false;
+                    }
+
+                    output.writeObject(Codes.OK2FA.toString());
+
                     this.devUser = srvStorage.getUser(userId);
                     return true;
                 } else {
