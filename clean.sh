@@ -3,6 +3,9 @@ rm -rf out/
 # Remove server files
 rm -rf server-files/*
 
+# Remove server output files
+rm -rf server-output/*
+
 # Remove server keystore
 rm -f keystore.server
 
