@@ -2,14 +2,12 @@ package client;
 
 import common.Message;
 
+import javax.crypto.SecretKey;
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.*;
 import java.net.Socket;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignedObject;
@@ -58,6 +56,8 @@ public class DeviceHandler {
     private final String address;       // the ip address of the client
     private final int port;             // the server port
     private SSLSocket socket;              // the client socket
+
+    private String userId;
 
     /**
      * Constructs a new {@code DeviceHandler}.
@@ -410,22 +410,64 @@ public class DeviceHandler {
             return;
         }
         String msg = parseCommandToSend(command, args);
+
         try {
-            Path imagePath = Paths.get(args[0]);
-            if (Files.exists(imagePath)) {
-                output.writeObject(msg);
-                int size = (int) new File(args[0]).length();
-                output.writeInt(size);
-                sendFile(args[0], size);
-                String res = (String) input.readObject();
-                if (res.equals(OK)) {
-                    System.out.println("Response: " + OK + " # Image sent successfully");
-                } else {
-                    System.out.println("Response: " + res + " # Error sending image");
-                }
-            } else {
-                System.out.println("Response: NOK # Image does not exist");
+            String res = this.sendReceive(msg);
+            if (res.equals(NOK)) {
+                System.out.println("Response: " + res + " # Device not registered");
+                return;
             }
+            String[] domains = res.split(";");
+
+            output.writeObject("RECEIVED_DOMAINS");
+
+            for (String domain : domains) {
+                // Receive the domain key
+                int size = input.readInt();
+                String keyTempPath = domain + ".key.cif.temp";
+                receiveFile(keyTempPath, size);
+
+                File encryptedKey = new File(keyTempPath);
+
+                SecretKey key = (SecretKey) Encryption.decryptKeyWithRSA(encryptedKey, Encryption.findPrivateKeyOnKeyStore(this.userId));
+
+                File imageEnc = new File(args[0] + ".cif");
+                Encryption.encryptFile(new File(args[0]), imageEnc, key);
+
+                int imageEncSize = (int) imageEnc.length();
+
+                // Send the encrypted image
+
+                output.writeInt(imageEncSize);
+                sendFile(imageEnc.getPath(), imageEncSize);
+
+                input.readObject(); // Receive confirmation of the image received
+
+                File imageEncParams = new File(args[0] + ".cif.params");
+                output.writeInt((int) imageEncParams.length());
+                sendFile(imageEncParams.getPath(), (int) imageEncParams.length());
+
+                input.readObject(); // Receive confirmation of the image params received
+
+                // Delete the temporary key file
+                new File(keyTempPath).delete(); // Delete the temporary key file
+                imageEnc.delete(); // Delete the encrypted image
+                imageEncParams.delete(); // Delete the encrypted image params
+
+            }
+
+            output.writeObject("ALL_IMAGES_RECEIVED");
+
+            String finalRes = (String) input.readObject();
+
+            if (finalRes.equals(OK)) {
+                System.out.println("Response: " + finalRes + " # Image sent successfully");
+            } else {
+                System.out.println("Response: " + finalRes + " # Error sending image");
+            }
+
+
+
         } catch (Exception e) {
             System.out.println("Response: NOK # Error sending image");
         }
@@ -480,35 +522,81 @@ public class DeviceHandler {
      * @requires {@code args != null && command != null}
      */
     protected void sendReceiveRI(String[] args, String command) {
-        if (args.length != 1 || !args[0].contains(":")) {
-            System.out.println("Usage: RI <user-id>:<dev_id>");
-            return;
-        }
-        String msg = parseCommandToSend(command, args);
-        String res = this.sendReceive(msg);
-        String[] temp = args[0].split(":");
-        String name = SERVER_OUT + temp[0] + "_" + temp[1] + ".jpg";
-        switch (res) {
-            case OK -> {
-                try {
-                    int size = input.readInt();
-                    int received = receiveFile(name, size);
-                    String result = received == size
-                            ? "Response: " + res + ", " + received
-                            + " (long), followed by " + received + " bytes of data"
-                            : "Response: NOK # Error getting image";
-                    System.out.println(result);
-                } catch (IOException e) {
-                    System.out.println("Response: NOK # Error getting image");
-                }
+        try {
+            if (args.length != 1 || !args[0].contains(":")) {
+                System.out.println("Usage: RI <user-id>:<dev_id>");
+                return;
             }
-            case NODATA -> System.out.println("Response: " + res
-                    + " # No image found for this device");
-            case NOID -> System.out.println("Response: " + res
-                    + " # No device found with this id");
-            case NOPERM -> System.out.println("Response: " + res
-                    + " # This user does not have permissions");
-            default -> System.out.println("Response: NOK # Error getting image");
+            String msg = parseCommandToSend(command, args);
+            String res = this.sendReceive(msg);
+            String[] temp = args[0].split(":");
+
+            switch (res) {
+                case "SENDING_FILES" -> {
+                    try {
+                        String domain = (String) input.readObject();
+
+                        File domainKeyENc = new File(SERVER_OUT + domain + ".key.enc");
+                        File imageEnc = new File(SERVER_OUT + temp[0] + "_" + temp[1] + ".jpg.cif");
+                        File imageEncParams = new File(SERVER_OUT + temp[0] + "_" + temp[1] + ".jpg.cif.params");
+
+                        // Receive the domain key
+                        int domainKeyEncSize = input.readInt();
+                        receiveFile(domainKeyENc.getPath(), domainKeyEncSize);
+                        output.writeObject("RECEIVED_DOMAIN_KEY");
+
+                        // Receive the encrypted image
+                        int imageEncSize = input.readInt();
+                        receiveFile(imageEnc.getPath(), imageEncSize);
+                        output.writeObject("RECEIVED_IMAGE");
+
+                        // Receive the encrypted image params
+                        int imageEncParamsSize = input.readInt();
+                        receiveFile(imageEncParams.getPath(), imageEncParamsSize);
+                        output.writeObject("RECEIVED_IMAGE_PARAMS");
+
+                        String finalRes = (String) input.readObject();
+                        if (!finalRes.equals(OK)) {
+                            System.out.println("Response: NOK # Error getting image");
+                            return;
+                        }
+
+                        // Decrypt the domain key
+                        SecretKey key = (SecretKey) Encryption.decryptKeyWithRSA(domainKeyENc, Encryption.findPrivateKeyOnKeyStore(this.userId));
+
+                        // Decrypt the image
+                        File image = new File(SERVER_OUT + temp[0] + "_" + temp[1] + ".jpg");
+                        Encryption.decryptFile(imageEnc, image, key);
+
+                        // Delete the encrypted files
+                        domainKeyENc.delete();
+                        imageEnc.delete();
+                        imageEncParams.delete();
+
+                        System.out.println("Response: " + finalRes + " # Image received successfully");
+                        System.out.println("Image saved as: " + image.getPath());
+
+                        /*
+                        String result = received == size
+                                ? "Response: " + res + ", " + received
+                                + " (long), followed by " + received + " bytes of data"
+                                : "Response: NOK # Error getting image";
+                        System.out.println(result);
+                        */
+                    } catch (IOException e) {
+                        System.out.println("Response: NOK # Error getting image");
+                    }
+                }
+                case NODATA -> System.out.println("Response: " + res
+                        + " # No image found for this device");
+                case NOID -> System.out.println("Response: " + res
+                        + " # No device found with this id");
+                case NOPERM -> System.out.println("Response: " + res
+                        + " # This user does not have permissions");
+                default -> System.out.println("Response: NOK # Error getting image");
+            }
+        } catch (Exception e) {
+            System.out.println("Response: NOK # Error getting image");
         }
     }
 

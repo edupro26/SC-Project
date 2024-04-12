@@ -3,12 +3,12 @@ package client;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import javax.crypto.SecretKey;
 import java.io.File;
 import java.security.Key;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-
-import javax.crypto.SecretKey;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -150,6 +150,28 @@ class EncryptionTest {
 
     }
 
+    @Test
+    void encryptFile() {
+        File fileToEncrypt = new File("file.txt");
+        File encryptedFile = new File("file_encrypted.txt");
+        SecretKey key = Encryption.generateKey(KEY_PASSWORD);
+        Encryption.encryptKeyWithRSA(key, Encryption.findPublicKeyOnTrustStore(PUBLIC_KEY_ALIAS), KEY_ENCRYPTED_FILE);
+        SecretKey key2 = (SecretKey) Encryption.decryptKeyWithRSA(new File(KEY_ENCRYPTED_FILE), Encryption.findPrivateKeyOnKeyStore(PUBLIC_KEY_ALIAS));
+        Encryption.encryptFile(fileToEncrypt, encryptedFile, key2);
+        assertTrue(encryptedFile.exists());
 
+    }
 
+    @Test
+    void decryptFile() {
+        File fileToEncrypt = new File("file.txt");
+        File encryptedFile = new File("file_encrypted.txt");
+        SecretKey key = Encryption.generateKey(KEY_PASSWORD);
+        Encryption.encryptKeyWithRSA(key, Encryption.findPublicKeyOnTrustStore(PUBLIC_KEY_ALIAS), KEY_ENCRYPTED_FILE);
+        SecretKey key2 = (SecretKey) Encryption.decryptKeyWithRSA(new File(KEY_ENCRYPTED_FILE), Encryption.findPrivateKeyOnKeyStore(PUBLIC_KEY_ALIAS));
+        Encryption.encryptFile(fileToEncrypt, encryptedFile, key2);
+        File decryptedFile = new File("file_decrypted.txt");
+        Encryption.decryptFile(encryptedFile, decryptedFile, key2);
+        assertTrue(decryptedFile.exists());
+    }
 }
