@@ -137,6 +137,8 @@ public class DeviceHandler {
                 System.exit(1);
             }
 
+            this.userId = userId;
+
 
         } catch (Exception e) {
             System.out.println(e.getMessage());
