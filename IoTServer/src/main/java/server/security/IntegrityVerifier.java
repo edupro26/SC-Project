@@ -4,19 +4,42 @@ import java.io.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+/**
+ * Class to verify integrity of files
+ *
+ * @author Eduardo Proença (57551)
+ * @author Manuel Barral (52026)
+ * @author Tiago Oliveira (54979)
+ *
+ * @see SecurityUtils
+ */
 public class IntegrityVerifier {
 
+    /**
+     * File paths
+     */
     private static final String ALGORITHM = "SHA-256";
     private static final String DOMAINS = "server-files/domains.txt";
     private static final String DEVICES = "server-files/devices.txt";
 
+    /**
+     * Path and pointer to the checksums file
+     */
     private final String filePath;
     private File fileInstance;
 
+    /**
+     * Checksums of each data file
+     */
     //TODO private String clientChecksum;
     private String domainsChecksum;
     private String devicesChecksum;
 
+    /**
+     * Constructs a new {@code IntegrityVerifier}
+     *
+     * @param filePath the path of the file to save checksums
+     */
     public IntegrityVerifier(String filePath) {
         domainsChecksum = "";
         devicesChecksum = "";
@@ -31,6 +54,12 @@ public class IntegrityVerifier {
         }
     }
 
+    /**
+     * Verifies the integrity of all the files
+     *
+     * @return true if there are no corrupted files,
+     *      false otherwise
+     */
     private boolean verifyAll() {
         boolean result = loadChecksums();
         if (!domainsChecksum.isEmpty()) result &= verify(DOMAINS);
@@ -38,6 +67,11 @@ public class IntegrityVerifier {
         return result;
     }
 
+    /**
+     * Loads the checksum values from the file
+     *
+     * @return true if succeeded, false otherwise
+     */
     private boolean loadChecksums() {
         String data = SecurityUtils.verifySignature(fileInstance);
         if (data != null) {
@@ -49,6 +83,10 @@ public class IntegrityVerifier {
         return false;
     }
 
+    /**
+     * Updated the content of the file with the
+     * {@link #domainsChecksum} and the {@link #domainsChecksum}.
+     */
     private void updateFile() {
         StringBuilder checksums = new StringBuilder();
         checksums.append(domainsChecksum).append('\n')
@@ -68,6 +106,12 @@ public class IntegrityVerifier {
         }
     }
 
+    /**
+     * Verifies the integrity of a file
+     *
+     * @param filePath the file path
+     * @return true if not corrupted, false otherwise
+     */
     public boolean verify(String filePath) {
         File file = new File(filePath);
         String data = SecurityUtils.verifySignature(fileInstance);
@@ -88,6 +132,12 @@ public class IntegrityVerifier {
         return false;
     }
 
+    /**
+     * Returns the checksum value of a file
+     *
+     * @param file the file
+     * @return the checksum, or null in case of an error
+     */
     public String calculateChecksum(File file) {
         StringBuilder checksum = new StringBuilder();
         try (FileInputStream fis = new FileInputStream(file)) {
@@ -110,6 +160,13 @@ public class IntegrityVerifier {
         }
     }
 
+    /**
+     * Updates the {@link #domainsChecksum} or the {@link
+     * #devicesChecksum}, depending on the filepath that was given
+     *
+     * @param filePath the filepath
+     * @param checksum the checksum
+     */
     public void updateChecksum(String filePath, String checksum) {
         switch (filePath){
             case DOMAINS -> this.domainsChecksum = checksum;
