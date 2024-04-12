@@ -415,14 +415,63 @@ public class Connection {
      * @see Codes
      */
     private void handleEI() throws IOException {
-        int size = input.readInt();
-        String name = device.getUser() + "_" + device.getId() + ".jpg";
-        String path = "server-files/images/" + name;
-        if (receiveFile(path, size)) {
-            System.out.println("Success: Image received!");
-            output.writeObject(Codes.OK.toString());
-        }
-        else {
+        try {
+            // Check domains device is in
+            List<Domain> domains = srvStorage.getDeviceDomains(device);
+            if (domains.isEmpty()) {
+                System.out.println("Error: Device not registered in any domain!");
+                output.writeObject(Codes.NOK.toString());
+                return;
+            }
+
+            StringBuilder sb = new StringBuilder();
+            for (Domain domain : domains) {
+                sb.append(domain.getName()).append(";");
+            }
+
+            // Send domains
+            output.writeObject(sb.toString());
+
+            // Receive confirmation of receiving the domains
+            input.readObject();
+
+            // Start receiving the images - one image per domain
+            for (Domain domain : domains) {
+                // Send the key
+                String keyPath = "server-files/domain_keys/" + domain.getName() + "/" + devUser.getName() + ".key.cif";
+                File keyFile = new File(keyPath);
+                if (!keyFile.exists()) {
+                    System.out.println("Error: Key not found!");
+                    output.writeObject(Codes.NOK.toString());
+                    return;
+                }
+                output.writeInt((int) keyFile.length()); // Send key size
+                sendFile(keyPath, (int) keyFile.length()); // Send key
+
+                int size = input.readInt(); // Receive image size
+                String imagePath = "server-files/images/" + device.getUser() + "_" + device.getId() + "_" + domain.getName() + ".jpg.cif";
+
+                receiveFile(imagePath, size); // Receive image
+
+                output.writeObject("ONE_IMAGE_RECEIVED"); // Confirm image received
+
+                int paramsSize = input.readInt(); // Receive params size
+                String paramsPath = "server-files/images/" + device.getUser() + "_" + device.getId() + "_" + domain.getName() + ".params";
+                receiveFile(paramsPath, paramsSize); // Receive params
+
+                output.writeObject("ONE_PARAMS_RECEIVED"); // Confirm params received
+            }
+
+            String allImagesReceived = (String) input.readObject(); // Receive confirmation of all images were sent to the server
+
+            if (allImagesReceived.equals("ALL_IMAGES_RECEIVED")) {
+                System.out.println("Success: All images received!");
+                output.writeObject(Codes.OK.toString());
+            } else {
+                System.out.println("Error: Unable to receive images!");
+                output.writeObject(Codes.NOK.toString());
+            }
+        } catch (Exception e) {
             System.out.println("Error: Unable to receive image!");
             output.writeObject(Codes.NOK.toString());
         }

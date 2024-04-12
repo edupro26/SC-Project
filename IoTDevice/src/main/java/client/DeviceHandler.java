@@ -2,14 +2,12 @@ package client;
 
 import common.Message;
 
+import javax.crypto.SecretKey;
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.*;
 import java.net.Socket;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignedObject;
@@ -57,6 +55,8 @@ public class DeviceHandler {
     private final String address;       // the ip address of the client
     private final int port;             // the server port
     private SSLSocket socket;              // the client socket
+
+    private String userId;
 
     /**
      * Constructs a new {@code DeviceHandler}.
@@ -134,6 +134,8 @@ public class DeviceHandler {
 
             this.output.writeObject(input);
             */
+
+            this.userId = userId;
 
             System.out.println(authRes);
             System.out.println("Authentication successful!");
@@ -410,22 +412,64 @@ public class DeviceHandler {
             return;
         }
         String msg = parseCommandToSend(command, args);
+
         try {
-            Path imagePath = Paths.get(args[0]);
-            if (Files.exists(imagePath)) {
-                output.writeObject(msg);
-                int size = (int) new File(args[0]).length();
-                output.writeInt(size);
-                sendFile(args[0], size);
-                String res = (String) input.readObject();
-                if (res.equals(OK)) {
-                    System.out.println("Response: " + OK + " # Image sent successfully");
-                } else {
-                    System.out.println("Response: " + res + " # Error sending image");
-                }
-            } else {
-                System.out.println("Response: NOK # Image does not exist");
+            String res = this.sendReceive(msg);
+            if (res.equals(NOK)) {
+                System.out.println("Response: " + res + " # Device not registered");
+                return;
             }
+            String[] domains = res.split(";");
+
+            output.writeObject("RECEIVED_DOMAINS");
+
+            for (String domain : domains) {
+                // Receive the domain key
+                int size = input.readInt();
+                String keyTempPath = domain + ".key.cif.temp";
+                receiveFile(keyTempPath, size);
+
+                File encryptedKey = new File(keyTempPath);
+
+                SecretKey key = (SecretKey) Encryption.decryptKeyWithRSA(encryptedKey, Encryption.findPrivateKeyOnKeyStore(this.userId));
+
+                File imageEnc = new File(args[0] + ".cif");
+                Encryption.encryptFile(new File(args[0]), imageEnc, key);
+
+                int imageEncSize = (int) imageEnc.length();
+
+                // Send the encrypted image
+
+                output.writeInt(imageEncSize);
+                sendFile(imageEnc.getPath(), imageEncSize);
+
+                input.readObject(); // Receive confirmation of the image received
+
+                File imageEncParams = new File(args[0] + ".cif.params");
+                output.writeInt((int) imageEncParams.length());
+                sendFile(imageEncParams.getPath(), (int) imageEncParams.length());
+
+                input.readObject(); // Receive confirmation of the image params received
+
+                // Delete the temporary key file
+                new File(keyTempPath).delete(); // Delete the temporary key file
+                imageEnc.delete(); // Delete the encrypted image
+                imageEncParams.delete(); // Delete the encrypted image params
+
+            }
+
+            output.writeObject("ALL_IMAGES_RECEIVED");
+
+            String finalRes = (String) input.readObject();
+
+            if (finalRes.equals(OK)) {
+                System.out.println("Response: " + finalRes + " # Image sent successfully");
+            } else {
+                System.out.println("Response: " + finalRes + " # Error sending image");
+            }
+
+
+
         } catch (Exception e) {
             System.out.println("Response: NOK # Error sending image");
         }
