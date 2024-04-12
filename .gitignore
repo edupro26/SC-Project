@@ -60,3 +60,4 @@ build/
 ### Encrypted Files ###
 **/*.enc
 **/*.cif
+**/*.params
