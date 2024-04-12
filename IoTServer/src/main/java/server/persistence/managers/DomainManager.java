@@ -26,6 +26,12 @@ public class DomainManager {
     private static DomainManager instance = null;
 
     /**
+     * {@code Object} locks to control concurrency
+     */
+    private final Object domainsLock;
+    private final Object tempsLock;
+
+    /**
      * Data structures
      */
     private final String domainsFile;
@@ -39,6 +45,8 @@ public class DomainManager {
     private DomainManager(String filePath) {
         domainsFile = filePath;
         domains = new ArrayList<>();
+        domainsLock = new Object();
+        tempsLock = new Object();
     }
 
     /**
@@ -69,13 +77,15 @@ public class DomainManager {
      */
     public String createDomain(String name, User owner) {
         if (owner == null) return Codes.NOK.toString();
-        if (getDomain(name) != null) return Codes.NOK.toString();
+        Domain domain = new Domain(name, owner);
         try {
-            Domain domain = new Domain(name, owner);
-            BufferedWriter writer = new BufferedWriter(new FileWriter(domainsFile, true));
-            writer.write(domain + "\n");
-            writer.close();
-            domains.add(domain);
+            synchronized (domainsLock) {
+                if (getDomain(name) != null) return Codes.NOK.toString();
+                BufferedWriter writer = new BufferedWriter(new FileWriter(domainsFile, true));
+                writer.write(domain + "\n");
+                writer.close();
+                domains.add(domain);
+            }
             return Codes.OK.toString();
         } catch (IOException e) {
             System.out.println(e.getMessage());
@@ -128,18 +138,21 @@ public class DomainManager {
      * @return status code
      * @see Codes
      */
-    public synchronized String addUserToDomain(User user, User userToAdd, Domain domain) {
+    public String addUserToDomain(User user, User userToAdd, Domain domain) {
         if (domain == null) return Codes.NODM.toString();
         if (userToAdd == null) return Codes.NOUSER.toString();
         if (!domain.getOwner().equals(user)) return Codes.NOPERM.toString();
-        if (domain.getUsers().contains(userToAdd)) return Codes.NOK.toString();
-
-        domain.getUsers().add(userToAdd);
-        String res = updateDomainInFile(domain) ? Codes.OK.toString() : Codes.NOK.toString();
-        if (res.equals(Codes.NOK.toString())) {
-            domain.getUsers().remove(userToAdd);
+        List<User> domainUsers = domain.getUsers();
+        if (domainUsers.contains(userToAdd)) return Codes.NOK.toString();
+        synchronized (domainsLock) {
+            domainUsers.add(userToAdd);
+            String res = updateDomainInFile(domain)
+                    ? Codes.OK.toString() : Codes.NOK.toString();
+            if (res.equals(Codes.NOK.toString())) {
+                domainUsers.remove(userToAdd);
+            }
+            return res;
         }
-        return res;
     }
 
     /**
@@ -156,21 +169,21 @@ public class DomainManager {
      * @return status code
      * @see Codes
      */
-    public synchronized String addDeviceToDomain(Domain domain, Device device, User user) {
+    public String addDeviceToDomain(Domain domain, Device device, User user) {
         if(domain == null) return Codes.NODM.toString();
         if(domain.getDevices().contains(device)) return Codes.NOK.toString();
-        User owner = domain.getOwner();
-        if(!domain.getUsers().contains(user)) {
-            if (!owner.getName().equals(user.getName()))
-                return Codes.NOPERM.toString();
+        String owner = domain.getOwner().getName();
+        if (!owner.equals(user.getName())) {
+            if(!domain.getUsers().contains(user)) return Codes.NOPERM.toString();
         }
-
-        domain.getDevices().add(device);
-        String res = updateDomainInFile(domain) ? Codes.OK.toString() : Codes.NOK.toString();
-        if (res.equals(Codes.NOK.toString())) {
-            domain.getDevices().remove(device);
+        synchronized (domainsLock) {
+            domain.getDevices().add(device);
+            String res = updateDomainInFile(domain) ? Codes.OK.toString() : Codes.NOK.toString();
+            if (res.equals(Codes.NOK.toString())) {
+                domain.getDevices().remove(device);
+            }
+            return res;
         }
-        return res;
     }
 
     /**
@@ -183,19 +196,25 @@ public class DomainManager {
      *          if there is no data or in case of error
      * @requires {@code domain != null}
      */
-    public synchronized String domainTemperaturesFile(Domain domain) {
+    public String domainTemperaturesFile(Domain domain) {
         String path = "server-files/temperatures/" + domain.getName() + ".txt";
         try {
             String temperatures = domain.getDomainTemperatures();
             if (!temperatures.isEmpty()) {
-                File file = new File(path);
-                if (!file.exists()) file.createNewFile();
-                BufferedWriter out = new BufferedWriter(new FileWriter(file, false));
-                out.write(temperatures);
-                out.close();
+                // FIXME Exception when executing RT D1 for example on
+                //  client1, then sleep the thread and execute RT D1 on
+                //  client2
+                synchronized (tempsLock) {
+                    File file = new File(path);
+                    if (!file.exists()) file.createNewFile();
+                    BufferedWriter out = new BufferedWriter(new FileWriter(file, false));
+                    out.write(temperatures);
+                    out.close();
+                }
                 return path;
             }
         } catch (IOException e) {
+            System.out.println(e.getMessage());
             return null;
         }
         return null;
