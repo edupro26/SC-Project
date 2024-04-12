@@ -1,6 +1,7 @@
 package client;
 
 import javax.crypto.Cipher;
+import javax.crypto.CipherOutputStream;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
@@ -144,6 +145,52 @@ public class Encryption {
             FileOutputStream tsFos = new FileOutputStream(System.getProperty("javax.net.ssl.trustStore"));
             trustStore.store(tsFos, System.getProperty("javax.net.ssl.trustStorePassword").toCharArray());
             tsFos.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void encryptFile(File fileToEncrypt, File encryptedFile, SecretKey key) {
+        try {
+            Cipher cipher = Cipher.getInstance("PBEWithHmacSHA256AndAES_128");
+            cipher.init(Cipher.ENCRYPT_MODE, key);
+
+            try (FileInputStream fis = new FileInputStream(fileToEncrypt);
+                 FileOutputStream fos = new FileOutputStream(encryptedFile);
+                 CipherOutputStream cos = new CipherOutputStream(fos, cipher)) {
+                byte[] buffer = new byte[1024];
+                int read;
+                while ((read = fis.read(buffer)) != -1) {
+                    cos.write(buffer, 0, read);
+                }
+            }
+
+            // Save params
+            saveParams(cipher.getParameters().getEncoded(), new File(encryptedFile.getAbsolutePath() + ".params"));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    public static void decryptFile(File encryptedFile, File decryptedFile, SecretKey key) {
+        try {
+            AlgorithmParameters p = AlgorithmParameters.getInstance("PBEWithHmacSHA256AndAES_128");
+            p.init(readParams(new File(encryptedFile.getAbsolutePath() + ".params")));
+            Cipher cipher = Cipher.getInstance("PBEWithHmacSHA256AndAES_128");
+            cipher.init(Cipher.DECRYPT_MODE, key, p);
+
+            try (FileInputStream fis = new FileInputStream(encryptedFile);
+                 FileOutputStream fos = new FileOutputStream(decryptedFile);
+                 CipherOutputStream cos = new CipherOutputStream(fos, cipher)) {
+                byte[] buffer = new byte[1024];
+                int read;
+                while ((read = fis.read(buffer)) != -1) {
+                    cos.write(buffer, 0, read);
+                }
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
