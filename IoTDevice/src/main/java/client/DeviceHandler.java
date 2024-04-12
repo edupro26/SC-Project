@@ -524,35 +524,81 @@ public class DeviceHandler {
      * @requires {@code args != null && command != null}
      */
     protected void sendReceiveRI(String[] args, String command) {
-        if (args.length != 1 || !args[0].contains(":")) {
-            System.out.println("Usage: RI <user-id>:<dev_id>");
-            return;
-        }
-        String msg = parseCommandToSend(command, args);
-        String res = this.sendReceive(msg);
-        String[] temp = args[0].split(":");
-        String name = SERVER_OUT + temp[0] + "_" + temp[1] + ".jpg";
-        switch (res) {
-            case OK -> {
-                try {
-                    int size = input.readInt();
-                    int received = receiveFile(name, size);
-                    String result = received == size
-                            ? "Response: " + res + ", " + received
-                            + " (long), followed by " + received + " bytes of data"
-                            : "Response: NOK # Error getting image";
-                    System.out.println(result);
-                } catch (IOException e) {
-                    System.out.println("Response: NOK # Error getting image");
-                }
+        try {
+            if (args.length != 1 || !args[0].contains(":")) {
+                System.out.println("Usage: RI <user-id>:<dev_id>");
+                return;
             }
-            case NODATA -> System.out.println("Response: " + res
-                    + " # No image found for this device");
-            case NOID -> System.out.println("Response: " + res
-                    + " # No device found with this id");
-            case NOPERM -> System.out.println("Response: " + res
-                    + " # This user does not have permissions");
-            default -> System.out.println("Response: NOK # Error getting image");
+            String msg = parseCommandToSend(command, args);
+            String res = this.sendReceive(msg);
+            String[] temp = args[0].split(":");
+
+            switch (res) {
+                case "SENDING_FILES" -> {
+                    try {
+                        String domain = (String) input.readObject();
+
+                        File domainKeyENc = new File(SERVER_OUT + domain + ".key.enc");
+                        File imageEnc = new File(SERVER_OUT + temp[0] + "_" + temp[1] + ".jpg.cif");
+                        File imageEncParams = new File(SERVER_OUT + temp[0] + "_" + temp[1] + ".jpg.cif.params");
+
+                        // Receive the domain key
+                        int domainKeyEncSize = input.readInt();
+                        receiveFile(domainKeyENc.getPath(), domainKeyEncSize);
+                        output.writeObject("RECEIVED_DOMAIN_KEY");
+
+                        // Receive the encrypted image
+                        int imageEncSize = input.readInt();
+                        receiveFile(imageEnc.getPath(), imageEncSize);
+                        output.writeObject("RECEIVED_IMAGE");
+
+                        // Receive the encrypted image params
+                        int imageEncParamsSize = input.readInt();
+                        receiveFile(imageEncParams.getPath(), imageEncParamsSize);
+                        output.writeObject("RECEIVED_IMAGE_PARAMS");
+
+                        String finalRes = (String) input.readObject();
+                        if (!finalRes.equals(OK)) {
+                            System.out.println("Response: NOK # Error getting image");
+                            return;
+                        }
+
+                        // Decrypt the domain key
+                        SecretKey key = (SecretKey) Encryption.decryptKeyWithRSA(domainKeyENc, Encryption.findPrivateKeyOnKeyStore(this.userId));
+
+                        // Decrypt the image
+                        File image = new File(SERVER_OUT + temp[0] + "_" + temp[1] + ".jpg");
+                        Encryption.decryptFile(imageEnc, image, key);
+
+                        // Delete the encrypted files
+                        domainKeyENc.delete();
+                        imageEnc.delete();
+                        imageEncParams.delete();
+
+                        System.out.println("Response: " + finalRes + " # Image received successfully");
+                        System.out.println("Image saved as: " + image.getPath());
+
+                        /*
+                        String result = received == size
+                                ? "Response: " + res + ", " + received
+                                + " (long), followed by " + received + " bytes of data"
+                                : "Response: NOK # Error getting image";
+                        System.out.println(result);
+                        */
+                    } catch (IOException e) {
+                        System.out.println("Response: NOK # Error getting image");
+                    }
+                }
+                case NODATA -> System.out.println("Response: " + res
+                        + " # No image found for this device");
+                case NOID -> System.out.println("Response: " + res
+                        + " # No device found with this id");
+                case NOPERM -> System.out.println("Response: " + res
+                        + " # This user does not have permissions");
+                default -> System.out.println("Response: NOK # Error getting image");
+            }
+        } catch (Exception e) {
+            System.out.println("Response: NOK # Error getting image");
         }
     }
 

@@ -537,7 +537,7 @@ public class Connection {
                 for (Domain d : domainsDevice) {
                     if (d.getUsers().contains(devUser) || d.getOwner().equals(devUser)) {
                         // Domain key
-                        File domainKeyEnc = new File("server-files/domain_keys/" + d + "/" + devUser.getName() + ".key.cif");
+                        File domainKeyEnc = new File("server-files/domain_keys/" + d.getName() + "/" + devUser.getName() + ".key.cif");
                         if (!domainKeyEnc.exists()) continue;
 
                         // Image encrypted
@@ -550,7 +550,10 @@ public class Connection {
 
                         output.writeObject("SENDING_FILES"); // Warn client that server is going to send the files
 
-                        input.readObject(); // Client is ready to receive the key
+                        //input.readObject(); // Client is ready to receive the key
+
+                        output.writeObject(d.getName());
+
                         output.writeInt((int) domainKeyEnc.length());
                         sendFile(domainKeyEnc.getPath(), (int) domainKeyEnc.length());
 
@@ -565,10 +568,12 @@ public class Connection {
                         input.readObject();
                         output.writeObject("OK");
 
-                        break;
+                        return;
                     }
 
                 }
+
+                output.writeObject(Codes.NODATA.toString());
             }
         } catch (Exception e) {
             output.writeObject(Codes.NOK);
