@@ -13,6 +13,7 @@ import java.nio.file.Paths;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignedObject;
+import java.util.Scanner;
 
 /**
  *
@@ -121,22 +122,21 @@ public class DeviceHandler {
                 System.exit(1);
             }
 
-            // TODO: 2FA Auth
-
             // 2FA Process
-            /*
-            System.out.println("Introduza o código enviado pelo servidor:”");
-
-
+            System.out.print("2FA Code: ");
 
             Scanner scanner = new Scanner(System.in);
             String input = scanner.nextLine();
 
-            this.output.writeObject(input);
-            */
+            output.writeObject(input);
 
-            System.out.println(authRes);
-            System.out.println("Authentication successful!");
+            String finalAuthRes = (String) this.input.readObject();
+
+            if (!finalAuthRes.equals("OK-2FA")) {
+                System.out.println("Authentication failed. 2FA code not valid.");
+                System.exit(1);
+            }
+
 
         } catch (Exception e) {
             System.out.println(e.getMessage());

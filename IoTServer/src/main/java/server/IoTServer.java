@@ -87,7 +87,7 @@ public class IoTServer {
             Storage srvStorage = new Storage(passwordCipher);
             System.out.println("Waiting for clients...");
             while (true) {
-                new ServerThread(srvSocket.accept(), srvStorage).start();
+                new ServerThread(srvSocket.accept(), srvStorage, apiKey).start();
             }
         } catch (Exception e) {
             System.out.println(e.getMessage());
@@ -113,17 +113,20 @@ public class IoTServer {
          */
         private final Socket cliSocket;         // the socket of the client
         private final Storage srvStorage;       // the storage of this IoTServer
+        private final String apiKey;            // the API key for the 2FA
 
         /**
          * Initiates a new {@code ServerThread}.
          *
          * @param cliSocket the {@code Socket} of the client
          * @param srvStorage the {@code Storage} of this IoTServer
-         * @requires {@code cliSocket != null && srvStorage != null}
+         * @param apiKey the API key for the 2FA
+         * @requires {@code cliSocket != null && srvStorage != null && apiKey != null}
          */
-        private ServerThread (Socket cliSocket, Storage srvStorage) {
+        private ServerThread (Socket cliSocket, Storage srvStorage, String apiKey) {
             this.cliSocket = cliSocket;
             this.srvStorage = srvStorage;
+            this.apiKey = apiKey;
         }
 
         /**
@@ -138,7 +141,7 @@ public class IoTServer {
                 ObjectOutputStream output = new ObjectOutputStream(cliSocket.getOutputStream());
 
                 Connection connection = new Connection(input, output, srvStorage, clientAddress);
-                boolean auth = connection.userAuthentication();
+                boolean auth = connection.userAuthentication(this.apiKey);
 
                 if (!auth) {
                     System.out.println("Client not authenticated (" + clientAddress + ")");
