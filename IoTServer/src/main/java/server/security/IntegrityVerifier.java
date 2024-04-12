@@ -24,9 +24,9 @@ public class IntegrityVerifier {
         if (new File(filePath).exists()) {
             fileInstance = new File(filePath);
             if (verifyAll()){
-                System.out.println("File integrity verified");
+                System.out.println("File integrity verified!");
             } else {
-                System.err.println("Corrupted files were found!");
+                System.err.println("Corrupted files found!");
             }
         }
     }
@@ -43,7 +43,7 @@ public class IntegrityVerifier {
         if (data != null) {
             String[] checksums = data.split("\n");
             domainsChecksum = checksums[0];
-            //TODO devicesChecksum = checksums[1];
+            devicesChecksum = checksums[1];
             return true;
         }
         return false;
