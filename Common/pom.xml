@@ -3,20 +3,13 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>pt.ulisboa.ciencias.di.sc.grupo6</groupId>
+        <artifactId>SC_Projeto</artifactId>
+        <version>grupo6</version>
+    </parent>
 
-    <groupId>pt.ulisboa.ciencias.di.sc.grupo6</groupId>
-    <artifactId>SC_Projeto</artifactId>
-    <version>grupo6</version>
-
-    <name>Client-Server IoT System</name>
-
-    <packaging>pom</packaging>
-
-    <modules>
-        <module>IoTDevice</module>
-        <module>IoTServer</module>
-        <module>Common</module>
-    </modules>
+    <artifactId>Common</artifactId>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>

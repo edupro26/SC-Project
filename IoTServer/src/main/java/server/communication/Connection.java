@@ -1,11 +1,15 @@
 package server.communication;
 
+import common.Message;
 import server.components.Device;
 import server.components.Domain;
 import server.components.User;
 import server.persistence.Storage;
+import server.security.SecurityUtils;
 
 import java.io.*;
+import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.util.List;
 
 /**
@@ -57,35 +61,107 @@ public class Connection {
         this.clientIP = clientIP;
         this.devUser = null;
         this.device = null;
-        userAuthentication();
     }
 
     /**
      * Authenticates the {@code User} of this connection.
      */
-    private void userAuthentication() {
+    public boolean userAuthentication(String apiKey) {
         try {
-            String in = (String) input.readObject();
-            String[] userParts = in.split(",");
-            User logIn = new User(userParts[0], userParts[1]);
+            String userId = (String) input.readObject();
+            SecureRandom secureRandom = new SecureRandom();
+            long nonce = secureRandom.nextLong();
 
-            devUser = srvStorage.getUser(logIn.getName());
-            if (devUser == null) {
-                srvStorage.saveUser(logIn);
-                devUser = logIn;
-                output.writeObject(Codes.OKNEWUSER.toString());
+            if (srvStorage.getUser(userId) == null) {
+
+                String newUserRes = Codes.NEWUSER + ";" + nonce;
+
+                output.writeObject(newUserRes);
+                Message msg = (Message) input.readObject();
+
+
+                long clientNonce = Long.parseLong((String) msg.getSignedObject().getObject());
+
+                boolean verified = SecurityUtils.verifySignature(msg.getCertificate().getPublicKey(), msg.getSignedObject());
+
+                if(clientNonce == nonce && verified) {
+                    String userPublicKeyPath = "server-files/users_pub_keys/" + userId + ".cer";
+                    SecurityUtils.savePublicKeyToFile(msg.getCertificate().getPublicKey(), new File(userPublicKeyPath));
+
+                    output.writeObject(Codes.OKNEWUSER.toString());
+
+                    long fiveDigitCode = secureRandom.nextInt(90000) + 10000;
+                    SecurityUtils.send2FACode(String.valueOf(fiveDigitCode), userId, apiKey);
+
+                    String codeStr = (String) input.readObject();
+                    try {
+                        int code = Integer.parseInt(codeStr);
+                        if (code != fiveDigitCode) {
+                            output.writeObject(Codes.NOK.toString());
+                            return false;
+                        }
+                    } catch (NumberFormatException e) {
+                        output.writeObject(Codes.NOK.toString());
+                        return false;
+                    }
+
+                    output.writeObject(Codes.OK2FA.toString());
+
+
+                    this.devUser = new User(userId, userPublicKeyPath);
+                    srvStorage.saveUser(this.devUser);
+
+                    return true;
+                }
+                else {
+                    output.writeObject(Codes.NOK.toString());
+                    return false;
+                }
+
+
             }
             else {
-                while (!logIn.getPassword().equals(devUser.getPassword())) {
-                    output.writeObject(Codes.WRONGPWD.toString());
-                    String password = ((String) input.readObject()).split(",")[1];
-                    logIn.setPassword(password);
+                String foundUserRes = Codes.FOUNDUSER + ";" + nonce;
+
+                output.writeObject(foundUserRes);
+                Message msg = (Message) input.readObject();
+
+                long clientNonce = Long.parseLong((String) msg.getSignedObject().getObject());
+
+                PublicKey userPublicKey = SecurityUtils.readPublicKeyFromFile(new File("server-files/users_pub_keys/" + userId + ".cer"));
+
+                boolean verified = SecurityUtils.verifySignature(userPublicKey, msg.getSignedObject());
+
+                if(clientNonce == nonce && verified) { // && verified
+                    output.writeObject(Codes.OKUSER.toString());
+
+                    long fiveDigitCode = secureRandom.nextInt(90000) + 10000;
+                    SecurityUtils.send2FACode(String.valueOf(fiveDigitCode), userId, apiKey);
+
+                    String codeStr = (String) input.readObject();
+                    try {
+                        int code = Integer.parseInt(codeStr);
+                        if (code != fiveDigitCode) {
+                            output.writeObject(Codes.NOK.toString());
+                            return false;
+                        }
+                    } catch (NumberFormatException e) {
+                        output.writeObject(Codes.NOK.toString());
+                        return false;
+                    }
+
+                    output.writeObject(Codes.OK2FA.toString());
+
+                    this.devUser = srvStorage.getUser(userId);
+                    return true;
+                } else {
+                    output.writeObject(Codes.NOK.toString());
+                    return false;
                 }
-                output.writeObject(Codes.OKUSER.toString());
             }
-            this.device = new Device(devUser.getName(), -1);
         } catch (Exception e) {
-            System.out.println("Error receiving user password!");
+            System.out.println("Error on auth process!");
+            return false;
         }
     }
 
@@ -96,32 +172,35 @@ public class Connection {
      */
     public boolean validateDevID() {
         try {
-            while (device.getId() < 0) {
-                String msg = (String) input.readObject();
-                int id = Integer.parseInt(msg);
-                if (id >= 0) {
-                    device.setId(id);
-                    Device exits = srvStorage.getDevice(device);
-                    if (exits != null) {
-                        if (!exits.isConnected()) {
-                            device = exits;
-                            device.setConnected(true);
-                            output.writeObject(Codes.OKDEVID.toString());
-                            System.out.println("Device ID validated!");
-                            return true;
-                        }
-                    }
-                    else {
-                        device.setConnected(true);
-                        srvStorage.saveDevice(device);
-                        output.writeObject(Codes.OKDEVID.toString());
-                        System.out.println("Device ID validated!");
-                        return true;
-                    }
-                }
+            //int devId = Integer.parseInt((String) input.readObject());
+            String strDevId = (String) input.readObject();
+            int devId = Integer.parseInt(strDevId);
+            if (devId < 0) {
                 output.writeObject(Codes.NOKDEVID.toString());
-                device.setId(-1);
+                return false;
             }
+            this.device = new Device(devUser.getName(), devId);
+
+            Device exists = srvStorage.getDevice(device);
+            if (exists != null) {
+                if (!exists.isConnected()) {
+                    device = exists;
+                } else {
+                    output.writeObject(Codes.NOKDEVID.toString());
+                    return false;
+                }
+            }
+            else {
+                srvStorage.saveDevice(device);
+            }
+
+            // TODO: Remote attestation
+
+            device.setConnected(true);
+            output.writeObject(Codes.OKDEVID.toString());
+            System.out.println("Device ID validated!");
+            return true;
+
         } catch (Exception e) {
             System.out.println("Something went wrong!");
         }
@@ -268,7 +347,11 @@ public class Connection {
             }
 
             int size = input.readInt();
-            String path = "server-files/domain_keys" + d + "." + u + ".key.cif";
+            File domainDir = new File("server-files/domain_keys/" + d);
+            if (!domainDir.exists()) {
+                domainDir.mkdirs();
+            }
+            String path = "server-files/domain_keys/" + d + "/" + u + ".key.cif";
 
             if (receiveFile(path, size)) {
                 System.out.println("Success: Key received!");

@@ -1,15 +1,15 @@
 package server;
 
-import java.net.Socket;
-import java.net.ServerSocket;
+import server.communication.Connection;
+import server.persistence.Storage;
+
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-
-import server.communication.Connection;
-import server.persistence.Storage;
+import java.net.ServerSocket;
+import java.net.Socket;
 
 /**
  * Main class of the {@code IoTServer}.This class represents a multithreaded server.
@@ -87,7 +87,7 @@ public class IoTServer {
             Storage srvStorage = new Storage(passwordCipher);
             System.out.println("Waiting for clients...");
             while (true) {
-                new ServerThread(srvSocket.accept(), srvStorage).start();
+                new ServerThread(srvSocket.accept(), srvStorage, apiKey).start();
             }
         } catch (Exception e) {
             System.out.println(e.getMessage());
@@ -113,17 +113,20 @@ public class IoTServer {
          */
         private final Socket cliSocket;         // the socket of the client
         private final Storage srvStorage;       // the storage of this IoTServer
+        private final String apiKey;            // the API key for the 2FA
 
         /**
          * Initiates a new {@code ServerThread}.
          *
          * @param cliSocket the {@code Socket} of the client
          * @param srvStorage the {@code Storage} of this IoTServer
-         * @requires {@code cliSocket != null && srvStorage != null}
+         * @param apiKey the API key for the 2FA
+         * @requires {@code cliSocket != null && srvStorage != null && apiKey != null}
          */
-        private ServerThread (Socket cliSocket, Storage srvStorage) {
+        private ServerThread (Socket cliSocket, Storage srvStorage, String apiKey) {
             this.cliSocket = cliSocket;
             this.srvStorage = srvStorage;
+            this.apiKey = apiKey;
         }
 
         /**
@@ -138,20 +141,25 @@ public class IoTServer {
                 ObjectOutputStream output = new ObjectOutputStream(cliSocket.getOutputStream());
 
                 Connection connection = new Connection(input, output, srvStorage, clientAddress);
+                boolean auth = connection.userAuthentication(this.apiKey);
 
-                System.out.print("Validating device ID... ");
+                if (!auth) {
+                    System.out.println("Client not authenticated (" + clientAddress + ")");
+                    output.close();
+                    input.close();
+                    cliSocket.close();
+                    return;
+                }
+
+                System.out.println("Validating device ID... ");
                 boolean validID = connection.validateDevID();
 
-                // FIXME Enable client verification later
-                /*System.out.print("Validating device info...");
-                boolean validInfo = connection.validateConnection();*/
 
                 if (validID /*&& validInfo*/) {
                     System.out.println("Client connected (" + clientAddress + ")");
                     System.out.println("Active connections: " + ++counter);
                     connection.handleRequests();
                     System.out.println("Active connections: " + --counter);
-
                 }
 
                 output.close();

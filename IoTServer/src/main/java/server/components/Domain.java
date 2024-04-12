@@ -1,10 +1,10 @@
 package server.components;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.StringJoiner;
-
 import server.persistence.Storage;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringJoiner;
 
 /**
  * Represents a domain in the {@code IoTServer} with its users and devices.

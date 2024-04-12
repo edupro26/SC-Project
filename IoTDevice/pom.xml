@@ -26,6 +26,12 @@
             <version>RELEASE</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>pt.ulisboa.ciencias.di.sc.grupo6</groupId>
+            <artifactId>Common</artifactId>
+            <version>grupo6</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <packaging>jar</packaging>

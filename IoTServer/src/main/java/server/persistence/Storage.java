@@ -1,21 +1,20 @@
 package server.persistence;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.FileReader;
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.List;
-import java.util.HashMap;
-import java.util.ArrayList;
-
-import server.components.*;
-import server.persistence.managers.*;
 import server.communication.Codes;
+import server.components.Device;
+import server.components.Domain;
+import server.components.User;
+import server.persistence.managers.DeviceManager;
+import server.persistence.managers.DomainManager;
+import server.persistence.managers.UserManager;
 import server.security.IntegrityVerifier;
 
-import static server.security.SecurityUtils.*;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+import static server.security.SecurityUtils.decryptDataFromFile;
 
 
 /**

@@ -1,5 +1,7 @@
 package client;
 
+import common.Message;
+
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
@@ -9,6 +11,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.PublicKey;
+import java.security.Signature;
+import java.security.SignedObject;
+import java.util.Scanner;
 
 /**
  *
@@ -26,6 +31,8 @@ public class DeviceHandler {
     /**
      * Response codes received by the {@code IoTServer}
      */
+    private static final String NEWUSER = "NEW-USER";
+    private static final String FOUNDUSER = "FOUND-USER";
     private static final String OK = "OK";
     private static final String NODM = "NODM";
     private static final String NOID = "NOID";
@@ -62,20 +69,75 @@ public class DeviceHandler {
     protected DeviceHandler(String address, int port) {
         this.address = address;
         this.port = port;
+
     }
 
     /**
      * Connects opens a {@link Socket} to the {@code IoTServer}
      * and its input and output streams
      */
-    protected void connect() {
+    protected void connect(String userId, String keystore, String keystorePass) {
         try {
+
             SocketFactory sf = SSLSocketFactory.getDefault();
             socket = (SSLSocket) sf.createSocket(address, port);
-            System.out.println("Connected to server: " + address + ":" + port);
-
             this.output = new ObjectOutputStream(socket.getOutputStream());
             this.input = new ObjectInputStream(socket.getInputStream());
+
+            System.out.println("Sending user id:" + userId);
+
+            String res = (String) this.sendReceive(userId);
+
+            if(res == null) {
+                System.out.println("Error in the response");
+                System.exit(1);
+            }
+
+            String[] resSplit = res.split(";");
+
+            if (resSplit.length != 2) {
+                System.out.println("Error in the response");
+                System.exit(1);
+            }
+
+            String flag = resSplit[0];
+            long nonce = Long.parseLong(resSplit[1]);
+
+            // If the user is not registered
+            if(flag.equals(NEWUSER)){
+                SignedObject signedObject = new SignedObject(Long.toString(nonce), Encryption.findPrivateKeyOnKeyStore(userId), Signature.getInstance("SHA256withRSA"));
+                Message signedMessage = new Message(signedObject, Encryption.getOwnCertificate(userId));
+                output.writeObject(signedMessage);
+            }
+            else { // If the user is registered
+                SignedObject signedObject = new SignedObject(Long.toString(nonce), Encryption.findPrivateKeyOnKeyStore(userId), Signature.getInstance("SHA256withRSA"));
+                Message signedMessage = new Message(signedObject, Encryption.getOwnCertificate(userId));
+                output.writeObject(signedMessage);
+            }
+
+            String authRes = (String) input.readObject();
+
+            if (!authRes.equals("OK-USER") && !authRes.equals("OK-NEW-USER")) {
+                System.out.println("Authentication failed. Certificate not valid.");
+                System.exit(1);
+            }
+
+            // 2FA Process
+            System.out.print("2FA Code: ");
+
+            Scanner scanner = new Scanner(System.in);
+            String input = scanner.nextLine();
+
+            output.writeObject(input);
+
+            String finalAuthRes = (String) this.input.readObject();
+
+            if (!finalAuthRes.equals("OK-2FA")) {
+                System.out.println("Authentication failed. 2FA code not valid.");
+                System.exit(1);
+            }
+
+
         } catch (Exception e) {
             System.out.println(e.getMessage());
             System.exit(1);
@@ -113,7 +175,17 @@ public class DeviceHandler {
 
         return null;
     }
+    protected Message sendReceiveMessage(Message msg) {
+        try {
+            this.output.writeObject(msg);
 
+            return (Message) this.input.readObject();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+
+        return null;
+    }
     /**
      * Sends a CREATE request to the {@code IoTServer}
      * and handles the response.
