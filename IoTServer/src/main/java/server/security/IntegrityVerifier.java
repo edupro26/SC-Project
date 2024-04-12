@@ -49,6 +49,25 @@ public class IntegrityVerifier {
         return false;
     }
 
+    private void updateFile() {
+        StringBuilder checksums = new StringBuilder();
+        checksums.append(domainsChecksum).append('\n')
+                .append(devicesChecksum).append('\n');
+        try {
+            if(fileInstance == null) {
+                new File(filePath).createNewFile();
+                fileInstance = new File(filePath);
+            }
+            BufferedWriter bw = new BufferedWriter(
+                    new FileWriter(fileInstance, false));
+            bw.write(checksums.toString());
+            bw.close();
+            SecurityUtils.signFile(fileInstance, checksums.toString());
+        } catch (IOException e) {
+            System.out.println("Error while updating checksums: " + e.getMessage());
+        }
+    }
+
     public boolean verify(String filePath) {
         File file = new File(filePath);
         String data = SecurityUtils.verifySignature(fileInstance);
@@ -91,31 +110,12 @@ public class IntegrityVerifier {
         }
     }
 
-    public void updateFile() {
-        StringBuilder checksums = new StringBuilder();
-        checksums.append(domainsChecksum).append('\n')
-                .append(devicesChecksum).append('\n');
-        try {
-            if(fileInstance == null) {
-                new File(filePath).createNewFile();
-                fileInstance = new File(filePath);
-            }
-            BufferedWriter bw = new BufferedWriter(
-                    new FileWriter(fileInstance, false));
-            bw.write(checksums.toString());
-            bw.close();
-            SecurityUtils.signFile(fileInstance, checksums.toString());
-        } catch (IOException e) {
-            System.out.println("Error while updating checksums: " + e.getMessage());
+    public void updateChecksum(String filePath, String checksum) {
+        switch (filePath){
+            case DOMAINS -> this.domainsChecksum = checksum;
+            case DEVICES -> this.devicesChecksum = checksum;
         }
-    }
-
-    public void setDomainsChecksum(String domainsChecksum) {
-        this.domainsChecksum = domainsChecksum;
-    }
-
-    public void setDevicesChecksum(String devicesChecksum) {
-        this.devicesChecksum = devicesChecksum;
+        updateFile();
     }
 
 }
