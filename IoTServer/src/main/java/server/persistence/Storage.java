@@ -76,7 +76,7 @@ public class Storage {
      * @param user the {@code User} to be saved
      * @requires {@code user != null}
      */
-    public synchronized void saveUser(User user) {
+    public void saveUser(User user) {
         userManager.saveUser(user);
     }
 
@@ -87,7 +87,7 @@ public class Storage {
      * @param device the {@code Device} to be saved
      * @requires {@code device != null}
      */
-    public synchronized void saveDevice(Device device) {
+    public void saveDevice(Device device) {
         deviceManager.saveDevice(device, new ArrayList<>());
         String checksum = fileVerifier.calculateChecksum(new File(DEVICES));
         fileVerifier.updateChecksum(DEVICES, checksum);
@@ -106,7 +106,7 @@ public class Storage {
      *
      * @see Codes
      */
-    public synchronized String createDomain(String name, User owner) {
+    public String createDomain(String name, User owner) {
         String result = domainManager.createDomain(name, owner);
         String checksum = fileVerifier.calculateChecksum(new File(DOMAINS));
         fileVerifier.updateChecksum(DOMAINS, checksum);
@@ -124,7 +124,7 @@ public class Storage {
      * @see Codes
      * @requires {@code device != null && temperature != null}
      */
-    public synchronized String updateLastTemp(Device device, Float temperature) {
+    public String updateLastTemp(Device device, Float temperature) {
         return deviceManager.updateLastTemp(device, temperature);
     }
 
@@ -138,7 +138,7 @@ public class Storage {
      *          if there is no data or in case of error
      * @requires {@code domain != null}
      */
-    public synchronized String domainTemperaturesFile(Domain domain) {
+    public String domainTemperaturesFile(Domain domain) {
         return domainManager.domainTemperaturesFile(domain);
     }
 
@@ -157,7 +157,7 @@ public class Storage {
      * @return status code
      * @see Codes
      */
-    public synchronized String addUserToDomain(User user, User userToAdd, Domain domain) {
+    public String addUserToDomain(User user, User userToAdd, Domain domain) {
         String res = domainManager.addUserToDomain(user, userToAdd, domain);
         String checksum = fileVerifier.calculateChecksum(new File(DOMAINS));
         fileVerifier.updateChecksum(DOMAINS, checksum);
@@ -179,7 +179,7 @@ public class Storage {
      * @return status code
      * @see Codes
      */
-    public synchronized String addDeviceToDomain(Domain domain, Device device, User user) {
+    public String addDeviceToDomain(Domain domain, Device device, User user) {
         String res = domainManager.addDeviceToDomain(domain, device, user);
         if (res.equals(Codes.OK.toString())) {
             deviceManager.addDomainToDevice(device, domain);
