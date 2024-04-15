@@ -4,6 +4,7 @@ import server.communication.Codes;
 import server.components.Device;
 import server.components.Domain;
 import server.components.User;
+import server.security.IntegrityVerifier;
 
 import java.io.*;
 import java.util.HashMap;
@@ -70,14 +71,16 @@ public class DeviceManager {
      *
      * @param device the {@code Device} to be saved
      * @param domains a list of {@code Domains} where the {@code Device} is registered
+     * @param fileVerifier the file {@code IntegrityVerifier}
      * @requires {@code device != null && domains != null}
      */
-    public void saveDevice(Device device, List<Domain> domains) {
-        // FIXME might have relations with the bug in UserManager
+    public void saveDevice(Device device, List<Domain> domains, IntegrityVerifier fileVerifier) {
         synchronized (devicesLock) {
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(devicesFile, true))) {
                 writer.write(device + "," + device.getLastTemp() + "\n");
                 devices.put(device, domains);
+                String checksum = fileVerifier.calculateChecksum(new File(devicesFile));
+                fileVerifier.updateChecksum(devicesFile, checksum);
             } catch (IOException e) {
                 System.out.println(e.getMessage());
             }
@@ -91,11 +94,12 @@ public class DeviceManager {
      *
      * @param device the {@code Device}
      * @param temperature the last temperature sent
+     * @param fileVerifier the file {@code IntegrityVerifier}
      * @return status code
-     * @see Codes
      * @requires {@code device != null && temperature != null}
+     * @see Codes
      */
-    public String updateLastTemp(Device device, Float temperature) {
+    public String updateLastTemp(Device device, Float temperature, IntegrityVerifier fileVerifier) {
         try (BufferedReader in = new BufferedReader(new FileReader(devicesFile))) {
             StringBuilder file = new StringBuilder();
             String line;
@@ -113,6 +117,8 @@ public class DeviceManager {
                 out.write(file.toString());
                 out.close();
                 device.setLastTemp(temperature);
+                String checksum = fileVerifier.calculateChecksum(new File(devicesFile));
+                fileVerifier.updateChecksum(devicesFile, checksum);
             }
         } catch (IOException e) {
             System.out.println(e.getMessage());

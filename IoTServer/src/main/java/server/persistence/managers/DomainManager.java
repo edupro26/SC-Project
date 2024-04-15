@@ -4,6 +4,7 @@ import server.communication.Codes;
 import server.components.Device;
 import server.components.Domain;
 import server.components.User;
+import server.security.IntegrityVerifier;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -71,11 +72,12 @@ public class DomainManager {
      *
      * @param name the name of the {@code Domain}
      * @param owner the owner of the {@code Domain}
-     * @requires {@code name != null}
+     * @param fileVerifier the file {@code IntegrityVerifier}
      * @return "OK" if the method concluded with success, "NOK" otherwise.
+     * @requires {@code name != null}
      * @see Codes
      */
-    public String createDomain(String name, User owner) {
+    public String createDomain(String name, User owner, IntegrityVerifier fileVerifier) {
         if (owner == null) return Codes.NOK.toString();
         Domain domain = new Domain(name, owner);
         try {
@@ -85,6 +87,8 @@ public class DomainManager {
                 writer.write(domain + "\n");
                 writer.close();
                 domains.add(domain);
+                String checksum = fileVerifier.calculateChecksum(new File(domainsFile));
+                fileVerifier.updateChecksum(domainsFile, checksum);
             }
             return Codes.OK.toString();
         } catch (IOException e) {
@@ -135,10 +139,11 @@ public class DomainManager {
      * @param user the {@code User} of the current {@code Device}
      * @param userToAdd the {@code User} to add to the {@code Domain}
      * @param domain the {@code Domain}
+     * @param fileVerifier the file {@code IntegrityVerifier}
      * @return status code
      * @see Codes
      */
-    public String addUserToDomain(User user, User userToAdd, Domain domain) {
+    public String addUserToDomain(User user, User userToAdd, Domain domain, IntegrityVerifier fileVerifier) {
         if (domain == null) return Codes.NODM.toString();
         if (userToAdd == null) return Codes.NOUSER.toString();
         if (!domain.getOwner().equals(user)) return Codes.NOPERM.toString();
@@ -151,6 +156,8 @@ public class DomainManager {
             if (res.equals(Codes.NOK.toString())) {
                 domainUsers.remove(userToAdd);
             }
+            String checksum = fileVerifier.calculateChecksum(new File(domainsFile));
+            fileVerifier.updateChecksum(domainsFile, checksum);
             return res;
         }
     }
@@ -166,10 +173,11 @@ public class DomainManager {
      * @param user the {@code User} of the current {@code Device}
      * @param device the {@code Device} to add to the {@code Domain}
      * @param domain the {@code Domain}
+     * @param fileVerifier the file {@code IntegrityVerifier}
      * @return status code
      * @see Codes
      */
-    public String addDeviceToDomain(Domain domain, Device device, User user) {
+    public String addDeviceToDomain(Domain domain, Device device, User user, IntegrityVerifier fileVerifier) {
         if(domain == null) return Codes.NODM.toString();
         if(domain.getDevices().contains(device)) return Codes.NOK.toString();
         String owner = domain.getOwner().getName();
@@ -182,6 +190,8 @@ public class DomainManager {
             if (res.equals(Codes.NOK.toString())) {
                 domain.getDevices().remove(device);
             }
+            String checksum = fileVerifier.calculateChecksum(new File(domainsFile));
+            fileVerifier.updateChecksum(domainsFile, checksum);
             return res;
         }
     }
