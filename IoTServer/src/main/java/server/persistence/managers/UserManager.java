@@ -82,8 +82,6 @@ public class UserManager {
         String currentUsersData = file.exists() ? decryptDataFromFile(file, this.secretKey) : "";
         currentUsersData += user + "\n";
         synchronized (usersLock) {
-            //FIXME this keeps the server from saving a repeated user
-            // but it still allows to register 2 equal devices
             if (getUser(user.getName()) == null) {
                 users.add(user);
                 encryptDataIntoFile(currentUsersData, file, this.secretKey);

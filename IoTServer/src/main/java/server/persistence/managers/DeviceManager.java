@@ -73,7 +73,6 @@ public class DeviceManager {
      * @requires {@code device != null && domains != null}
      */
     public void saveDevice(Device device, List<Domain> domains) {
-        // FIXME might have relations with the bug in UserManager
         synchronized (devicesLock) {
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(devicesFile, true))) {
                 writer.write(device + "," + device.getLastTemp() + "\n");
