@@ -88,9 +88,7 @@ public class Storage {
      * @requires {@code device != null}
      */
     public void saveDevice(Device device) {
-        deviceManager.saveDevice(device, new ArrayList<>());
-        String checksum = fileVerifier.calculateChecksum(new File(DEVICES));
-        fileVerifier.updateChecksum(DEVICES, checksum);
+        deviceManager.saveDevice(device, new ArrayList<>(), fileVerifier);
     }
 
     /**
@@ -107,10 +105,7 @@ public class Storage {
      * @see Codes
      */
     public String createDomain(String name, User owner) {
-        String result = domainManager.createDomain(name, owner);
-        String checksum = fileVerifier.calculateChecksum(new File(DOMAINS));
-        fileVerifier.updateChecksum(DOMAINS, checksum);
-        return result;
+        return domainManager.createDomain(name, owner, fileVerifier);
     }
 
     /**
@@ -125,10 +120,7 @@ public class Storage {
      * @requires {@code device != null && temperature != null}
      */
     public String updateLastTemp(Device device, Float temperature) {
-        String res = deviceManager.updateLastTemp(device, temperature);
-        String checksum = fileVerifier.calculateChecksum(new File(DEVICES));
-        fileVerifier.updateChecksum(DEVICES, checksum);
-        return res;
+        return deviceManager.updateLastTemp(device, temperature, fileVerifier);
     }
 
     /**
@@ -161,10 +153,7 @@ public class Storage {
      * @see Codes
      */
     public String addUserToDomain(User user, User userToAdd, Domain domain) {
-        String res = domainManager.addUserToDomain(user, userToAdd, domain);
-        String checksum = fileVerifier.calculateChecksum(new File(DOMAINS));
-        fileVerifier.updateChecksum(DOMAINS, checksum);
-        return res;
+        return domainManager.addUserToDomain(user, userToAdd, domain, fileVerifier);
     }
 
     /**
@@ -183,12 +172,10 @@ public class Storage {
      * @see Codes
      */
     public String addDeviceToDomain(Domain domain, Device device, User user) {
-        String res = domainManager.addDeviceToDomain(domain, device, user);
+        String res = domainManager.addDeviceToDomain(domain, device, user, fileVerifier);
         if (res.equals(Codes.OK.toString())) {
             deviceManager.addDomainToDevice(device, domain);
         }
-        String checksum = fileVerifier.calculateChecksum(new File(DOMAINS));
-        fileVerifier.updateChecksum(DOMAINS, checksum);
         return res;
     }
 
