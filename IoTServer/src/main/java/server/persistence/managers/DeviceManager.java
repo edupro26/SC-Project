@@ -71,6 +71,7 @@ public class DeviceManager {
      *
      * @param device the {@code Device} to be saved
      * @param domains a list of {@code Domains} where the {@code Device} is registered
+     * @param fileVerifier the file {@code IntegrityVerifier}
      * @requires {@code device != null && domains != null}
      */
     public void saveDevice(Device device, List<Domain> domains, IntegrityVerifier fileVerifier) {
@@ -93,9 +94,10 @@ public class DeviceManager {
      *
      * @param device the {@code Device}
      * @param temperature the last temperature sent
+     * @param fileVerifier the file {@code IntegrityVerifier}
      * @return status code
-     * @see Codes
      * @requires {@code device != null && temperature != null}
+     * @see Codes
      */
     public String updateLastTemp(Device device, Float temperature, IntegrityVerifier fileVerifier) {
         try (BufferedReader in = new BufferedReader(new FileReader(devicesFile))) {

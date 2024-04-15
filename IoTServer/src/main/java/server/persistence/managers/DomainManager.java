@@ -72,8 +72,9 @@ public class DomainManager {
      *
      * @param name the name of the {@code Domain}
      * @param owner the owner of the {@code Domain}
-     * @requires {@code name != null}
+     * @param fileVerifier the file {@code IntegrityVerifier}
      * @return "OK" if the method concluded with success, "NOK" otherwise.
+     * @requires {@code name != null}
      * @see Codes
      */
     public String createDomain(String name, User owner, IntegrityVerifier fileVerifier) {
@@ -138,6 +139,7 @@ public class DomainManager {
      * @param user the {@code User} of the current {@code Device}
      * @param userToAdd the {@code User} to add to the {@code Domain}
      * @param domain the {@code Domain}
+     * @param fileVerifier the file {@code IntegrityVerifier}
      * @return status code
      * @see Codes
      */
@@ -171,6 +173,7 @@ public class DomainManager {
      * @param user the {@code User} of the current {@code Device}
      * @param device the {@code Device} to add to the {@code Domain}
      * @param domain the {@code Domain}
+     * @param fileVerifier the file {@code IntegrityVerifier}
      * @return status code
      * @see Codes
      */
