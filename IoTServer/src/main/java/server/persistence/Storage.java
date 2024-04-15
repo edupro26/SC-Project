@@ -125,7 +125,10 @@ public class Storage {
      * @requires {@code device != null && temperature != null}
      */
     public String updateLastTemp(Device device, Float temperature) {
-        return deviceManager.updateLastTemp(device, temperature);
+        String res = deviceManager.updateLastTemp(device, temperature);
+        String checksum = fileVerifier.calculateChecksum(new File(DEVICES));
+        fileVerifier.updateChecksum(DEVICES, checksum);
+        return res;
     }
 
     /**
