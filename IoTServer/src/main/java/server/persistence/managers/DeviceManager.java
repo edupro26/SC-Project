@@ -76,9 +76,11 @@ public class DeviceManager {
      */
     public void saveDevice(Device device, List<Domain> domains, IntegrityVerifier fileVerifier) {
         synchronized (devicesLock) {
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter(devicesFile, true))) {
+            try {
+                BufferedWriter writer = new BufferedWriter(new FileWriter(devicesFile, true));
                 writer.write(device + "," + device.getLastTemp() + "\n");
                 devices.put(device, domains);
+                writer.close();
                 String checksum = fileVerifier.calculateChecksum(new File(devicesFile));
                 fileVerifier.updateChecksum(devicesFile, checksum);
             } catch (IOException e) {
