@@ -15,32 +15,32 @@ import java.security.cert.CertificateFactory;
 import java.security.spec.InvalidKeySpecException;
 
 public class Encryption {
-    private static final byte[] salt = { (byte) 0xc9, (byte) 0x36, (byte) 0x78, (byte) 0x99, (byte) 0x52, (byte) 0x3e, (byte) 0xea, (byte) 0xf2 };
+
+    private static final String ENC_ALGORITHM = "PBEWithHmacSHA256AndAES_128";
+
+    private static final byte[] salt = { (byte) 0xc9, (byte) 0x36, (byte) 0x78,
+                                        (byte) 0x99, (byte) 0x52, (byte) 0x3e,
+                                        (byte) 0xea, (byte) 0xf2 };
 
     private static final int ITERATION_COUNT = 20;
 
     public static SecretKey generateKey(String cipherPassword) {
-
-
-        PBEKeySpec keySpec = new PBEKeySpec(cipherPassword.toCharArray(), salt, ITERATION_COUNT);
+        PBEKeySpec keySpec = new PBEKeySpec(
+                cipherPassword.toCharArray(), salt, ITERATION_COUNT);
         try {
-            SecretKeyFactory kf = SecretKeyFactory.getInstance("PBEWithHmacSHA256AndAES_128");
+            SecretKeyFactory kf = SecretKeyFactory.getInstance(ENC_ALGORITHM);
             return kf.generateSecret(keySpec);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-            return null;
-        } catch (InvalidKeySpecException e) {
-            e.printStackTrace();
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            System.out.println(e.getMessage());
             return null;
         }
-
     }
 
     public static void saveKeyIntoFile(SecretKey key, File keyFile) {
         try (FileOutputStream fos = new FileOutputStream(keyFile)) {
             fos.write(key.getEncoded());
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
     }
 
@@ -55,7 +55,7 @@ public class Encryption {
                 fos.write(wrappedKey);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
     }
 
@@ -69,9 +69,9 @@ public class Encryption {
                 fis.read(wrappedKey);
             }
 
-            return cipher.unwrap(wrappedKey, "PBEWithHmacSHA256AndAES_128", Cipher.SECRET_KEY);
+            return cipher.unwrap(wrappedKey, ENC_ALGORITHM, Cipher.SECRET_KEY);
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
             return null;
         }
     }
@@ -80,7 +80,7 @@ public class Encryption {
         try (FileOutputStream fos = new FileOutputStream(paramsFile)) {
             fos.write(params);
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
     }
 
@@ -90,7 +90,7 @@ public class Encryption {
             fis.read(params);
             return params;
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
             return null;
         }
     }
@@ -98,10 +98,14 @@ public class Encryption {
     public static Certificate getOwnCertificate(String alias) {
         try {
             KeyStore ks = KeyStore.getInstance("JKS");
-            ks.load(new FileInputStream(System.getProperty("javax.net.ssl.keyStore")), System.getProperty("javax.net.ssl.keyStorePassword").toCharArray());
+            ks.load(new FileInputStream(
+                    System.getProperty("javax.net.ssl.keyStore")),
+                    System.getProperty("javax.net.ssl.keyStorePassword")
+                            .toCharArray());
+
             return ks.getCertificate(alias);
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
             return null;
         }
     }
@@ -109,10 +113,14 @@ public class Encryption {
     public static PublicKey findPublicKeyOnTrustStore(String alias) {
         try {
             KeyStore ks = KeyStore.getInstance("JKS");
-            ks.load(new FileInputStream(System.getProperty("javax.net.ssl.trustStore")), System.getProperty("javax.net.ssl.trustStorePassword").toCharArray());
+            ks.load(new FileInputStream(
+                    System.getProperty("javax.net.ssl.trustStore")),
+                    System.getProperty("javax.net.ssl.trustStorePassword")
+                            .toCharArray());
+
             return ks.getCertificate(alias).getPublicKey();
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
             return null;
         }
     }
@@ -120,10 +128,16 @@ public class Encryption {
     public static PrivateKey findPrivateKeyOnKeyStore(String alias) {
         try {
             KeyStore ks = KeyStore.getInstance("JKS");
-            ks.load(new FileInputStream(System.getProperty("javax.net.ssl.keyStore")), System.getProperty("javax.net.ssl.keyStorePassword").toCharArray());
-            return (PrivateKey) ks.getKey(alias, System.getProperty("javax.net.ssl.keyStorePassword").toCharArray());
+            ks.load(new FileInputStream(
+                    System.getProperty("javax.net.ssl.keyStore")),
+                    System.getProperty("javax.net.ssl.keyStorePassword")
+                            .toCharArray());
+
+            return (PrivateKey) ks.getKey(alias,
+                    System.getProperty("javax.net.ssl.keyStorePassword")
+                            .toCharArray());
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
             return null;
         }
     }
@@ -147,13 +161,13 @@ public class Encryption {
             tsFos.close();
 
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
     }
 
     public static void encryptFile(File fileToEncrypt, File encryptedFile, SecretKey key) {
         try {
-            Cipher cipher = Cipher.getInstance("PBEWithHmacSHA256AndAES_128");
+            Cipher cipher = Cipher.getInstance(ENC_ALGORITHM);
             cipher.init(Cipher.ENCRYPT_MODE, key);
 
             try (FileInputStream fis = new FileInputStream(fileToEncrypt);
@@ -165,21 +179,20 @@ public class Encryption {
                     cos.write(buffer, 0, read);
                 }
             }
-
             // Save params
-            saveParams(cipher.getParameters().getEncoded(), new File(encryptedFile.getAbsolutePath() + ".params"));
-
+            saveParams(cipher.getParameters().getEncoded(),
+                    new File(encryptedFile.getAbsolutePath() + ".params"));
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
 
     }
 
     public static void decryptFile(File encryptedFile, File decryptedFile, SecretKey key) {
         try {
-            AlgorithmParameters p = AlgorithmParameters.getInstance("PBEWithHmacSHA256AndAES_128");
+            AlgorithmParameters p = AlgorithmParameters.getInstance(ENC_ALGORITHM);
             p.init(readParams(new File(encryptedFile.getAbsolutePath() + ".params")));
-            Cipher cipher = Cipher.getInstance("PBEWithHmacSHA256AndAES_128");
+            Cipher cipher = Cipher.getInstance(ENC_ALGORITHM);
             cipher.init(Cipher.DECRYPT_MODE, key, p);
 
             try (FileInputStream fis = new FileInputStream(encryptedFile);
@@ -191,9 +204,8 @@ public class Encryption {
                     cos.write(buffer, 0, read);
                 }
             }
-
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
     }
 }

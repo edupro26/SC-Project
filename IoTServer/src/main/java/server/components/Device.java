@@ -18,7 +18,7 @@ public class Device {
      * Device attributes
      */
     private final String user;      // user of the device
-    private int id;                 // id of the device
+    private final int id;                 // id of the device
     private boolean isConnected;    // connection status
     private Float lastTemp;         // last temperature given by the device
 
