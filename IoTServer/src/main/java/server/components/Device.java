@@ -100,16 +100,6 @@ public class Device {
     }
 
     /**
-     * Sets the id of this device.
-     *
-     * @param id the id for this device
-     * @requires {@code id != null}
-     */
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    /**
      * Sets the last temperature sent by this device.
      *
      * @param lastTemp the temperature sent
