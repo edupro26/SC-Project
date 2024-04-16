@@ -1,4 +1,7 @@
+# Build folders
 out/
+server-app/
+client-app/
 
 ### Maven ###
 target/

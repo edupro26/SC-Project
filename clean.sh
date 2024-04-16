@@ -1,4 +1,6 @@
-rm -rf out/
+# Remove build folders
+rm -rf client-app/
+rm -rf server-app/
 
 # Remove server files
 rm -rf server-files/*
