@@ -7,7 +7,9 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import static server.security.SecurityUtils.*;
+import static server.security.SecurityUtils.decryptDataFromFile;
+import static server.security.SecurityUtils.encryptDataIntoFile;
+import static server.security.SecurityUtils.generateKey;
 
 /**
  * Singleton class that manages the users of the {@code IoTServer}
