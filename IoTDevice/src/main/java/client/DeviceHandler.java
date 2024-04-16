@@ -76,9 +76,8 @@ public class DeviceHandler {
      * Connects opens a {@link Socket} to the {@code IoTServer}
      * and its input and output streams
      */
-    protected void connect(String userId, String keystore, String keystorePass) {
+    protected void connect(String userId) {
         try {
-
             SocketFactory sf = SSLSocketFactory.getDefault();
             socket = (SSLSocket) sf.createSocket(address, port);
             this.output = new ObjectOutputStream(socket.getOutputStream());
@@ -86,7 +85,7 @@ public class DeviceHandler {
 
             System.out.println("Sending user id:" + userId);
 
-            String res = (String) this.sendReceive(userId);
+            String res = this.sendReceive(userId);
 
             if(res == null) {
                 System.out.println("Error in the response");
@@ -177,17 +176,7 @@ public class DeviceHandler {
 
         return null;
     }
-    protected Message sendReceiveMessage(Message msg) {
-        try {
-            this.output.writeObject(msg);
 
-            return (Message) this.input.readObject();
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-        }
-
-        return null;
-    }
     /**
      * Sends a CREATE request to the {@code IoTServer}
      * and handles the response.

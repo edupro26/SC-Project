@@ -16,7 +16,7 @@ public class User {
      * User attributes
      */
     private final String name;      // the name of this user
-    private String password;        // the password of this user
+    private final String password;        // the password of this user
 
     /**
      * Constructs a new {@code User} with a name and a password.
@@ -37,25 +37,6 @@ public class User {
      */
     public String getName() {
         return name;
-    }
-
-    /**
-     * Returns the password of this user.
-     *
-     * @return the password of this user
-     */
-    public String getPassword() {
-        return password;
-    }
-
-    /**
-     * Sets the password of this user.
-     *
-     * @param password the password to be set
-     * @requires {@code password != null}
-     */
-    public void setPassword(String password) {
-        this.password = password;
     }
 
     /**

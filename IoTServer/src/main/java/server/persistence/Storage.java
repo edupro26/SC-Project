@@ -13,6 +13,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import javax.crypto.SecretKey;
 
 import static server.security.SecurityUtils.decryptDataFromFile;
 
@@ -288,14 +289,13 @@ public class Storage {
          *
          * @param srvStorage this storage
          * @see Storage
-         * @see #start(File, File, File, Storage)
+         * @see #start(Storage, File, File)
          */
         private FileLoader(Storage srvStorage) {
             createFolders();
-            File users = new File(USERS);
             File domains = new File(DOMAINS);
             File temps = new File(DEVICES);
-            this.start(users, domains, temps, srvStorage);
+            this.start(srvStorage, domains, temps);
         }
 
         /**
@@ -303,7 +303,6 @@ public class Storage {
          * If they already exist, then loads their content to the
          * data structures of this storage.
          *
-         * @param users the users.txt file
          * @param domains the domains.txt file
          * @param temps the devices.txt file
          * @param srvStorage this storage
@@ -311,7 +310,7 @@ public class Storage {
          * @see #loadDomains(Storage)
          * @see #loadTemps(Storage)
          */
-        private void start(File users, File domains, File temps, Storage srvStorage) {
+        private void start(Storage srvStorage, File domains, File temps) {
             loadUsers(srvStorage);
             if (!createFile(domains, "Domains"))
                 loadDomains(srvStorage);
@@ -333,12 +332,20 @@ public class Storage {
          */
         private void loadUsers(Storage srvStorage) {
             File usersFile = new File(USERS);
-            if (!usersFile.exists()) return;
-            String usersData = decryptDataFromFile(usersFile, srvStorage.userManager.getSecretKey());
-            String[] users = usersData.split("\n");
-            for (String user : users) {
-                String[] data = user.split(",");
-                srvStorage.userManager.getUsers().add(new User(data[0],data[1]));
+            if (usersFile.exists()) {
+                SecretKey usersKey = srvStorage.userManager.getSecretKey();
+                String usersData = decryptDataFromFile(usersFile, usersKey);
+                if (usersData != null) {
+                    String[] users = usersData.split("\n");
+                    for (String user : users) {
+                        String[] data = user.split(",");
+                        User newUser = new User(data[0], data[1]);
+                        srvStorage.userManager.getUsers().add(newUser);
+                    }
+                    System.out.println("Users text file loaded successfully");
+                } else {
+                    System.out.println("Users text file could not be loaded");
+                }
             }
         }
 

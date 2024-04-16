@@ -47,13 +47,12 @@ public class IoTServer {
         String passwordKeystore = null;
         String apiKey = null;
 
-        /**
-         * Check if the arguments are valid
-         *
-         * If 5 arguments are given, the first one is the port and the rest are the remaining required arguments
-         * If 4 arguments are given, a default port is used. All 4 arguments are the required arguments
-         * If the arguments are invalid, the program exits with an error message
-         */
+        /*
+        Check if the arguments are valid
+        If 5 arguments are given, the first one is the port and the rest are the remaining arguments
+        If 4 arguments are given, a default port is used. All 4 arguments are the required arguments
+        If the arguments are invalid, the program exits with an error message
+        */
         if (args.length == 5) {
             port = Integer.parseInt(args[0]);
             passwordCipher = args[1];

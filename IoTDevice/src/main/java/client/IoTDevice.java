@@ -1,7 +1,5 @@
 package client;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -30,7 +28,7 @@ public class IoTDevice {
      *
      * @param args the arguments given when executed
      */
-    public static void main(String[] args) throws UnsupportedEncodingException {
+    public static void main(String[] args) {
         String checkArgs = checkArgs(args);
         if (checkArgs != null) {
             System.out.println(checkArgs);
@@ -38,8 +36,8 @@ public class IoTDevice {
         }
 
         String serverAddress = args[0];
-        String truststore = URLDecoder.decode(args[1], StandardCharsets.UTF_8.name());
-        String keystore = URLDecoder.decode(args[2], StandardCharsets.UTF_8.name());
+        String truststore = URLDecoder.decode(args[1], StandardCharsets.UTF_8);
+        String keystore = URLDecoder.decode(args[2], StandardCharsets.UTF_8);
         String passwordKeystore = args[3];
         String devId = args[4];
         String userId = args[5];
@@ -56,8 +54,8 @@ public class IoTDevice {
 
         DeviceHandler client = new DeviceHandler(server[0], Integer.parseInt(server[1]));
         try {
-            client.connect(userId,keystore,passwordKeystore);
-            deviceLogIn(client, userId, devId);
+            client.connect(userId);
+            deviceValidation(client, devId);
             printMenu();
 
             Scanner scanner = new Scanner(System.in);
@@ -79,24 +77,20 @@ public class IoTDevice {
      * It also tests this IoTDevice executable.
      *
      * @param handler handler used for communication with the {@code IoTServer}
-     * @param userId username of the user of this IoTDevice
      * @param devId id of this IoTDevice
      * @see DeviceHandler
      */
-    private static void deviceLogIn(DeviceHandler handler, String userId, String devId) throws URISyntaxException {
-        // Regex of me
-
+    private static void deviceValidation(DeviceHandler handler, String devId) {
         String res = handler.sendReceive(devId);
         if (res.equals("NOK-DEVID")) {
             System.out.println("Response: NOK-DEVID # Invalid device id");
             System.exit(1);
         }
-        String resSplit[] = res.split(";");
+        String[] resSplit = res.split(";");
         if (!resSplit[0].equals("OK-DEVID")) {
             System.out.println("Response: NOK-DEVID # Invalid device id");
             System.exit(1);
         }
-
         // TODO: Remote attestation
     }
 

@@ -73,85 +73,44 @@ public class Connection {
             long nonce = secureRandom.nextLong();
 
             if (srvStorage.getUser(userId) == null) {
-
                 String newUserRes = Codes.NEWUSER + ";" + nonce;
-
                 output.writeObject(newUserRes);
                 Message msg = (Message) input.readObject();
-
-
                 long clientNonce = Long.parseLong((String) msg.getSignedObject().getObject());
-
-                boolean verified = SecurityUtils.verifySignature(msg.getCertificate().getPublicKey(), msg.getSignedObject());
-
+                boolean verified = SecurityUtils.verifySignature(
+                        msg.getCertificate().getPublicKey(),
+                        msg.getSignedObject());
                 if(clientNonce == nonce && verified) {
                     String userPublicKeyPath = "server-files/users_pub_keys/" + userId + ".cer";
-                    SecurityUtils.savePublicKeyToFile(msg.getCertificate().getPublicKey(), new File(userPublicKeyPath));
-
+                    File pubKeyFile = new File(userPublicKeyPath);
+                    SecurityUtils.savePublicKeyToFile(msg.getCertificate().getPublicKey(), pubKeyFile);
                     output.writeObject(Codes.OKNEWUSER.toString());
-
-                    long fiveDigitCode = secureRandom.nextInt(90000) + 10000;
-                    SecurityUtils.send2FACode(String.valueOf(fiveDigitCode), userId, apiKey);
-
-                    String codeStr = (String) input.readObject();
-                    try {
-                        int code = Integer.parseInt(codeStr);
-                        if (code != fiveDigitCode) {
-                            output.writeObject(Codes.NOK.toString());
-                            return false;
-                        }
-                    } catch (NumberFormatException e) {
-                        output.writeObject(Codes.NOK.toString());
+                    if (!authentication2FA(apiKey, userId)) {
                         return false;
                     }
-
-                    output.writeObject(Codes.OK2FA.toString());
-
-
                     this.devUser = new User(userId, userPublicKeyPath);
                     srvStorage.saveUser(this.devUser);
-
                     return true;
                 }
                 else {
                     output.writeObject(Codes.NOK.toString());
                     return false;
                 }
-
-
             }
             else {
                 String foundUserRes = Codes.FOUNDUSER + ";" + nonce;
-
                 output.writeObject(foundUserRes);
                 Message msg = (Message) input.readObject();
 
                 long clientNonce = Long.parseLong((String) msg.getSignedObject().getObject());
-
-                PublicKey userPublicKey = SecurityUtils.readPublicKeyFromFile(new File("server-files/users_pub_keys/" + userId + ".cer"));
-
+                File pubKeyFile = new File("server-files/users_pub_keys/" + userId + ".cer");
+                PublicKey userPublicKey = SecurityUtils.readPublicKeyFromFile(pubKeyFile);
                 boolean verified = SecurityUtils.verifySignature(userPublicKey, msg.getSignedObject());
-
-                if(clientNonce == nonce && verified) { // && verified
+                if(clientNonce == nonce && verified) {
                     output.writeObject(Codes.OKUSER.toString());
-
-                    long fiveDigitCode = secureRandom.nextInt(90000) + 10000;
-                    SecurityUtils.send2FACode(String.valueOf(fiveDigitCode), userId, apiKey);
-
-                    String codeStr = (String) input.readObject();
-                    try {
-                        int code = Integer.parseInt(codeStr);
-                        if (code != fiveDigitCode) {
-                            output.writeObject(Codes.NOK.toString());
-                            return false;
-                        }
-                    } catch (NumberFormatException e) {
-                        output.writeObject(Codes.NOK.toString());
+                    if (!authentication2FA(apiKey, userId)) {
                         return false;
                     }
-
-                    output.writeObject(Codes.OK2FA.toString());
-
                     this.devUser = srvStorage.getUser(userId);
                     return true;
                 } else {
@@ -166,13 +125,44 @@ public class Connection {
     }
 
     /**
+     * Handles the second mechanism of the 2FA authentication. In this step the
+     * server sends a random code to the client by email, which the client then
+     * has to insert in order to be authenticated.
+     *
+     * @param apiKey the apiKey 
+     * @param userId the user id
+     *               
+     * @return true if this step was successful, false otherwise
+     * @throws IOException Any of the usual Input/Output related exceptions.
+     * @throws ClassNotFoundException Class of a serialized object cannot be found.
+     */
+    private boolean authentication2FA(String apiKey, String userId)
+            throws IOException, ClassNotFoundException {
+        SecureRandom secureRandom = new SecureRandom();
+        long fiveDigitCode = secureRandom.nextInt(90000) + 10000;
+        SecurityUtils.send2FACode(String.valueOf(fiveDigitCode), userId, apiKey);
+        String codeStr = (String) input.readObject();
+        try {
+            int code = Integer.parseInt(codeStr);
+            if (code != fiveDigitCode) {
+                output.writeObject(Codes.NOK.toString());
+                return false;
+            }
+        } catch (NumberFormatException e) {
+            output.writeObject(Codes.NOK.toString());
+            return false;
+        }
+        output.writeObject(Codes.OK2FA.toString());
+        return true;
+    }
+
+    /**
      * Validates the {@code Device} id of this connection.
      *
      * @return true if validated, false otherwise
      */
     public boolean validateDevID() {
         try {
-            //int devId = Integer.parseInt((String) input.readObject());
             String strDevId = (String) input.readObject();
             int devId = Integer.parseInt(strDevId);
             if (devId < 0) {
@@ -200,7 +190,6 @@ public class Connection {
             output.writeObject(Codes.OKDEVID.toString());
             System.out.println("Device ID validated!");
             return true;
-
         } catch (Exception e) {
             System.out.println("Something went wrong!");
         }
@@ -569,15 +558,18 @@ public class Connection {
                 for (Domain d : domainsDevice) {
                     if (d.getUsers().contains(devUser) || d.getOwner().equals(devUser)) {
                         // Domain key
-                        File domainKeyEnc = new File("server-files/domain_keys/" + d.getName() + "/" + devUser.getName() + ".key.cif");
+                        File domainKeyEnc = new File("server-files/domain_keys/" 
+                                + d.getName() + "/" + devUser.getName() + ".key.cif");
                         if (!domainKeyEnc.exists()) continue;
 
                         // Image encrypted
-                        File imageEnc = new File("server-files/images/" + device.getUser() + "_" + device.getId() + "_" + d.getName() + ".jpg.cif");
+                        File imageEnc = new File("server-files/images/" 
+                                + device.getUser() + "_" + device.getId() + "_" + d.getName() + ".jpg.cif");
                         if (!imageEnc.exists()) continue;
 
                         // Image encryption params
-                        File imageEncParams = new File("server-files/images/" + device.getUser() + "_" + device.getId() + "_" + d.getName() + ".params");
+                        File imageEncParams = new File("server-files/images/" 
+                                + device.getUser() + "_" + device.getId() + "_" + d.getName() + ".params");
                         if (!imageEncParams.exists()) continue;
 
                         output.writeObject("SENDING_FILES"); // Warn client that server is going to send the files
@@ -599,12 +591,9 @@ public class Connection {
 
                         input.readObject();
                         output.writeObject("OK");
-
                         return;
                     }
-
                 }
-
                 output.writeObject(Codes.NODATA.toString());
             }
         } catch (Exception e) {

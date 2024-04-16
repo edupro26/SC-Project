@@ -12,17 +12,20 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.Scanner;
 
 public class SecurityUtils {
+
     private static final String API_URL = "https://lmpinto.eu.pythonanywhere.com/2FA";
-    private static final HttpClient client = HttpClient.newHttpClient();
+    private static final String SERVER_KEYPAIR_ALIAS = "ServerKeyPair";
+    private static final String ENC_ALGORITHM = "PBEWithHmacSHA256AndAES_128";
+    private static final String SIG_ALGORITHM = "SHA256withRSA";
 
     // TODO: Make salt secure
-    private static final byte[] salt = { (byte) 0xc9, (byte) 0x36, (byte) 0x78, (byte) 0x99, (byte) 0x52, (byte) 0x3e, (byte) 0xea, (byte) 0xf2 };
-
+    private static final byte[] salt = { (byte) 0xc9, (byte) 0x36, (byte) 0x78,
+                                        (byte) 0x99, (byte) 0x52, (byte) 0x3e,
+                                        (byte) 0xea, (byte) 0xf2 };
     private static final int ITERATION_COUNT = 20;
 
     private static final File PARAMS_FILE = new File("params.txt");
-
-    private static final String SERVER_KEYPAIR_ALIAS = "ServerKeyPair";
+    private static final HttpClient client = HttpClient.newHttpClient();
 
     /**
      * Utility class should not be constructed
@@ -36,9 +39,10 @@ public class SecurityUtils {
      * @return the generated key
      */
     public static SecretKey generateKey(String cipherPassword) {
-        PBEKeySpec keySpec = new PBEKeySpec(cipherPassword.toCharArray(), salt, ITERATION_COUNT);
+        PBEKeySpec keySpec = new PBEKeySpec(
+                cipherPassword.toCharArray(), salt, ITERATION_COUNT);
         try {
-            SecretKeyFactory kf = SecretKeyFactory.getInstance("PBEWithHmacSHA256AndAES_128");
+            SecretKeyFactory kf = SecretKeyFactory.getInstance(ENC_ALGORITHM);
             return kf.generateSecret(keySpec);
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
             System.out.println(e.getMessage());
@@ -48,7 +52,7 @@ public class SecurityUtils {
 
     public static void encryptDataIntoFile(String data, File file, SecretKey key) {
         try {
-            Cipher cipher = Cipher.getInstance("PBEWithHmacSHA256AndAES_128");
+            Cipher cipher = Cipher.getInstance(ENC_ALGORITHM);
             cipher.init(Cipher.ENCRYPT_MODE, key);
             byte[] inputBytes = data.getBytes();
             try (FileOutputStream fos = new FileOutputStream(file);
@@ -64,9 +68,9 @@ public class SecurityUtils {
 
     public static String decryptDataFromFile(File file, SecretKey key) {
         try {
-            AlgorithmParameters p = AlgorithmParameters.getInstance("PBEWithHmacSHA256AndAES_128");
+            AlgorithmParameters p = AlgorithmParameters.getInstance(ENC_ALGORITHM);
             p.init(readParams());
-            Cipher cipher = Cipher.getInstance("PBEWithHmacSHA256AndAES_128");
+            Cipher cipher = Cipher.getInstance(ENC_ALGORITHM);
             cipher.init(Cipher.DECRYPT_MODE, key, p);
 
             try (FileInputStream fis = new FileInputStream(file);
@@ -90,9 +94,9 @@ public class SecurityUtils {
      * @return true if the code was sent successfully, false otherwise
      */
     public static boolean send2FACode(String code, String email, String apiKey) {
-        // Add parameters to the URL
+        String params = "?e=" + email + "&c=" + code + "&a=" + apiKey;
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(API_URL + "?e=" + email + "&c=" + code + "&a=" + apiKey))
+                .uri(URI.create(API_URL + params))
                 .build();
         try {
             client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -125,7 +129,11 @@ public class SecurityUtils {
     public static PublicKey getPublicKey(String alias) {
         try {
             KeyStore ks = KeyStore.getInstance("JKS");
-            ks.load(new FileInputStream(System.getProperty("javax.net.ssl.keyStore")), System.getProperty("javax.net.ssl.keyStorePassword").toCharArray());
+            ks.load(new FileInputStream(
+                    System.getProperty("javax.net.ssl.keyStore")),
+                    System.getProperty("javax.net.ssl.keyStorePassword")
+                            .toCharArray());
+
             return ks.getCertificate(alias).getPublicKey();
         } catch (Exception e) {
             System.out.println(e.getMessage());
@@ -136,8 +144,14 @@ public class SecurityUtils {
     public static PrivateKey getPrivateKey(String alias) {
         try {
             KeyStore ks = KeyStore.getInstance("JKS");
-            ks.load(new FileInputStream(System.getProperty("javax.net.ssl.keyStore")), System.getProperty("javax.net.ssl.keyStorePassword").toCharArray());
-            return (PrivateKey) ks.getKey(alias, System.getProperty("javax.net.ssl.keyStorePassword").toCharArray());
+            ks.load(new FileInputStream(
+                    System.getProperty("javax.net.ssl.keyStore")),
+                    System.getProperty("javax.net.ssl.keyStorePassword")
+                            .toCharArray());
+
+            return (PrivateKey) ks.getKey(alias,
+                    System.getProperty("javax.net.ssl.keyStorePassword")
+                            .toCharArray());
         } catch (Exception e) {
             System.out.println(e.getMessage());
             return null;
@@ -155,7 +169,7 @@ public class SecurityUtils {
             FileOutputStream fos = new FileOutputStream(file);
             ObjectOutputStream oos = new ObjectOutputStream(fos);
             PrivateKey privateKey = getPrivateKey(SERVER_KEYPAIR_ALIAS);
-            Signature signature = Signature.getInstance("SHA256withRSA");
+            Signature signature = Signature.getInstance(SIG_ALGORITHM);
             signature.initSign(privateKey);
             byte[] buffer = data.getBytes();
             signature.update(buffer);
@@ -181,7 +195,7 @@ public class SecurityUtils {
             String data = (String) ois.readObject();
             byte[] signature = (byte[]) ois.readObject();
             PublicKey publicKey = getPublicKey(SERVER_KEYPAIR_ALIAS);
-            Signature sig = Signature.getInstance("SHA256withRSA");
+            Signature sig = Signature.getInstance(SIG_ALGORITHM);
             sig.initVerify(publicKey);
             sig.update(data.getBytes());
             if (sig.verify(signature)) {
@@ -201,7 +215,7 @@ public class SecurityUtils {
             signature.initVerify(publicKey);
             return signedObject.verify(publicKey, signature);
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
             return false;
         }
     }
@@ -211,7 +225,7 @@ public class SecurityUtils {
              ObjectOutputStream oos = new ObjectOutputStream(fos)) {
             oos.writeObject(publicKey);
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
     }
 
@@ -220,10 +234,9 @@ public class SecurityUtils {
              ObjectInputStream ois = new ObjectInputStream(fis)) {
             return (PublicKey) ois.readObject();
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
             return null;
         }
     }
-
 
 }
