@@ -1,8 +1,10 @@
 # Build Server
-javac -d out/server/classes -cp IoTServer/src/main/java IoTServer/src/main/java/server/*.java
-cp -r IoTServer/src/main/resources/* out/server/classes
-jar cvfe out/IoTServer.jar server.IoTServer -C out/server/classes .
+javac -d server-app/classes -cp src/main/java src/main/java/common/*.java
+javac -d server-app/classes -cp src/main/java src/main/java/server/*.java
+cp -r src/main/resources/* server-app/classes
+jar cvfe server-app/IoTServer.jar server.IoTServer -C server-app/classes .
 
 # Build Client
-javac -d out/client/classes -cp IoTDevice/src/main/java IoTDevice/src/main/java/client/*.java
-jar cvfe out/IoTDevice.jar client.IoTDevice -C out/client/classes .
+javac -d client-app/classes -cp src/main/java src/main/java/common/*.java
+javac -d client-app/classes -cp src/main/java src/main/java/client/*.java
+jar cvfe client-app/IoTDevice.jar client.IoTDevice -C client-app/classes .

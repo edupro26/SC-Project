@@ -1,4 +1,7 @@
+# Build folders
 out/
+server-app/
+client-app/
 
 ### Maven ###
 target/
@@ -49,7 +52,6 @@ build/
 /**/*.jpg
 
 ### Data Files ###
-/**/*.csv
 /**/*.txt
 
 ### Keys related files ###

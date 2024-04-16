@@ -6,22 +6,29 @@
 
     <groupId>pt.ulisboa.ciencias.di.sc.grupo6</groupId>
     <artifactId>SC_Projeto</artifactId>
-    <version>grupo6</version>
+    <version>1.0-SNAPSHOT</version>
 
     <name>Client-Server IoT System</name>
-
-    <packaging>pom</packaging>
-
-    <modules>
-        <module>IoTDevice</module>
-        <module>IoTServer</module>
-        <module>Common</module>
-    </modules>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>RELEASE</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
 </project>

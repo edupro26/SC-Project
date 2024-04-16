@@ -1,11 +1,11 @@
 package server.security;
 
 import org.junit.jupiter.api.*;
-
+import static org.junit.jupiter.api.Assertions.*;
 import java.io.File;
 
-import static org.junit.jupiter.api.Assertions.*;
 class SecurityUtilsTest {
+
     private static final String CIPHER_PASSWORD = "INSERT_CIPHER_PASSWORD_HERE";
     private static final String dummyData = "INSERT_DUMMY_DATA_HERE";
     private static final String dummyFile = "hello.txt";
