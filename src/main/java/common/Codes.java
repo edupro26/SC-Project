@@ -1,6 +1,5 @@
 package common;
 
-
 /**
  * Enum containing all the response codes of the {@code IoTServer}.
  *
@@ -24,7 +23,6 @@ public enum Codes {
     OK2FA("OK-2FA"),
     OKDEVID("OK-DEVID"),
     OKTESTED("OK-TESTED"),
-    WRONGPWD("WRONG-PWD"),
     NOKDEVID("NOK-DEVID"),
     NOKTESTED("NOK-TESTED");
 
