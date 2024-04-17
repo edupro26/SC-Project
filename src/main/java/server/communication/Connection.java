@@ -1,5 +1,6 @@
 package server.communication;
 
+import common.Codes;
 import common.Message;
 import server.components.Device;
 import server.components.Domain;
