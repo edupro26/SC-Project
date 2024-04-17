@@ -152,7 +152,8 @@ public class DeviceHandler {
     protected void deviceValidation(String devId) {
         String res = sendReceive(devId);
         if (res.equals(Codes.OKDEVID.toString())) {
-            try {
+            //FIXME remote attestation is disabled
+            /*try {
                 // Find the client executable
                 CodeSource src = IoTDevice.class.getProtectionDomain().getCodeSource();
                 String path = src.getLocation().toURI().getPath();
@@ -177,7 +178,7 @@ public class DeviceHandler {
             } catch (Exception e) {
                 System.err.println("Error during device validation");
                 System.exit(1);
-            }
+            }*/
         } else {
             System.out.println("Response: NOK-DEVID # Invalid device id");
             System.exit(1);
