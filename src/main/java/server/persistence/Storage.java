@@ -10,8 +10,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -191,31 +189,6 @@ public class Storage {
      */
     public boolean hasPerm(User user, Device device) {
         return deviceManager.hasPerm(user, device);
-    }
-
-    /**
-     * Validates the name and the size of the {@code IoTDevice} executable
-     *
-     * @param name the name {@code IoTDevice} executable
-     * @param size the size {@code IoTDevice} executable
-     * @return true, if validated, false otherwise
-     */
-    public boolean checkConnectionInfo(String name, String size) {
-        InputStream in = Storage.class.getClassLoader().getResourceAsStream(INFO);
-        if (in != null) {
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(in))) {
-                String line;
-                while ((line = br.readLine()) != null) {
-                    String[] data = line.split(",");
-                    if (name.equals(data[0]) && size.equals(data[1]))
-                        return true;
-                }
-                in.close();
-            } catch (IOException e) {
-                System.out.println(e.getMessage());
-            }
-        }
-        return false;
     }
 
     /**

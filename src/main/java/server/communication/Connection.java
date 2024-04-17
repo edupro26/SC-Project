@@ -210,32 +210,6 @@ public class Connection {
     }
 
     /**
-     * Validates the client program.
-     *
-     * @return true if validated, false otherwise
-     */
-    public boolean validateConnection() {
-        try {
-            String[] in = ((String) input.readObject()).split(",");
-            String name = in[0];
-            String size = in[1];
-            boolean tested = srvStorage.checkConnectionInfo(name, size);
-            if (tested) {
-                output.writeObject(Codes.OKTESTED.toString());
-                System.out.println("Device info validated!");
-                return true;
-            }
-            else {
-                output.writeObject(Codes.NOKTESTED.toString());
-                System.out.println("Device info not validated!");
-            }
-        } catch (Exception e) {
-            System.out.println("Something went wrong!");
-        }
-        return false;
-    }
-
-    /**
      * Handles the requests from the {@code IoTDevice}.
      *
      * @see Codes
