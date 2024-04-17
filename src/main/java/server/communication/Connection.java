@@ -1,18 +1,12 @@
 package server.communication;
 
 import common.*;
+import common.security.CommonUtils;
 import server.components.*;
 import server.persistence.Storage;
 import server.security.SecurityUtils;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.util.List;
@@ -168,6 +162,7 @@ public class Connection {
      */
     public boolean validateDevID() {
         try {
+            // Id validation
             String strDevId = (String) input.readObject();
             int devId = Integer.parseInt(strDevId);
             if (devId < 0) {
@@ -175,11 +170,10 @@ public class Connection {
                 return false;
             }
             this.device = new Device(devUser.getName(), devId);
-
-            Device exists = srvStorage.getDevice(device);
+            Device exists = srvStorage.getDevice(this.device);
             if (exists != null) {
                 if (!exists.isConnected()) {
-                    device = exists;
+                    this.device = exists;
                 } else {
                     output.writeObject(Codes.NOKDEVID.toString());
                     return false;
@@ -188,17 +182,45 @@ public class Connection {
             else {
                 srvStorage.saveDevice(device);
             }
-
-            // TODO: Remote attestation
-
-            device.setConnected(true);
             output.writeObject(Codes.OKDEVID.toString());
-            System.out.println("Device ID validated!");
-            return true;
+
+            // Remote attestation
+            SecureRandom secureRandom = new SecureRandom();
+            long nonce = secureRandom.nextLong();
+            output.writeObject(nonce);
+
+            String[] copyInfo = getCopyInfo();
+            File clientCopy = new File(copyInfo[1]);
+            byte[] server = CommonUtils.calculateHashWithNonce(clientCopy, nonce);
+            String clientName = (String) input.readObject();
+            byte[] client = (byte[]) input.readObject();
+            if(clientName.equals(copyInfo[0]) && CommonUtils.compareHashes(client, server)) {
+                this.device.setConnected(true);
+                output.writeObject(Codes.OKTESTED.toString());
+                System.out.println("Device validated!");
+                return true;
+            } else {
+                output.writeObject(Codes.NOKTESTED.toString());
+                System.out.println("Device not validated!");
+            }
         } catch (Exception e) {
             System.out.println("Something went wrong!");
         }
         return false;
+    }
+
+    private String[] getCopyInfo() {
+        String path = "classes/device_info.csv";
+        String[] info = null;
+        try (BufferedReader br = new BufferedReader(new FileReader(path))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                info = line.split(",");
+            }
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
+        return info;
     }
 
     /**
