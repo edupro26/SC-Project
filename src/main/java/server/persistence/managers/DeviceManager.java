@@ -1,9 +1,7 @@
 package server.persistence.managers;
 
 import common.Codes;
-import server.components.Device;
-import server.components.Domain;
-import server.components.User;
+import server.components.*;
 import server.security.IntegrityVerifier;
 
 import java.io.BufferedReader;

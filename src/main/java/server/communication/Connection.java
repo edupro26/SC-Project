@@ -1,10 +1,7 @@
 package server.communication;
 
-import common.Codes;
-import common.Message;
-import server.components.Device;
-import server.components.Domain;
-import server.components.User;
+import common.*;
+import server.components.*;
 import server.persistence.Storage;
 import server.security.SecurityUtils;
 

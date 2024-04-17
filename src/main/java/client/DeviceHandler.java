@@ -1,7 +1,6 @@
 package client;
 
-import common.Codes;
-import common.Message;
+import common.*;
 
 import javax.crypto.SecretKey;
 import javax.net.SocketFactory;

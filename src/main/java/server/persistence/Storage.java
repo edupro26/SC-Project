@@ -1,12 +1,8 @@
 package server.persistence;
 
 import common.Codes;
-import server.components.Device;
-import server.components.Domain;
-import server.components.User;
-import server.persistence.managers.DeviceManager;
-import server.persistence.managers.DomainManager;
-import server.persistence.managers.UserManager;
+import server.components.*;
+import server.persistence.managers.*;
 import server.security.IntegrityVerifier;
 
 import javax.crypto.SecretKey;
