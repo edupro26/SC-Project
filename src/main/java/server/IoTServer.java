@@ -154,10 +154,13 @@ public class IoTServer {
                 boolean isValid = connection.validateDevice();
 
                 if (isValid) {
+                    System.out.println("Device validated!");
                     System.out.println("Client connected (" + clientAddress + ")");
                     System.out.println("Active connections: " + ++counter);
                     connection.handleRequests();
                     System.out.println("Active connections: " + --counter);
+                } else {
+                    System.out.println("Device not validated!");
                 }
 
                 output.close();

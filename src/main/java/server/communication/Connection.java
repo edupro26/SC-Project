@@ -197,11 +197,9 @@ public class Connection {
             if(clientName.equals(copyInfo[0]) && CommonUtils.compareHashes(client, server)) {
                 this.device.setConnected(true);
                 output.writeObject(Codes.OKTESTED.toString());
-                System.out.println("Device validated!");
                 return true;
             } else {
                 output.writeObject(Codes.NOKTESTED.toString());
-                System.out.println("Device not validated!");
             }
         } catch (Exception e) {
             System.err.println("Error during device validation!");
