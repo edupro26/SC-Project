@@ -150,15 +150,17 @@ public class IoTServer {
                     return;
                 }
 
-                System.out.println("Validating device ID... ");
-                boolean validID = connection.validateDevID();
+                System.out.print("Validating device... ");
+                boolean isValid = connection.validateDevice();
 
-
-                if (validID /*&& validInfo*/) {
+                if (isValid) {
+                    System.out.println("Device validated!");
                     System.out.println("Client connected (" + clientAddress + ")");
                     System.out.println("Active connections: " + ++counter);
                     connection.handleRequests();
                     System.out.println("Active connections: " + --counter);
+                } else {
+                    System.out.println("Device not validated!");
                 }
 
                 output.close();

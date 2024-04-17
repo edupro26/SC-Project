@@ -10,8 +10,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -38,7 +36,7 @@ public class Storage {
     /**
      * File paths
      */
-    private static final String INFO = "device_info.txt";
+    private static final String INFO = "classes/device_info.csv";
     private static final String USERS = "server-files/users.txt";
     private static final String DOMAINS = "server-files/domains.txt";
     private static final String DEVICES = "server-files/devices.txt";
@@ -194,28 +192,21 @@ public class Storage {
     }
 
     /**
-     * Validates the name and the size of the {@code IoTDevice} executable
+     * Returns the information about the local client copy
      *
-     * @param name the name {@code IoTDevice} executable
-     * @param size the size {@code IoTDevice} executable
-     * @return true, if validated, false otherwise
+     * @return the information about the local client copy
      */
-    public boolean checkConnectionInfo(String name, String size) {
-        InputStream in = Storage.class.getClassLoader().getResourceAsStream(INFO);
-        if (in != null) {
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(in))) {
-                String line;
-                while ((line = br.readLine()) != null) {
-                    String[] data = line.split(",");
-                    if (name.equals(data[0]) && size.equals(data[1]))
-                        return true;
-                }
-                in.close();
-            } catch (IOException e) {
-                System.out.println(e.getMessage());
+    public String[] getCopyInfo() {
+        String[] info = null;
+        try (BufferedReader br = new BufferedReader(new FileReader(INFO))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                info = line.split(",");
             }
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
         }
-        return false;
+        return info;
     }
 
     /**

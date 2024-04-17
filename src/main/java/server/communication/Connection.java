@@ -1,18 +1,12 @@
 package server.communication;
 
 import common.*;
+import common.security.CommonUtils;
 import server.components.*;
 import server.persistence.Storage;
 import server.security.SecurityUtils;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.util.List;
@@ -162,12 +156,14 @@ public class Connection {
     }
 
     /**
-     * Validates the {@code Device} id of this connection.
+     * Validates the {@code Device} id of this connection,
+     * and tests this client program to see if it is valid.
      *
      * @return true if validated, false otherwise
      */
-    public boolean validateDevID() {
+    public boolean validateDevice() {
         try {
+            // Id validation
             String strDevId = (String) input.readObject();
             int devId = Integer.parseInt(strDevId);
             if (devId < 0) {
@@ -175,11 +171,10 @@ public class Connection {
                 return false;
             }
             this.device = new Device(devUser.getName(), devId);
-
-            Device exists = srvStorage.getDevice(device);
+            Device exists = srvStorage.getDevice(this.device);
             if (exists != null) {
                 if (!exists.isConnected()) {
-                    device = exists;
+                    this.device = exists;
                 } else {
                     output.writeObject(Codes.NOKDEVID.toString());
                     return false;
@@ -188,41 +183,28 @@ public class Connection {
             else {
                 srvStorage.saveDevice(device);
             }
-
-            // TODO: Remote attestation
-
-            device.setConnected(true);
             output.writeObject(Codes.OKDEVID.toString());
-            System.out.println("Device ID validated!");
+            //FIXME remote attestation is disabled
+            this.device.setConnected(true);
             return true;
-        } catch (Exception e) {
-            System.out.println("Something went wrong!");
-        }
-        return false;
-    }
-
-    /**
-     * Validates the client program.
-     *
-     * @return true if validated, false otherwise
-     */
-    public boolean validateConnection() {
-        try {
-            String[] in = ((String) input.readObject()).split(",");
-            String name = in[0];
-            String size = in[1];
-            boolean tested = srvStorage.checkConnectionInfo(name, size);
-            if (tested) {
+            /*// Remote attestation
+            SecureRandom secureRandom = new SecureRandom();
+            long nonce = secureRandom.nextLong();
+            output.writeObject(nonce);
+            String[] copyInfo = srvStorage.getCopyInfo();
+            File clientCopy = new File(copyInfo[1]);
+            byte[] server = CommonUtils.calculateHashWithNonce(clientCopy, nonce);
+            String clientName = (String) input.readObject();
+            byte[] client = (byte[]) input.readObject();
+            if(clientName.equals(copyInfo[0]) && CommonUtils.compareHashes(client, server)) {
+                this.device.setConnected(true);
                 output.writeObject(Codes.OKTESTED.toString());
-                System.out.println("Device info validated!");
                 return true;
-            }
-            else {
+            } else {
                 output.writeObject(Codes.NOKTESTED.toString());
-                System.out.println("Device info not validated!");
-            }
+            }*/
         } catch (Exception e) {
-            System.out.println("Something went wrong!");
+            System.err.println("Error during device validation!");
         }
         return false;
     }

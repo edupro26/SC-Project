@@ -1,6 +1,7 @@
 package client;
 
 import common.*;
+import common.security.CommonUtils;
 
 import javax.crypto.SecretKey;
 import javax.net.SocketFactory;
@@ -15,6 +16,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.security.CodeSource;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignedObject;
@@ -139,6 +141,47 @@ public class DeviceHandler {
             socket.close();
         } catch (Exception e) {
             System.out.println(e.getMessage());
+        }
+    }
+
+    /**
+     * Validates the id of this IoTDevice. It also tests this IoTDevice executable.
+     *
+     * @param devId id of this IoTDevice
+     */
+    protected void deviceValidation(String devId) {
+        String res = sendReceive(devId);
+        if (res.equals(Codes.OKDEVID.toString())) {
+            //FIXME remote attestation is disabled
+            /*try {
+                // Find the client executable
+                CodeSource src = IoTDevice.class.getProtectionDomain().getCodeSource();
+                String path = src.getLocation().toURI().getPath();
+                File exec = new File(path);
+
+                long nonce = (long) input.readObject();
+                byte[] hash = CommonUtils.calculateHashWithNonce(exec, nonce);
+                if (hash != null) {
+                    output.writeObject(exec.getName());
+                    output.writeObject(hash);
+                    String tested = (String) input.readObject();
+                    if (tested.equals(Codes.OKTESTED.toString())) {
+                        System.out.println("OK-TESTED # This IoTDevice is valid!");
+                    } else {
+                        System.out.println("NOK-TESTED # This IoTDevice is not valid!");
+                        System.exit(1);
+                    }
+                } else {
+                    System.err.println("Error calculating hash during device validation");
+                    System.exit(1);
+                }
+            } catch (Exception e) {
+                System.err.println("Error during device validation");
+                System.exit(1);
+            }*/
+        } else {
+            System.out.println("Response: NOK-DEVID # Invalid device id");
+            System.exit(1);
         }
     }
 

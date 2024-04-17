@@ -1,7 +1,5 @@
 package client;
 
-import common.Codes;
-
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -57,7 +55,7 @@ public class IoTDevice {
         DeviceHandler client = new DeviceHandler(server[0], Integer.parseInt(server[1]));
         try {
             client.connect(userId);
-            deviceValidation(client, devId);
+            client.deviceValidation(devId);
             printMenu();
 
             Scanner scanner = new Scanner(System.in);
@@ -72,28 +70,6 @@ public class IoTDevice {
             System.out.println("\nExited IoTDevice ");
             client.disconnect();
         }
-    }
-
-    /**
-     * Authenticates the user and validates the id of this IoTDevice.
-     * It also tests this IoTDevice executable.
-     *
-     * @param handler handler used for communication with the {@code IoTServer}
-     * @param devId id of this IoTDevice
-     * @see DeviceHandler
-     */
-    private static void deviceValidation(DeviceHandler handler, String devId) {
-        String res = handler.sendReceive(devId);
-        if (res.equals(Codes.NOKDEVID.toString())) {
-            System.out.println("Response: NOK-DEVID # Invalid device id");
-            System.exit(1);
-        }
-        String[] resSplit = res.split(";");
-        if (!resSplit[0].equals(Codes.OKDEVID.toString())) {
-            System.out.println("Response: NOK-DEVID # Invalid device id");
-            System.exit(1);
-        }
-        // TODO: Remote attestation
     }
 
     /**
