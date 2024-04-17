@@ -13,23 +13,28 @@ public class CommonUtils {
     public static byte[] calculateHashWithNonce(File file, long nonce) {
         try {
             MessageDigest md = MessageDigest.getInstance(HASH_ALGORITHM);
-            FileInputStream inputStream = new FileInputStream(file);
-            byte[] buffer = new byte[1024];
-            int bytesRead;
-            md.update(nonceToByteArray(nonce));
-            while ((bytesRead = inputStream.read(buffer)) != -1) {
-                md.update(buffer, 0, bytesRead);
-            }
-            byte[] hash = md.digest();
-            inputStream.close();
-            return hash;
-        } catch (IOException | NoSuchAlgorithmException e) {
+            byte[] fileArray = fileToByteArray(file);
+            byte[] nonceArray = nonceToByteArray(nonce);
+            md.update(fileArray);
+            md.update(nonceArray);
+            return md.digest();
+        } catch (NoSuchAlgorithmException e) {
             return null;
         }
     }
 
     public static boolean compareHashes(byte[] client, byte[] server) {
         return MessageDigest.isEqual(client, server);
+    }
+
+    private static byte[] fileToByteArray(File file) {
+        byte[] buffer = new byte[(int) file.length()];
+        try (FileInputStream in = new FileInputStream(file)) {
+            in.read(buffer);
+        } catch (IOException e) {
+            return null;
+        }
+        return buffer;
     }
 
     private static byte[] nonceToByteArray(long nonce) {
