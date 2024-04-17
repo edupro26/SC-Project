@@ -1,5 +1,7 @@
 package client;
 
+import common.Codes;
+
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -82,12 +84,12 @@ public class IoTDevice {
      */
     private static void deviceValidation(DeviceHandler handler, String devId) {
         String res = handler.sendReceive(devId);
-        if (res.equals("NOK-DEVID")) {
+        if (res.equals(Codes.NOKDEVID.toString())) {
             System.out.println("Response: NOK-DEVID # Invalid device id");
             System.exit(1);
         }
         String[] resSplit = res.split(";");
-        if (!resSplit[0].equals("OK-DEVID")) {
+        if (!resSplit[0].equals(Codes.OKDEVID.toString())) {
             System.out.println("Response: NOK-DEVID # Invalid device id");
             System.exit(1);
         }

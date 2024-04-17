@@ -1,5 +1,6 @@
 package client;
 
+import common.Codes;
 import common.Message;
 
 import javax.crypto.SecretKey;
@@ -34,19 +35,6 @@ import java.util.Scanner;
 public class DeviceHandler {
 
     /**
-     * Response codes received by the {@code IoTServer}
-     */
-    private static final String NEWUSER = "NEW-USER";
-    private static final String FOUNDUSER = "FOUND-USER";
-    private static final String OK = "OK";
-    private static final String NODM = "NODM";
-    private static final String NOID = "NOID";
-    private static final String NOUSER = "NOUSER";
-    private static final String NOPERM = "NOPERM";
-    private static final String NODATA = "NODATA";
-    private static final String NOK = "NOK";
-
-    /**
      * Folder used as an output for files sent by the {@code IoTServer}
      */
     private static final String SERVER_OUT = "server-output/";
@@ -76,7 +64,6 @@ public class DeviceHandler {
     protected DeviceHandler(String address, int port) {
         this.address = address;
         this.port = port;
-
     }
 
     /**
@@ -91,16 +78,13 @@ public class DeviceHandler {
             this.input = new ObjectInputStream(socket.getInputStream());
 
             System.out.println("Sending user id:" + userId);
-
             String res = this.sendReceive(userId);
-
             if(res == null) {
                 System.out.println("Error in the response");
                 System.exit(1);
             }
 
             String[] resSplit = res.split(";");
-
             if (resSplit.length != 2) {
                 System.out.println("Error in the response");
                 System.exit(1);
@@ -110,7 +94,7 @@ public class DeviceHandler {
             long nonce = Long.parseLong(resSplit[1]);
 
             // If the user is not registered
-            if(flag.equals(NEWUSER)){
+            if(flag.equals(Codes.NEWUSER.toString())) {
                 SignedObject signedObject = new SignedObject(Long.toString(nonce), Encryption.findPrivateKeyOnKeyStore(userId), Signature.getInstance("SHA256withRSA"));
                 Message signedMessage = new Message(signedObject, Encryption.getOwnCertificate(userId));
                 output.writeObject(signedMessage);
@@ -122,30 +106,24 @@ public class DeviceHandler {
             }
 
             String authRes = (String) input.readObject();
-
-            if (!authRes.equals("OK-USER") && !authRes.equals("OK-NEW-USER")) {
+            if (!authRes.equals(Codes.OKUSER.toString()) && !authRes.equals(Codes.OKNEWUSER.toString())) {
                 System.out.println("Authentication failed. Certificate not valid.");
                 System.exit(1);
             }
 
             // 2FA Process
             System.out.print("2FA Code: ");
-
             Scanner scanner = new Scanner(System.in);
             String input = scanner.nextLine();
-
             output.writeObject(input);
 
             String finalAuthRes = (String) this.input.readObject();
-
-            if (!finalAuthRes.equals("OK-2FA")) {
+            if (!finalAuthRes.equals(Codes.OK2FA.toString())) {
                 System.out.println("Authentication failed. 2FA code not valid.");
                 System.exit(1);
             }
 
             this.userId = userId;
-
-
         } catch (Exception e) {
             System.out.println(e.getMessage());
             System.exit(1);
@@ -180,7 +158,6 @@ public class DeviceHandler {
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
-
         return null;
     }
 
@@ -199,12 +176,12 @@ public class DeviceHandler {
         }
         String msg = parseCommandToSend(command, args);
         String res = this.sendReceive(msg);
-        switch (res) {
-            case OK -> System.out.println("Response: "
-                    + OK + " # Domain created successfully");
-            case NOK -> System.out.println("Response: " + res
-                    + " # Domain already exists");
-            default -> System.out.println("Response: NOK # Error creating domain");
+        if (res.equals(Codes.OK.toString())){
+            System.out.println("Response: OK # Domain created successfully");
+        } else if (res.equals(Codes.NOK.toString())) {
+            System.out.println("Response: NOK # Domain already exists");
+        } else {
+            System.out.println("Response: NOK # Error creating domain");
         }
     }
 
@@ -217,43 +194,31 @@ public class DeviceHandler {
      * @requires {@code args != null && command != null}
      */
     protected void sendReceiveADD(String[] args, String command) {
-           if (args.length != 3) {
+        if (args.length != 3) {
             System.out.println("Usage: ADD <user1> <dm> <password-domain>");
             return;
         }
         String msg = parseCommandToSend(command, args);
-
         // TODO: Handle first response
-
         String res = this.sendReceive(msg);
-        switch (res) {
-            case OK -> {}
-            case NODM -> {
-                System.out.println("Response: " + res
-                        + " # Domain does not exist");
+        if (!res.equals(Codes.OK.toString())) {
+            if (res.equals(Codes.NODM.toString())) {
+                System.out.println("Response: NODM # Domain does not exist");
                 return;
-            }
-
-            case NOUSER -> {
-                System.out.println("Response: " + res
-                    + " # User does not exist");
+            } else if (res.equals(Codes.NOUSER.toString())) {
+                System.out.println("Response: NOUSER # User does not exist");
                 return;
-            }
-            case NOPERM -> {
-                System.out.println("Response: " + res
-                        + " # This user does not have permissions");
+            } else if (res.equals(Codes.NOPERM.toString())) {
+                System.out.println("Response: NOPERM # User does not exist");
                 return;
-            }
-            default -> {
+            } else {
                 System.out.println("Response: NOK # Error adding user");
                 return;
             }
         }
 
         PublicKey pk = Encryption.findPublicKeyOnTrustStore(args[0]);
-
         try {
-
             if (pk == null) {
                 String resNoPk = this.sendReceive("NO_PK");
                 System.out.println("Response: NOK # Error adding user. Public key not found to encrypt the key.");
@@ -272,49 +237,38 @@ public class DeviceHandler {
             } else {
                 String resFoundPk = this.sendReceive("SENDING_PK");
             }
-
         } catch (Exception e) {
             System.out.println("Response: NOK # Error adding user");
             return;
         }
 
         String keyEncFilename = args[1] + "_" + args[0] + ".key.enc";
-
         Encryption.encryptKeyWithRSA(Encryption.generateKey(args[2]), pk, keyEncFilename);
-
         File keyEncFile = new File(keyEncFilename);
 
         try {
             output.writeInt((int) keyEncFile.length());
-
             sendFile(keyEncFilename, (int) keyEncFile.length());
-
             String resKeySent = (String) input.readObject();
 
             if (keyEncFile.exists()) {
                 keyEncFile.delete();
             }
-
-            if (!resKeySent.equals("OK")) {
+            if (!resKeySent.equals(Codes.OK.toString())) {
                 System.out.println("Response: NOK # Error adding user");
                 return;
             }
 
             output.writeObject("WAITING_FINAL_RES");
-
             String finalRes = (String) input.readObject();
-
-            if (finalRes.equals("OK")) {
+            if (finalRes.equals(Codes.OK.toString())) {
                 System.out.println("Response: " + finalRes + " # User added successfully");
                 return;
             }
-
             System.out.println("Response: NOK # Error adding user");
-
         } catch (Exception e) {
             System.out.println("Response: NOK # Error adding user");
         }
-
     }
 
     /**
@@ -331,16 +285,15 @@ public class DeviceHandler {
             return;
         }
         String msg = parseCommandToSend(command, args);
-
         String res = this.sendReceive(msg);
-        switch (res) {
-            case OK -> System.out.println("Response: "
-                    + OK + " # Device registered successfully");
-            case NODM -> System.out.println("Response: " + res
-                    + " # Domain does not exist");
-            case NOPERM -> System.out.println("Response: " + res
-                    + " # This user does not have permissions");
-            default -> System.out.println("Response: NOK # Error registering device");
+        if (res.equals(Codes.OK.toString())) {
+            System.out.println("Response: OK # Device registered successfully");
+        } else if (res.equals(Codes.NODM.toString())) {
+            System.out.println("Response: NODM # Domain does not exist");
+        } else if (res.equals(Codes.NOPERM.toString())) {
+            System.out.println("Response: NOPERM # This user does not have permissions");
+        } else {
+            System.out.println("Response: NOK # Error registering device");
         }
     }
 
@@ -359,15 +312,15 @@ public class DeviceHandler {
         }
         String msg = parseCommandToSend(command, args);
         String res = this.sendReceive(msg);
-        if (res.equals(OK)) {
-            System.out.println("Response: " + OK + " # Printing domains");
+        if (res.equals(Codes.OK.toString())) {
+            System.out.println("Response: OK # Printing domains");
             try {
                 System.out.println((String) input.readObject());
             } catch (Exception e) {
                 System.out.println("Response: NOK # Error printing domains");
             }
         } else {
-            System.out.println("Response: " + NOK + " # Device not registered");
+            System.out.println("Response: NOK # Device not registered");
         }
     }
 
@@ -386,11 +339,10 @@ public class DeviceHandler {
         }
         String msg = parseCommandToSend(command, args);
         String res = this.sendReceive(msg);
-        if (res.equals(OK)) {
-            System.out.println("Response: " + OK +
-                    " # Temperature sent successfully");
+        if (res.equals(Codes.OK.toString())) {
+            System.out.println("Response: OK # Temperature sent successfully");
         } else {
-            System.out.println("Response: " + res + " # Error sending temperature");
+            System.out.println("Response: NOK # Error sending temperature");
         }
     }
 
@@ -408,17 +360,15 @@ public class DeviceHandler {
             return;
         }
         String msg = parseCommandToSend(command, args);
-
         try {
             String res = this.sendReceive(msg);
-            if (res.equals(NOK)) {
-                System.out.println("Response: " + res + " # Device not registered");
+            if (res.equals(Codes.NOK.toString())) {
+                System.out.println("Response: NOK # Device not registered");
                 return;
             }
+
             String[] domains = res.split(";");
-
             output.writeObject("RECEIVED_DOMAINS");
-
             for (String domain : domains) {
                 // Receive the domain key
                 int size = input.readInt();
@@ -426,7 +376,6 @@ public class DeviceHandler {
                 receiveFile(keyTempPath, size);
 
                 File encryptedKey = new File(keyTempPath);
-
                 SecretKey key = (SecretKey) Encryption.decryptKeyWithRSA(encryptedKey, Encryption.findPrivateKeyOnKeyStore(this.userId));
 
                 File imageEnc = new File(args[0] + ".cif");
@@ -435,7 +384,6 @@ public class DeviceHandler {
                 int imageEncSize = (int) imageEnc.length();
 
                 // Send the encrypted image
-
                 output.writeInt(imageEncSize);
                 sendFile(imageEnc.getPath(), imageEncSize);
 
@@ -451,21 +399,15 @@ public class DeviceHandler {
                 new File(keyTempPath).delete(); // Delete the temporary key file
                 imageEnc.delete(); // Delete the encrypted image
                 imageEncParams.delete(); // Delete the encrypted image params
-
             }
-
             output.writeObject("ALL_IMAGES_RECEIVED");
 
             String finalRes = (String) input.readObject();
-
-            if (finalRes.equals(OK)) {
-                System.out.println("Response: " + finalRes + " # Image sent successfully");
+            if (finalRes.equals(Codes.OK.toString())) {
+                System.out.println("Response: OK # Image sent successfully");
             } else {
-                System.out.println("Response: " + finalRes + " # Error sending image");
+                System.out.println("Response: NOK # Error sending image");
             }
-
-
-
         } catch (Exception e) {
             System.out.println("Response: NOK # Error sending image");
         }
@@ -487,27 +429,26 @@ public class DeviceHandler {
         String msg = parseCommandToSend(command, args);
         String res = this.sendReceive(msg);
         String name = SERVER_OUT + args[0] + ".txt";
-        switch (res) {
-            case OK -> {
-                try {
-                    int size = input.readInt();
-                    int received = receiveFile(name, size);
-                    String result = received == size
-                            ? "Response: " + res + ", " + received
-                            + " (long), followed by " + received + " bytes of data"
-                            : "Response: NOK # Error getting temperatures";
-                    System.out.println(result);
-                } catch (IOException e) {
-                    System.out.println("Response: NOK # Error getting temperatures");
-                }
+        if (res.equals(Codes.OK.toString())) {
+            try {
+                int size = input.readInt();
+                int received = receiveFile(name, size);
+                String result = received == size
+                        ? "Response: OK, " + received + " (long), followed by "
+                        + received + " bytes of data"
+                        : "Response: NOK # Error getting temperatures";
+                System.out.println(result);
+            } catch (IOException e) {
+                System.out.println("Response: NOK # Error getting temperatures");
             }
-            case NODM -> System.out.println("Response: " + res
-                    + " # Domain does not exist");
-            case NOPERM -> System.out.println("Response: " + res
-                    + " # This user does not have permissions");
-            case NODATA -> System.out.println("Response: " + res
-                    + " # No data found in this domain");
-            default -> System.out.println("Response: NOK # Error getting temperatures");
+        } else if (res.equals(Codes.NODM.toString())) {
+            System.out.println("Response: NODM # Domain does not exist");
+        } else if (res.equals(Codes.NOPERM.toString())) {
+            System.out.println("Response: NOPERM # This user does not have permissions");
+        } else if (res.equals(Codes.NODATA.toString())) {
+            System.out.println("Response: NODATA # No data found in this domain");
+        } else {
+            System.out.println("Response: NOK # Error getting temperatures");
         }
     }
 
@@ -520,80 +461,71 @@ public class DeviceHandler {
      * @requires {@code args != null && command != null}
      */
     protected void sendReceiveRI(String[] args, String command) {
-        try {
-            if (args.length != 1 || !args[0].contains(":")) {
-                System.out.println("Usage: RI <user-id>:<dev_id>");
-                return;
-            }
-            String msg = parseCommandToSend(command, args);
-            String res = this.sendReceive(msg);
-            String[] temp = args[0].split(":");
+        if (args.length != 1 || !args[0].contains(":")) {
+            System.out.println("Usage: RI <user-id>:<dev_id>");
+            return;
+        }
+        String msg = parseCommandToSend(command, args);
+        String res = this.sendReceive(msg);
+        String[] temp = args[0].split(":");
+        if (res.equals("SENDING_FILES")) {
+            try {
+                String domain = (String) input.readObject();
+                File domainKeyENc = new File(SERVER_OUT + domain + ".key.enc");
+                File imageEnc = new File(SERVER_OUT + temp[0] + "_" + temp[1] + ".jpg.cif");
+                File imageEncParams = new File(SERVER_OUT + temp[0] + "_" + temp[1] + ".jpg.cif.params");
 
-            switch (res) {
-                case "SENDING_FILES" -> {
-                    try {
-                        String domain = (String) input.readObject();
+                // Receive the domain key
+                int domainKeyEncSize = input.readInt();
+                receiveFile(domainKeyENc.getPath(), domainKeyEncSize);
+                output.writeObject("RECEIVED_DOMAIN_KEY");
 
-                        File domainKeyENc = new File(SERVER_OUT + domain + ".key.enc");
-                        File imageEnc = new File(SERVER_OUT + temp[0] + "_" + temp[1] + ".jpg.cif");
-                        File imageEncParams = new File(SERVER_OUT + temp[0] + "_" + temp[1] + ".jpg.cif.params");
+                // Receive the encrypted image
+                int imageEncSize = input.readInt();
+                receiveFile(imageEnc.getPath(), imageEncSize);
+                output.writeObject("RECEIVED_IMAGE");
 
-                        // Receive the domain key
-                        int domainKeyEncSize = input.readInt();
-                        receiveFile(domainKeyENc.getPath(), domainKeyEncSize);
-                        output.writeObject("RECEIVED_DOMAIN_KEY");
+                // Receive the encrypted image params
+                int imageEncParamsSize = input.readInt();
+                receiveFile(imageEncParams.getPath(), imageEncParamsSize);
+                output.writeObject("RECEIVED_IMAGE_PARAMS");
 
-                        // Receive the encrypted image
-                        int imageEncSize = input.readInt();
-                        receiveFile(imageEnc.getPath(), imageEncSize);
-                        output.writeObject("RECEIVED_IMAGE");
-
-                        // Receive the encrypted image params
-                        int imageEncParamsSize = input.readInt();
-                        receiveFile(imageEncParams.getPath(), imageEncParamsSize);
-                        output.writeObject("RECEIVED_IMAGE_PARAMS");
-
-                        String finalRes = (String) input.readObject();
-                        if (!finalRes.equals(OK)) {
-                            System.out.println("Response: NOK # Error getting image");
-                            return;
-                        }
-
-                        // Decrypt the domain key
-                        SecretKey key = (SecretKey) Encryption.decryptKeyWithRSA(domainKeyENc, Encryption.findPrivateKeyOnKeyStore(this.userId));
-
-                        // Decrypt the image
-                        File image = new File(SERVER_OUT + temp[0] + "_" + temp[1] + ".jpg");
-                        Encryption.decryptFile(imageEnc, image, key);
-
-                        // Delete the encrypted files
-                        domainKeyENc.delete();
-                        imageEnc.delete();
-                        imageEncParams.delete();
-
-                        System.out.println("Response: " + finalRes + " # Image received successfully");
-                        System.out.println("Image saved as: " + image.getPath());
-
-                        /*
-                        String result = received == size
-                                ? "Response: " + res + ", " + received
-                                + " (long), followed by " + received + " bytes of data"
-                                : "Response: NOK # Error getting image";
-                        System.out.println(result);
-                        */
-                    } catch (IOException e) {
-                        System.out.println("Response: NOK # Error getting image");
-                    }
+                String finalRes = (String) input.readObject();
+                if (!finalRes.equals(Codes.OK.toString())) {
+                    System.out.println("Response: NOK # Error getting image");
+                    return;
                 }
-                case NODATA -> System.out.println("Response: " + res
-                        + " # No image found for this device");
-                case NOID -> System.out.println("Response: " + res
-                        + " # No device found with this id");
-                case NOPERM -> System.out.println("Response: " + res
-                        + " # This user does not have permissions");
-                default -> System.out.println("Response: NOK # Error getting image");
+
+                // Decrypt the domain key
+                SecretKey key = (SecretKey) Encryption.decryptKeyWithRSA(domainKeyENc, Encryption.findPrivateKeyOnKeyStore(this.userId));
+
+                // Decrypt the image
+                File image = new File(SERVER_OUT + temp[0] + "_" + temp[1] + ".jpg");
+                Encryption.decryptFile(imageEnc, image, key);
+
+                // Delete the encrypted files
+                domainKeyENc.delete();
+                imageEnc.delete();
+                imageEncParams.delete();
+                System.out.println("Response: " + finalRes + " # Image received successfully");
+                System.out.println("Image saved as: " + image.getPath());
+                    /*
+                    String result = received == size
+                            ? "Response: " + res + ", " + received
+                            + " (long), followed by " + received + " bytes of data"
+                            : "Response: NOK # Error getting image";
+                    System.out.println(result);
+                    */
+            } catch (IOException | ClassNotFoundException e) {
+                System.out.println("Response: NOK # Error getting image");
             }
-        } catch (Exception e) {
+        } else if (res.equals(Codes.NODATA.toString())) {
+            System.out.println("Response: NODATA # No image found for this device");
+        } else if (res.equals(Codes.NOID.toString())) {
+            System.out.println("Response: NOID # No device found with this id");
+        } else if (res.equals(Codes.NOPERM.toString())) {
+            System.out.println("Response: NOPERM # This user does not have permissions");
+        } else {
             System.out.println("Response: NOK # Error getting image");
         }
     }
