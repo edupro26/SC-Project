@@ -38,7 +38,7 @@ public class Storage {
     /**
      * File paths
      */
-    private static final String INFO = "device_info.txt";
+    private static final String INFO = "classes/device_info.csv";
     private static final String USERS = "server-files/users.txt";
     private static final String DOMAINS = "server-files/domains.txt";
     private static final String DEVICES = "server-files/devices.txt";
@@ -216,6 +216,19 @@ public class Storage {
             }
         }
         return false;
+    }
+
+    public String[] getCopyInfo() {
+        String[] info = null;
+        try (BufferedReader br = new BufferedReader(new FileReader(INFO))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                info = line.split(",");
+            }
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
+        return info;
     }
 
     /**

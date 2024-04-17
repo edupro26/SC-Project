@@ -189,7 +189,7 @@ public class Connection {
             long nonce = secureRandom.nextLong();
             output.writeObject(nonce);
 
-            String[] copyInfo = getCopyInfo();
+            String[] copyInfo = srvStorage.getCopyInfo();
             File clientCopy = new File(copyInfo[1]);
             byte[] server = CommonUtils.calculateHashWithNonce(clientCopy, nonce);
             String clientName = (String) input.readObject();
@@ -207,20 +207,6 @@ public class Connection {
             System.out.println("Something went wrong!");
         }
         return false;
-    }
-
-    private String[] getCopyInfo() {
-        String path = "classes/device_info.csv";
-        String[] info = null;
-        try (BufferedReader br = new BufferedReader(new FileReader(path))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                info = line.split(",");
-            }
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
-        return info;
     }
 
     /**
