@@ -157,6 +157,7 @@ public class DeviceHandler {
                 CodeSource src = IoTDevice.class.getProtectionDomain().getCodeSource();
                 String path = src.getLocation().toURI().getPath();
                 File exec = new File(path);
+
                 long nonce = (long) input.readObject();
                 byte[] hash = CommonUtils.calculateHashWithNonce(exec, nonce);
                 if (hash != null) {
@@ -164,9 +165,9 @@ public class DeviceHandler {
                     output.writeObject(hash);
                     String tested = (String) input.readObject();
                     if (tested.equals(Codes.OKTESTED.toString())) {
-                        System.out.println("This IoTDevice has been validated!");
+                        System.out.println("OK-TESTED # This IoTDevice is valid!");
                     } else {
-                        System.out.println("This IoTDevice is not valid!");
+                        System.out.println("NOK-TESTED # This IoTDevice is not valid!");
                         System.exit(1);
                     }
                 } else {

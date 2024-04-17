@@ -156,11 +156,12 @@ public class Connection {
     }
 
     /**
-     * Validates the {@code Device} id of this connection.
+     * Validates the {@code Device} id of this connection,
+     * and tests this client program to see if it is valid.
      *
      * @return true if validated, false otherwise
      */
-    public boolean validateDevID() {
+    public boolean validateDevice() {
         try {
             // Id validation
             String strDevId = (String) input.readObject();
@@ -188,7 +189,6 @@ public class Connection {
             SecureRandom secureRandom = new SecureRandom();
             long nonce = secureRandom.nextLong();
             output.writeObject(nonce);
-
             String[] copyInfo = srvStorage.getCopyInfo();
             File clientCopy = new File(copyInfo[1]);
             byte[] server = CommonUtils.calculateHashWithNonce(clientCopy, nonce);
@@ -204,7 +204,7 @@ public class Connection {
                 System.out.println("Device not validated!");
             }
         } catch (Exception e) {
-            System.out.println("Something went wrong!");
+            System.err.println("Error during device validation!");
         }
         return false;
     }

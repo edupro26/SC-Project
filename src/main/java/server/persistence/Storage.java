@@ -218,6 +218,11 @@ public class Storage {
         return false;
     }
 
+    /**
+     * Returns the information about the local client copy
+     *
+     * @return the information about the local client copy
+     */
     public String[] getCopyInfo() {
         String[] info = null;
         try (BufferedReader br = new BufferedReader(new FileReader(INFO))) {
