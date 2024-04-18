@@ -1,7 +1,7 @@
 package client;
 
 import common.*;
-import client.security.Encryption;
+import client.security.SecurityUtils;
 
 import javax.crypto.SecretKey;
 import javax.net.SocketFactory;
@@ -95,13 +95,13 @@ public class DeviceHandler {
 
             // If the user is not registered
             if(flag.equals(Codes.NEWUSER.toString())) {
-                SignedObject signedObject = new SignedObject(Long.toString(nonce), Encryption.findPrivateKeyOnKeyStore(userId), Signature.getInstance("SHA256withRSA"));
-                Message signedMessage = new Message(signedObject, Encryption.getOwnCertificate(userId));
+                SignedObject signedObject = new SignedObject(Long.toString(nonce), SecurityUtils.findPrivateKeyOnKeyStore(userId), Signature.getInstance("SHA256withRSA"));
+                Message signedMessage = new Message(signedObject, SecurityUtils.getOwnCertificate(userId));
                 output.writeObject(signedMessage);
             }
             else { // If the user is registered
-                SignedObject signedObject = new SignedObject(Long.toString(nonce), Encryption.findPrivateKeyOnKeyStore(userId), Signature.getInstance("SHA256withRSA"));
-                Message signedMessage = new Message(signedObject, Encryption.getOwnCertificate(userId));
+                SignedObject signedObject = new SignedObject(Long.toString(nonce), SecurityUtils.findPrivateKeyOnKeyStore(userId), Signature.getInstance("SHA256withRSA"));
+                Message signedMessage = new Message(signedObject, SecurityUtils.getOwnCertificate(userId));
                 output.writeObject(signedMessage);
             }
 
@@ -258,7 +258,7 @@ public class DeviceHandler {
             }
         }
 
-        PublicKey pk = Encryption.findPublicKeyOnTrustStore(args[0]);
+        PublicKey pk = SecurityUtils.findPublicKeyOnTrustStore(args[0]);
         try {
             if (pk == null) {
                 String resNoPk = this.sendReceive("NO_PK");
@@ -284,7 +284,7 @@ public class DeviceHandler {
         }
 
         String keyEncFilename = args[1] + "_" + args[0] + ".key.enc";
-        Encryption.encryptKeyWithRSA(Encryption.generateKey(args[2]), pk, keyEncFilename);
+        SecurityUtils.encryptKeyWithRSA(SecurityUtils.generateKey(args[2]), pk, keyEncFilename);
         File keyEncFile = new File(keyEncFilename);
 
         try {
@@ -417,10 +417,10 @@ public class DeviceHandler {
                 receiveFile(keyTempPath, size);
 
                 File encryptedKey = new File(keyTempPath);
-                SecretKey key = (SecretKey) Encryption.decryptKeyWithRSA(encryptedKey, Encryption.findPrivateKeyOnKeyStore(this.userId));
+                SecretKey key = (SecretKey) SecurityUtils.decryptKeyWithRSA(encryptedKey, SecurityUtils.findPrivateKeyOnKeyStore(this.userId));
 
                 File imageEnc = new File(args[0] + ".cif");
-                Encryption.encryptFile(new File(args[0]), imageEnc, key);
+                SecurityUtils.encryptFile(new File(args[0]), imageEnc, key);
 
                 int imageEncSize = (int) imageEnc.length();
 
@@ -538,11 +538,11 @@ public class DeviceHandler {
                 }
 
                 // Decrypt the domain key
-                SecretKey key = (SecretKey) Encryption.decryptKeyWithRSA(domainKeyENc, Encryption.findPrivateKeyOnKeyStore(this.userId));
+                SecretKey key = (SecretKey) SecurityUtils.decryptKeyWithRSA(domainKeyENc, SecurityUtils.findPrivateKeyOnKeyStore(this.userId));
 
                 // Decrypt the image
                 File image = new File(SERVER_OUT + temp[0] + "_" + temp[1] + ".jpg");
-                Encryption.decryptFile(imageEnc, image, key);
+                SecurityUtils.decryptFile(imageEnc, image, key);
 
                 // Delete the encrypted files
                 domainKeyENc.delete();

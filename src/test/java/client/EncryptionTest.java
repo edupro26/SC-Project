@@ -1,6 +1,6 @@
 package client;
 
-import client.security.Encryption;
+import client.security.SecurityUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -81,14 +81,14 @@ class EncryptionTest {
 
     @org.junit.jupiter.api.Test
     void generateKey() {
-        SecretKey key = Encryption.generateKey(KEY_PASSWORD);
+        SecretKey key = SecurityUtils.generateKey(KEY_PASSWORD);
         assertNotNull(key);
     }
 
     @org.junit.jupiter.api.Test
     void saveKeyIntoFile() {
-        SecretKey key = Encryption.generateKey(KEY_PASSWORD);
-        Encryption.saveKeyIntoFile(key, new File(KEY_FILE));
+        SecretKey key = SecurityUtils.generateKey(KEY_PASSWORD);
+        SecurityUtils.saveKeyIntoFile(key, new File(KEY_FILE));
         assertTrue(new File(KEY_FILE).exists());
     }
 
@@ -96,40 +96,40 @@ class EncryptionTest {
 
     @org.junit.jupiter.api.Test
     void findPublicKeyOnTrustStore() {
-        PublicKey pubKey = Encryption.findPublicKeyOnTrustStore(PUBLIC_KEY_ALIAS);
+        PublicKey pubKey = SecurityUtils.findPublicKeyOnTrustStore(PUBLIC_KEY_ALIAS);
         assertNotNull(pubKey);
     }
 
     @Test
     void findPrivateKeyOnKeyStore() {
-        PrivateKey privateKey = Encryption.findPrivateKeyOnKeyStore(PUBLIC_KEY_ALIAS);
+        PrivateKey privateKey = SecurityUtils.findPrivateKeyOnKeyStore(PUBLIC_KEY_ALIAS);
         assertNotNull(privateKey);
     }
 
     @org.junit.jupiter.api.Test
     void encryptKeyWithRSA() {
-        SecretKey key = Encryption.generateKey(KEY_PASSWORD);
-        PublicKey pubKey = Encryption.findPublicKeyOnTrustStore(PUBLIC_KEY_ALIAS);
-        Encryption.encryptKeyWithRSA(key, pubKey, KEY_ENCRYPTED_FILE);
+        SecretKey key = SecurityUtils.generateKey(KEY_PASSWORD);
+        PublicKey pubKey = SecurityUtils.findPublicKeyOnTrustStore(PUBLIC_KEY_ALIAS);
+        SecurityUtils.encryptKeyWithRSA(key, pubKey, KEY_ENCRYPTED_FILE);
         assertTrue(new File(KEY_ENCRYPTED_FILE).exists());
     }
 
     @Test
     void decryptKeyWithRSA() {
-        SecretKey key = Encryption.generateKey(KEY_PASSWORD);
-        PublicKey pubKey = Encryption.findPublicKeyOnTrustStore(PUBLIC_KEY_ALIAS);
+        SecretKey key = SecurityUtils.generateKey(KEY_PASSWORD);
+        PublicKey pubKey = SecurityUtils.findPublicKeyOnTrustStore(PUBLIC_KEY_ALIAS);
         System.out.println(pubKey);
-        Encryption.encryptKeyWithRSA(key, pubKey, KEY_ENCRYPTED_FILE);
-        PrivateKey privateKey = Encryption.findPrivateKeyOnKeyStore(PUBLIC_KEY_ALIAS);
+        SecurityUtils.encryptKeyWithRSA(key, pubKey, KEY_ENCRYPTED_FILE);
+        PrivateKey privateKey = SecurityUtils.findPrivateKeyOnKeyStore(PUBLIC_KEY_ALIAS);
         System.out.println(privateKey);
-        Key decryptedKey = Encryption.decryptKeyWithRSA(new File(KEY_ENCRYPTED_FILE), privateKey);
+        Key decryptedKey = SecurityUtils.decryptKeyWithRSA(new File(KEY_ENCRYPTED_FILE), privateKey);
         assertEquals(key, decryptedKey);
     }
 
     @Test
     void storePubKeyOnTrustStore() {
-        Encryption.storePubKeyOnTrustStore(new File(PK_FILE), NEW_PUBLIC_KEY_ALIAS);
-        assertNotNull(Encryption.findPublicKeyOnTrustStore(NEW_PUBLIC_KEY_ALIAS));
+        SecurityUtils.storePubKeyOnTrustStore(new File(PK_FILE), NEW_PUBLIC_KEY_ALIAS);
+        assertNotNull(SecurityUtils.findPublicKeyOnTrustStore(NEW_PUBLIC_KEY_ALIAS));
     }
 
 
@@ -155,10 +155,10 @@ class EncryptionTest {
     void encryptFile() {
         File fileToEncrypt = new File("file.txt");
         File encryptedFile = new File("file_encrypted.txt");
-        SecretKey key = Encryption.generateKey(KEY_PASSWORD);
-        Encryption.encryptKeyWithRSA(key, Encryption.findPublicKeyOnTrustStore(PUBLIC_KEY_ALIAS), KEY_ENCRYPTED_FILE);
-        SecretKey key2 = (SecretKey) Encryption.decryptKeyWithRSA(new File(KEY_ENCRYPTED_FILE), Encryption.findPrivateKeyOnKeyStore(PUBLIC_KEY_ALIAS));
-        Encryption.encryptFile(fileToEncrypt, encryptedFile, key2);
+        SecretKey key = SecurityUtils.generateKey(KEY_PASSWORD);
+        SecurityUtils.encryptKeyWithRSA(key, SecurityUtils.findPublicKeyOnTrustStore(PUBLIC_KEY_ALIAS), KEY_ENCRYPTED_FILE);
+        SecretKey key2 = (SecretKey) SecurityUtils.decryptKeyWithRSA(new File(KEY_ENCRYPTED_FILE), SecurityUtils.findPrivateKeyOnKeyStore(PUBLIC_KEY_ALIAS));
+        SecurityUtils.encryptFile(fileToEncrypt, encryptedFile, key2);
         assertTrue(encryptedFile.exists());
 
     }
@@ -167,12 +167,12 @@ class EncryptionTest {
     void decryptFile() {
         File fileToEncrypt = new File("file.txt");
         File encryptedFile = new File("file_encrypted.txt");
-        SecretKey key = Encryption.generateKey(KEY_PASSWORD);
-        Encryption.encryptKeyWithRSA(key, Encryption.findPublicKeyOnTrustStore(PUBLIC_KEY_ALIAS), KEY_ENCRYPTED_FILE);
-        SecretKey key2 = (SecretKey) Encryption.decryptKeyWithRSA(new File(KEY_ENCRYPTED_FILE), Encryption.findPrivateKeyOnKeyStore(PUBLIC_KEY_ALIAS));
-        Encryption.encryptFile(fileToEncrypt, encryptedFile, key2);
+        SecretKey key = SecurityUtils.generateKey(KEY_PASSWORD);
+        SecurityUtils.encryptKeyWithRSA(key, SecurityUtils.findPublicKeyOnTrustStore(PUBLIC_KEY_ALIAS), KEY_ENCRYPTED_FILE);
+        SecretKey key2 = (SecretKey) SecurityUtils.decryptKeyWithRSA(new File(KEY_ENCRYPTED_FILE), SecurityUtils.findPrivateKeyOnKeyStore(PUBLIC_KEY_ALIAS));
+        SecurityUtils.encryptFile(fileToEncrypt, encryptedFile, key2);
         File decryptedFile = new File("file_decrypted.txt");
-        Encryption.decryptFile(encryptedFile, decryptedFile, key2);
+        SecurityUtils.decryptFile(encryptedFile, decryptedFile, key2);
         assertTrue(decryptedFile.exists());
     }
 }

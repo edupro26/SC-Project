@@ -19,7 +19,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.spec.InvalidKeySpecException;
 
-public class Encryption {
+public class SecurityUtils {
 
     private static final String ENC_ALGORITHM = "PBEWithHmacSHA256AndAES_128";
 
