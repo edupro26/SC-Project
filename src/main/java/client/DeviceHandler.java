@@ -1,7 +1,7 @@
 package client;
 
 import common.*;
-import common.security.CommonUtils;
+import client.security.Encryption;
 
 import javax.crypto.SecretKey;
 import javax.net.SocketFactory;
@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.security.CodeSource;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignedObject;

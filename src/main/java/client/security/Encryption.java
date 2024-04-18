@@ -1,4 +1,4 @@
-package client;
+package client.security;
 
 import javax.crypto.Cipher;
 import javax.crypto.CipherOutputStream;
