@@ -11,6 +11,7 @@ public enum Codes {
 
     OK("OK"),
     NOK("NOK"),
+    NRD("NRD"),
     NODM("NODM"),
     NOID("NOID"),
     NOUSER("NOUSER"),
