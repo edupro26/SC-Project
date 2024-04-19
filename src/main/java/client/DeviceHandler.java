@@ -382,6 +382,8 @@ public class DeviceHandler {
         String res = this.sendReceive(msg);
         if (res.equals(Codes.OK.toString())) {
             System.out.println("Response: OK # Temperature sent successfully");
+        } else if (res.equals(Codes.NRD.toString())) {
+            System.out.println("Response: NRD # Device not registered");
         } else {
             System.out.println("Response: NOK # Error sending temperature");
         }
@@ -403,8 +405,8 @@ public class DeviceHandler {
         String msg = parseCommandToSend(command, args);
         try {
             String res = this.sendReceive(msg);
-            if (res.equals(Codes.NOK.toString())) {
-                System.out.println("Response: NOK # Device not registered");
+            if (res.equals(Codes.NRD.toString())) {
+                System.out.println("Response: NRD # Device not registered");
                 return;
             }
 

@@ -402,12 +402,19 @@ public class Connection {
      */
     private void handleET(String t) throws IOException {
         try {
-            Float temperature = Float.parseFloat(t);
-            String res = srvStorage.updateLastTemp(device, temperature);
-            String result = res.equals(Codes.OK.toString()) ?
-                    "Success: Temperature received!" : "Error: Unable to receive temperature!";
-            System.out.println(result);
-            output.writeObject(res);
+            String response, log;
+            if (!srvStorage.getDeviceDomains(device).isEmpty()) {
+                Float temperature = Float.parseFloat(t);
+                response = srvStorage.updateLastTemp(device, temperature);
+                log = response.equals(Codes.OK.toString()) ?
+                        "Success: Temperature received!"
+                        : "Error: Unable to receive temperature!";
+            } else {
+                response = Codes.NRD.toString();
+                log = "Error: Device not registered!";
+            }
+            System.out.println(log);
+            output.writeObject(response);
         } catch (Exception e) {
             System.out.println("Error: Unable to receive temperature!");
             output.writeObject(Codes.NOK.toString());
@@ -427,8 +434,8 @@ public class Connection {
             // Check domains device is in
             List<Domain> domains = srvStorage.getDeviceDomains(device);
             if (domains.isEmpty()) {
-                System.out.println("Error: Device not registered in any domain!");
-                output.writeObject(Codes.NOK.toString());
+                System.out.println("Error: Device not registered!");
+                output.writeObject(Codes.NRD.toString());
                 return;
             }
 
