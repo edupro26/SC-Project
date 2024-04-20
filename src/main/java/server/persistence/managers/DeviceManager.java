@@ -1,12 +1,7 @@
 package server.persistence.managers;
 
 import server.components.*;
-import server.security.IntegrityVerifier;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,16 +31,12 @@ public class DeviceManager {
     /**
      * Data structures
      */
-    private final String devicesFile;
     private final HashMap<Device, List<Domain>> devices;
 
     /**
      * Constructs a new {@code DeviceManager}
-     *
-     * @param filePath the path of the file to be managed
      */
-    private DeviceManager(String filePath) {
-        devicesFile = filePath;
+    private DeviceManager() {
         devices = new HashMap<>();
         devicesLock = new Object();
     }
@@ -54,38 +45,26 @@ public class DeviceManager {
      * Returns the instance of {@code DeviceManager} or creates
      * it if the instance is still null
      *
-     * @param filePath the path of the file to be managed
      * @return the instance of {@code DeviceManager}
      */
-    public static DeviceManager getInstance(String filePath) {
+    public static DeviceManager getInstance() {
         if (instance == null) {
-            instance = new DeviceManager(filePath);
+            instance = new DeviceManager();
         }
         return instance;
     }
 
     /**
      * Saves the {@code Device} as the key, and a list of domains as the value,
-     * to the map {@link #devices}. It also writes the device to a devices.txt
-     * file located in the server-files folder.
+     * to the map {@link #devices}.
      *
      * @param device the {@code Device} to be saved
      * @param domains a list of {@code Domains} where the {@code Device} is registered
-     * @param fileVerifier the file {@code IntegrityVerifier}
      * @requires {@code device != null && domains != null}
      */
-    public void saveDevice(Device device, List<Domain> domains, IntegrityVerifier fileVerifier) {
+    public void saveDevice(Device device, List<Domain> domains) {
         synchronized (devicesLock) {
-            try {
-                BufferedWriter writer = new BufferedWriter(new FileWriter(devicesFile, true));
-                writer.write(device + "," + device.getLastTemp() + "\n");
-                devices.put(device, domains);
-                writer.close();
-                String checksum = fileVerifier.calculateChecksum(new File(devicesFile));
-                fileVerifier.updateChecksum(devicesFile, checksum);
-            } catch (IOException e) {
-                System.out.println(e.getMessage());
-            }
+            devices.put(device, domains);
         }
     }
 
