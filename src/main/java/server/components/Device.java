@@ -18,9 +18,8 @@ public class Device {
      * Device attributes
      */
     private final String user;      // user of the device
-    private final int id;                 // id of the device
+    private final int id;           // id of the device
     private boolean isConnected;    // connection status
-    private Float lastTemp;         // last temperature given by the device
 
     /**
      * Constructs a new {@code Device} with a user and an id.
@@ -33,25 +32,6 @@ public class Device {
         this.user = user;
         this.id = id;
         isConnected = false;
-        lastTemp = null;
-    }
-
-    /**
-     * Creates a new {@code Device} with the given string representation.
-     *
-     * @param device the string representation of this device
-     * @param temp the last temperature given by this device
-     * @requires {@code device != null}
-     */
-    public Device(String device, String temp) {
-        String[] deviceArgs = device.split(":");
-        this.user = deviceArgs[0];
-        this.id = Integer.parseInt(deviceArgs[1]);
-        isConnected = false;
-        if (!temp.equals("null"))
-            lastTemp = Float.parseFloat(temp);
-        else
-            lastTemp = null;
     }
 
     /**
@@ -82,30 +62,12 @@ public class Device {
     }
 
     /**
-     * Returns the last temperature sent by this device.
-     *
-     * @return the last temperature sent by this device
-     */
-    public Float getLastTemp() {
-        return lastTemp;
-    }
-
-    /**
      * Sets the connection status of the device.
      *
      * @param connected true to connect, false to disconnect
      */
     public void setConnected(boolean connected) {
         isConnected = connected;
-    }
-
-    /**
-     * Sets the last temperature sent by this device.
-     *
-     * @param lastTemp the temperature sent
-     */
-    public void setLastTemp(Float lastTemp) {
-        this.lastTemp = lastTemp;
     }
 
     /**
