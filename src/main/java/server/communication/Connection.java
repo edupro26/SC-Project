@@ -403,7 +403,6 @@ public class Connection {
         try {
             String response, log;
             if (!srvStorage.getDeviceDomains(device).isEmpty()) {
-                Float temperature = Float.parseFloat(t);
                 response = srvStorage.saveTemperature(device, t);
                 log = response.equals(Codes.OK.toString()) ?
                         "Success: Temperature received!"
