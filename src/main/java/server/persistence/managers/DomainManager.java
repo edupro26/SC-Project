@@ -200,35 +200,62 @@ public class DomainManager {
     }
 
     /**
+     * Saves the last temperature sent by the given {@code Device}. This temperature
+     * gets saved in every domain the {@code Device} is registered. If the {@code Device}
+     * has sent a temperature before, it will be replaced by the new one.
+     * Returns "OK" if the method concluded with success, "NOK" otherwise
+     *
+     * @param device the {@code Device}
+     * @param temp the temperature to be saved
+     * @param domains the domains where the {@code Device} is
+     * @return status code
+     */
+    public String saveTemperature(Device device, String temp, List<Domain> domains) {
+        for (Domain domain : domains) {
+            String path = "server-files/temperatures/" + domain.getName() + ".txt";
+            try {
+                StringBuilder sb = new StringBuilder();
+                boolean replaced = false;
+                if (new File(path).exists()) {
+                    BufferedReader br = new BufferedReader(new FileReader(path));
+                    String line;
+                    while ((line = br.readLine()) != null) {
+                        if(line.split(",")[0].equals(device.toString())) {
+                            sb.append(device).append(",").append(temp).append("\n");
+                            replaced = true;
+                        } else {
+                            sb.append(line).append("\n");
+                        }
+                    }
+                    br.close();
+                }
+                if (!replaced)
+                    sb.append(device).append(",").append(temp).append("\n");
+                synchronized (tempsLock) {
+                    BufferedWriter bw = new BufferedWriter(new FileWriter(path));
+                    bw.write(sb.toString());
+                    bw.close();
+                }
+            } catch (IOException e) {
+                System.out.println(e.getMessage());
+                return Codes.NOK.toString();
+            }
+        }
+        return Codes.OK.toString();
+    }
+
+    /**
      * Returns the path of the file containing the temperatures sent
-     * by the devices of the given domain. Creates if it does not
-     * already exist or updates it with the most recent temperatures
+     * by the devices of the given domain.
      *
      * @param domain the {@code Domain}
-     * @return the path of the file containing the temperatures, null
-     *          if there is no data or in case of error
+     * @return the path of the file or null if there is no data
      * @requires {@code domain != null}
      */
-    public String domainTemperaturesFile(Domain domain) {
+    public String getDomainTemperatures(Domain domain) {
         String path = "server-files/temperatures/" + domain.getName() + ".txt";
-        try {
-            String temperatures = domain.getDomainTemperatures();
-            if (!temperatures.isEmpty()) {
-                // FIXME Exception when executing RT D1 for example on
-                //  client1, then sleep the thread and execute RT D1 on
-                //  client2
-                synchronized (tempsLock) {
-                    File file = new File(path);
-                    if (!file.exists()) file.createNewFile();
-                    BufferedWriter out = new BufferedWriter(new FileWriter(file, false));
-                    out.write(temperatures);
-                    out.close();
-                }
-                return path;
-            }
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-            return null;
+        if (new File(path).exists()) {
+            return path;
         }
         return null;
     }

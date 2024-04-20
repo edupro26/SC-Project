@@ -119,8 +119,9 @@ public class Storage {
      * @see Codes
      * @requires {@code device != null && temperature != null}
      */
-    public String updateLastTemp(Device device, Float temperature) {
-        return deviceManager.updateLastTemp(device, temperature, fileVerifier);
+    public String saveTemperature(Device device, String temperature) {
+        List<Domain> domains = deviceManager.getDeviceDomains(device);
+        return domainManager.saveTemperature(device, temperature, domains);
     }
 
     /**
@@ -133,8 +134,8 @@ public class Storage {
      *          if there is no data or in case of error
      * @requires {@code domain != null}
      */
-    public String domainTemperaturesFile(Domain domain) {
-        return domainManager.domainTemperaturesFile(domain);
+    public String getDomainTemperatures(Domain domain) {
+        return domainManager.getDomainTemperatures(domain);
     }
 
     /**

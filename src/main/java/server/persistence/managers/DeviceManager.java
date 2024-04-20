@@ -93,46 +93,6 @@ public class DeviceManager {
     }
 
     /**
-     * Saves the last temperature sent from the given {@code Device} and
-     * updates the devices.txt file located in the server-files folder.
-     * Returns "OK" if the method concluded with success, "NOK" otherwise
-     *
-     * @param device the {@code Device}
-     * @param temperature the last temperature sent
-     * @param fileVerifier the file {@code IntegrityVerifier}
-     * @return status code
-     * @requires {@code device != null && temperature != null}
-     * @see Codes
-     */
-    public String updateLastTemp(Device device, Float temperature, IntegrityVerifier fileVerifier) {
-        try (BufferedReader in = new BufferedReader(new FileReader(devicesFile))) {
-            StringBuilder file = new StringBuilder();
-            String line;
-            while ((line = in.readLine()) != null) {
-                String[] temp = line.split(",");
-                if (temp[0].equals(device.toString())) {
-                    file.append(device).append(",")
-                            .append(temperature).append("\n");
-                } else {
-                    file.append(line).append("\n");
-                }
-            }
-            synchronized (devicesLock) {
-                BufferedWriter out = new BufferedWriter(new FileWriter(devicesFile, false));
-                out.write(file.toString());
-                out.close();
-                device.setLastTemp(temperature);
-                String checksum = fileVerifier.calculateChecksum(new File(devicesFile));
-                fileVerifier.updateChecksum(devicesFile, checksum);
-            }
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-            return Codes.NOK.toString();
-        }
-        return Codes.OK.toString();
-    }
-
-    /**
      * Verifies if a {@code User} has permission to read data
      * sent from the {@code Device}.
      *
