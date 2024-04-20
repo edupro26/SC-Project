@@ -73,26 +73,6 @@ public class Domain {
     }
 
     /**
-     * Returns a string containing the temperatures
-     * sent by the devices of this {@code Domain}.
-     * This string can be empty.
-     *
-     * @return Returns a string containing the temperatures
-     *          sent by the devices of this {@code Domain}
-     */
-    public String getDomainTemperatures() {
-        StringBuilder temps = new StringBuilder();
-        for (Device device : devices) {
-            if(device.getLastTemp() != null)
-                temps.append(device)
-                        .append(",")
-                        .append(device.getLastTemp())
-                        .append("\n");
-        }
-        return temps.toString();
-    }
-
-    /**
      * Returns the name of this domain.
      *
      * @return the name of this domain

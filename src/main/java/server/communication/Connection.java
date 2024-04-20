@@ -1,7 +1,6 @@
 package server.communication;
 
 import common.*;
-import common.security.CommonUtils;
 import server.components.*;
 import server.persistence.Storage;
 import server.security.SecurityUtils;
@@ -404,8 +403,7 @@ public class Connection {
         try {
             String response, log;
             if (!srvStorage.getDeviceDomains(device).isEmpty()) {
-                Float temperature = Float.parseFloat(t);
-                response = srvStorage.updateLastTemp(device, temperature);
+                response = srvStorage.saveTemperature(device, t);
                 log = response.equals(Codes.OK.toString()) ?
                         "Success: Temperature received!"
                         : "Error: Unable to receive temperature!";
@@ -511,7 +509,7 @@ public class Connection {
             System.out.println("Error: User does not have permissions!");
             output.writeObject(Codes.NOPERM.toString());
         } else {
-            String path = srvStorage.domainTemperaturesFile(domain);
+            String path = srvStorage.getDomainTemperatures(domain);
             if (path != null) {
                 output.writeObject(Codes.OK.toString());
                 int size = (int) new File(path).length();

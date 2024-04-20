@@ -374,7 +374,13 @@ public class DeviceHandler {
      * @requires {@code args != null && command != null}
      */
     protected void sendReceiveET(String[] args, String command) {
-        if (args.length != 1) {
+        try {
+            if (args.length != 1) {
+                System.out.println("Usage: ET <float>");
+                return;
+            }
+            args[0] = String.valueOf(Float.parseFloat(args[0]));
+        } catch (Exception e) {
             System.out.println("Usage: ET <float>");
             return;
         }

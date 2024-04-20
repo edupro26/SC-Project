@@ -39,7 +39,6 @@ public class Storage {
     private static final String INFO = "classes/device_info.csv";
     private static final String USERS = "server-files/users.txt";
     private static final String DOMAINS = "server-files/domains.txt";
-    private static final String DEVICES = "server-files/devices.txt";
     private static final String CHECKSUMS = "server-files/checksums.txt";
 
     /**
@@ -63,7 +62,7 @@ public class Storage {
     public Storage(String passwordCypher) {
         userManager = UserManager.getInstance(USERS, passwordCypher);
         domainManager = DomainManager.getInstance(DOMAINS);
-        deviceManager = DeviceManager.getInstance(DEVICES);
+        deviceManager = DeviceManager.getInstance();
         new FileLoader(this);
 
         fileVerifier = new IntegrityVerifier(CHECKSUMS);
@@ -88,7 +87,7 @@ public class Storage {
      * @requires {@code device != null}
      */
     public void saveDevice(Device device) {
-        deviceManager.saveDevice(device, new ArrayList<>(), fileVerifier);
+        deviceManager.saveDevice(device, new ArrayList<>());
     }
 
     /**
@@ -119,8 +118,9 @@ public class Storage {
      * @see Codes
      * @requires {@code device != null && temperature != null}
      */
-    public String updateLastTemp(Device device, Float temperature) {
-        return deviceManager.updateLastTemp(device, temperature, fileVerifier);
+    public String saveTemperature(Device device, String temperature) {
+        List<Domain> domains = deviceManager.getDeviceDomains(device);
+        return domainManager.saveTemperature(device, temperature, domains);
     }
 
     /**
@@ -133,8 +133,8 @@ public class Storage {
      *          if there is no data or in case of error
      * @requires {@code domain != null}
      */
-    public String domainTemperaturesFile(Domain domain) {
-        return domainManager.domainTemperaturesFile(domain);
+    public String getDomainTemperatures(Domain domain) {
+        return domainManager.getDomainTemperatures(domain);
     }
 
     /**
@@ -281,13 +281,10 @@ public class Storage {
          *
          * @param srvStorage this storage
          * @see Storage
-         * @see #start(Storage, File, File)
          */
         private FileLoader(Storage srvStorage) {
             createFolders();
-            File domains = new File(DOMAINS);
-            File temps = new File(DEVICES);
-            this.start(srvStorage, domains, temps);
+            this.start(srvStorage);
         }
 
         /**
@@ -295,19 +292,26 @@ public class Storage {
          * If they already exist, then loads their content to the
          * data structures of this storage.
          *
-         * @param domains the domains.txt file
-         * @param temps the devices.txt file
          * @param srvStorage this storage
          * @see #loadUsers(Storage)
          * @see #loadDomains(Storage)
-         * @see #loadTemps(Storage)
          */
-        private void start(Storage srvStorage, File domains, File temps) {
+        private void start(Storage srvStorage) {
             loadUsers(srvStorage);
-            if (!createFile(domains, "Domains"))
+
+            File domains = new File(DOMAINS);
+            if (!domains.exists()) {
+                try {
+                    if (domains.createNewFile()){
+                        System.out.println("Domains text file created successfully");
+                    }
+                } catch (IOException e) {
+                    System.err.println("Unable to create domains text file");
+                    System.exit(1);
+                }
+            } else {
                 loadDomains(srvStorage);
-            if (!createFile(temps, "Temperatures"))
-                loadTemps(srvStorage);
+            }
 
             StringBuilder sb = new StringBuilder();
             for (Domain domain : srvStorage.domainManager.getDomains())
@@ -364,61 +368,6 @@ public class Storage {
                 System.out.println(e.getMessage());
                 System.out.println("Unable to load domains text file");
             }
-        }
-
-        /**
-         * Loads the temperatures from devices.txt file to
-         * the devices of this storage
-         *
-         * @param srvStorage this storage
-         */
-        private void loadTemps(Storage srvStorage) {
-            try (BufferedReader in = new BufferedReader(new FileReader(DEVICES))) {
-                String line;
-                while ((line = in.readLine()) != null) {
-                    String[] fileData = line.split(",");
-                    Device device = new Device(fileData[0], fileData[1]);
-                    Device exits = srvStorage.getDevice(device);
-                    if (exits != null) {
-                        List<Domain> domains = srvStorage.getDevices().get(exits);
-                        srvStorage.getDevices().remove(exits);
-                        for (Domain domain : domains) {
-                            domain.getDevices().remove(exits);
-                            domain.getDevices().add(device);
-                        }
-                        srvStorage.getDevices().put(device, domains);
-                    }
-                    else {
-                        srvStorage.getDevices().put(device, new ArrayList<>());
-                    }
-                }
-                System.out.println("Temperatures text file loaded successfully");
-            } catch (IOException e) {
-                System.out.println(e.getMessage());
-                System.out.println("Unable to load temperatures text file");
-            }
-        }
-
-        /**
-         * Creates a new file
-         *
-         * @param file the file to create
-         * @param type the type of the file (Users, Domains, Temperatures)
-         * @return true, if file was created, false otherwise
-         */
-        private boolean createFile(File file, String type) {
-            try {
-                if (!file.exists()) {
-                    if (file.createNewFile()){
-                        System.out.println(type + " text file created successfully");
-                        return true;
-                    }
-                    System.out.println("Unable to create " + type.toLowerCase() + " text file");
-                }
-            } catch (IOException e) {
-                System.out.println(e.getMessage());
-            }
-            return false;
         }
 
         /**
