@@ -24,7 +24,6 @@ public class IntegrityVerifier {
      */
     private static final String ALGORITHM = "SHA-256";
     private static final String DOMAINS = "server-files/domains.txt";
-    private static final String DEVICES = "server-files/devices.txt";
 
     /**
      * Path and pointer to the checksums file
@@ -37,7 +36,9 @@ public class IntegrityVerifier {
      */
     //TODO private String clientChecksum;
     private String domainsChecksum;
-    private String devicesChecksum;
+
+    // TODO updated this class logic, given the recent
+    //  changes of the devices file.
 
     /**
      * Constructs a new {@code IntegrityVerifier}
@@ -46,7 +47,6 @@ public class IntegrityVerifier {
      */
     public IntegrityVerifier(String filePath) {
         domainsChecksum = "";
-        devicesChecksum = "";
         this.filePath = filePath;
         if (new File(filePath).exists()) {
             fileInstance = new File(filePath);
@@ -67,7 +67,6 @@ public class IntegrityVerifier {
     private boolean verifyAll() {
         boolean result = loadChecksums();
         if (!domainsChecksum.isEmpty()) result &= verify(DOMAINS);
-        if (!devicesChecksum.isEmpty()) result &= verify(DEVICES);
         return result;
     }
 
@@ -81,7 +80,6 @@ public class IntegrityVerifier {
         if (data != null) {
             String[] checksums = data.split("\n");
             domainsChecksum = checksums[0];
-            devicesChecksum = checksums[1];
             return true;
         }
         return false;
@@ -93,8 +91,7 @@ public class IntegrityVerifier {
      */
     private void updateFile() {
         StringBuilder checksums = new StringBuilder();
-        checksums.append(domainsChecksum).append('\n')
-                .append(devicesChecksum).append('\n');
+        checksums.append(domainsChecksum).append('\n');
         try {
             if(fileInstance == null) {
                 new File(filePath).createNewFile();
@@ -124,11 +121,6 @@ public class IntegrityVerifier {
                 case DOMAINS -> {
                     String checksum = calculateChecksum(file);
                     if (checksum.equals(domainsChecksum))
-                        return true;
-                }
-                case DEVICES -> {
-                    String checksum = calculateChecksum(file);
-                    if (checksum.equals(devicesChecksum))
                         return true;
                 }
             }
@@ -165,8 +157,7 @@ public class IntegrityVerifier {
     }
 
     /**
-     * Updates the {@link #domainsChecksum} or the {@link
-     * #devicesChecksum}, depending on the filepath that was given
+     * Updates the checksum, depending on the filepath that was given
      *
      * @param filePath the filepath
      * @param checksum the checksum
@@ -174,7 +165,6 @@ public class IntegrityVerifier {
     public void updateChecksum(String filePath, String checksum) {
         switch (filePath){
             case DOMAINS -> this.domainsChecksum = checksum;
-            case DEVICES -> this.devicesChecksum = checksum;
         }
         updateFile();
     }
