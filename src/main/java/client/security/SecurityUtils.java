@@ -81,25 +81,6 @@ public class SecurityUtils {
         }
     }
 
-    public static void saveParams(byte[] params, File paramsFile) {
-        try (FileOutputStream fos = new FileOutputStream(paramsFile)) {
-            fos.write(params);
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-        }
-    }
-
-    public static byte[] readParams(File paramsFile) {
-        try (FileInputStream fis = new FileInputStream(paramsFile)) {
-            byte[] params = new byte[(int) paramsFile.length()];
-            fis.read(params);
-            return params;
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-            return null;
-        }
-    }
-
     public static Certificate getOwnCertificate(String alias) {
         try {
             KeyStore ks = KeyStore.getInstance("JKS");
