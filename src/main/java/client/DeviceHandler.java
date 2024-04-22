@@ -505,16 +505,34 @@ public class DeviceHandler {
         }
         String msg = parseCommandToSend(command, args);
         String res = this.sendReceive(msg);
-        String name = SERVER_OUT + args[0] + ".txt";
+        String outputPath = SERVER_OUT + args[0] + ".txt";
         if (res.equals(Codes.OK.toString())) {
             try {
-                int size = input.readInt();
-                int received = receiveFile(name, size);
-                String result = received == size
-                        ? "Response: OK, " + received + " (long), followed by "
-                        + received + " bytes of data"
-                        : "Response: NOK # Error getting temperatures";
-                System.out.println(result);
+                // Receive the domain key
+                int keySize = input.readInt();
+                String keyTempPath = args[0] + ".key.cif.temp";
+                receiveFile(keyTempPath, keySize);
+
+                // Receive the file with encryted temperatures
+                int fileSize = input.readInt();
+                receiveFile(outputPath, fileSize);
+
+                File encryptedKey = new File(keyTempPath);
+                SecretKey key = (SecretKey) SecurityUtils.decryptKeyWithRSA(
+                        encryptedKey, SecurityUtils.findPrivateKeyOnKeyStore(this.userId));
+
+                // Delete temp key file
+                encryptedKey.delete();
+
+                // Decrypt the temperatures
+                File outputFile = new File(outputPath);
+                int received = SecurityUtils.decryptTemperatures(outputFile, key);
+                if (received > 0) {
+                    System.out.println("Response: OK, " + received
+                            + " (long), followed by " + received + " bytes of data");
+                } else {
+                    System.out.println("Response: NOK # Error getting temperatures");
+                }
             } catch (IOException e) {
                 System.out.println("Response: NOK # Error getting temperatures");
             }
