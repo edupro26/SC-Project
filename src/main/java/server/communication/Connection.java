@@ -241,7 +241,7 @@ public class Connection {
                     case "ADD" -> handleADD(parsedMsg[1], parsedMsg[2]);
                     case "RD" -> handleRD(parsedMsg[1]);
                     case "MYDOMAINS" -> handleMYDOMAINS();
-                    case "ET" -> handleET(parsedMsg[1]);
+                    case "ET" -> handleET();
                     case "EI" -> handleEI();
                     case "RT" -> handleRT(parsedMsg[1]);
                     case "RI" -> {
@@ -409,25 +409,64 @@ public class Connection {
     /**
      * Handles the command ET
      *
-     * @param t the temperature in string format
      * @throws IOException if an error occurred when writing to the server
      *         files, or during the communication between client and server
      * @see Codes
      */
-    private void handleET(String t) throws IOException {
+    private void handleET() throws IOException {
         try {
-            String response, log;
-            if (!srvStorage.getDeviceDomains(device).isEmpty()) {
-                response = srvStorage.saveTemperature(device, t);
-                log = response.equals(Codes.OK.toString()) ?
-                        "Success: Temperature received!"
-                        : "Error: Unable to receive temperature!";
-            } else {
-                response = Codes.NRD.toString();
-                log = "Error: Device not registered!";
+            List<Domain> domains = srvStorage.getDeviceDomains(device);
+            if (domains.isEmpty()) {
+                System.out.println("Error: Device not registered!");
+                output.writeObject(Codes.NRD.toString());
+                return;
             }
-            System.out.println(log);
-            output.writeObject(response);
+
+            StringBuilder sb = new StringBuilder();
+            for (Domain domain : domains) {
+                sb.append(domain.getName()).append(";");
+            }
+            // Send domains
+            output.writeObject(sb.toString());
+
+            // Receive confirmation of receiving the domains
+            input.readObject();
+            for (Domain domain : domains) {
+                String keyPath = "server-files/domain_keys/" + domain.getName()
+                        + "/" + devUser.getName() + ".key.cif";
+
+                File keyFile = new File(keyPath);
+                if (!keyFile.exists()) {
+                    System.out.println("Error: Key not found!");
+                    output.writeObject(Codes.NOK.toString());
+                    return;
+                }
+
+                // Send the key
+                output.writeInt((int) keyFile.length()); // Send key size
+                sendFile(keyPath, (int) keyFile.length()); // Send key
+
+                // Receiving encrypted temperature
+                String encTemp = (String) this.input.readObject();
+
+                // Save temperature
+                String res = srvStorage.saveTemperature(device, encTemp, domain);
+                if(res.equals(Codes.OK.toString())) {
+                    output.writeObject(Codes.OK.toString());
+                } else {
+                    output.writeObject(Codes.NOK.toString());
+                }
+            }
+
+            // Receive confirmation of all temperatures were sent to the server
+            String allTempsReceived = (String) input.readObject();
+            if (allTempsReceived.equals(Codes.OK.toString())) {
+                System.out.println("Success: Temperature received!");
+                output.writeObject(Codes.OK.toString());
+            } else {
+                System.out.println("Error: Unable to receive temperature!");
+                output.writeObject(Codes.NOK.toString());
+            }
         } catch (Exception e) {
             System.out.println("Error: Unable to receive temperature!");
             output.writeObject(Codes.NOK.toString());
@@ -520,7 +559,23 @@ public class Connection {
         } else {
             String path = srvStorage.getDomainTemperatures(domain);
             if (path != null) {
+                String keyPath = "server-files/domain_keys/" + domain.getName()
+                        + "/" + devUser.getName() + ".key.cif";
+
+                // Find domain key
+                File keyFile = new File(keyPath);
+                if (!keyFile.exists()) {
+                    System.out.println("Error: Key not found!");
+                    output.writeObject(Codes.NOK.toString());
+                    return;
+                }
                 output.writeObject(Codes.OK.toString());
+
+                // Send the key
+                output.writeInt((int) keyFile.length());
+                sendFile(keyPath, (int) keyFile.length());
+
+                // Send the temperatures file
                 int size = (int) new File(path).length();
                 output.writeInt(size);
                 String result = sendFile(path, size) ?

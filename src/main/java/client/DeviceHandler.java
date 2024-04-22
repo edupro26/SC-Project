@@ -385,13 +385,47 @@ public class DeviceHandler {
             System.out.println("Usage: ET <float>");
             return;
         }
-        String msg = parseCommandToSend(command, args);
-        String res = this.sendReceive(msg);
-        if (res.equals(Codes.OK.toString())) {
-            System.out.println("Response: OK # Temperature sent successfully");
-        } else if (res.equals(Codes.NRD.toString())) {
-            System.out.println("Response: NRD # Device not registered");
-        } else {
+        try {
+            String msg = parseCommandToSend(command, args);
+            String res = this.sendReceive(msg);
+            if (res.equals(Codes.NRD.toString())) {
+                System.out.println("Response: NRD # Device not registered");
+                return;
+            }
+
+            String[] domains = res.split(";");
+            output.writeObject(Codes.OK.toString());
+            for(String domain : domains) {
+                // Receive the domain key
+                int size = input.readInt();
+                String keyTempPath = domain + ".key.cif.temp";
+                receiveFile(keyTempPath, size);
+
+                File encryptedKey = new File(keyTempPath);
+                SecretKey key = (SecretKey) SecurityUtils.decryptKeyWithRSA(
+                        encryptedKey, SecurityUtils.findPrivateKeyOnKeyStore(this.userId));
+
+                // Encrypt and send the temperature
+                output.writeObject(SecurityUtils.encryptTemperature(args[0], key));
+                // Delete the temporary key file
+                encryptedKey.delete();
+
+                // Confirmation temperature has been received
+                String response = (String) input.readObject();
+                if(response.equals(Codes.NOK.toString())){
+                    System.out.println("Response: NOK # Error sending temperature");
+                    return;
+                }
+            }
+
+            output.writeObject(Codes.OK.toString());
+            String finalRes = (String) input.readObject();
+            if (finalRes.equals(Codes.OK.toString())) {
+                System.out.println("Response: OK # Temperature sent successfully");
+            } else {
+                System.out.println("Response: NOK # Error sending temperature");
+            }
+        } catch (Exception e) {
             System.out.println("Response: NOK # Error sending temperature");
         }
     }
@@ -487,16 +521,34 @@ public class DeviceHandler {
         }
         String msg = parseCommandToSend(command, args);
         String res = this.sendReceive(msg);
-        String name = SERVER_OUT + args[0] + ".txt";
+        String outputPath = SERVER_OUT + args[0] + ".txt";
         if (res.equals(Codes.OK.toString())) {
             try {
-                int size = input.readInt();
-                int received = receiveFile(name, size);
-                String result = received == size
-                        ? "Response: OK, " + received + " (long), followed by "
-                        + received + " bytes of data"
-                        : "Response: NOK # Error getting temperatures";
-                System.out.println(result);
+                // Receive the domain key
+                int keySize = input.readInt();
+                String keyTempPath = args[0] + ".key.cif.temp";
+                receiveFile(keyTempPath, keySize);
+
+                // Receive the file with encryted temperatures
+                int fileSize = input.readInt();
+                receiveFile(outputPath, fileSize);
+
+                File encryptedKey = new File(keyTempPath);
+                SecretKey key = (SecretKey) SecurityUtils.decryptKeyWithRSA(
+                        encryptedKey, SecurityUtils.findPrivateKeyOnKeyStore(this.userId));
+
+                // Delete temp key file
+                encryptedKey.delete();
+
+                // Decrypt the temperatures
+                File outputFile = new File(outputPath);
+                int received = SecurityUtils.decryptTemperatures(outputFile, key);
+                if (received > 0) {
+                    System.out.println("Response: OK, " + received
+                            + " (long), followed by " + received + " bytes of data");
+                } else {
+                    System.out.println("Response: NOK # Error getting temperatures");
+                }
             } catch (IOException e) {
                 System.out.println("Response: NOK # Error getting temperatures");
             }

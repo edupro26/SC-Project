@@ -6,15 +6,13 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
+import java.io.*;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
+import java.util.Base64;
 
 public class SecurityUtils {
 
@@ -188,6 +186,50 @@ public class SecurityUtils {
             }
         } catch (Exception e) {
             System.out.println(e.getMessage());
+        }
+    }
+
+    public static String encryptTemperature(String temperature, SecretKey key) {
+        try {
+            Cipher cipher = Cipher.getInstance("AES");
+            cipher.init(Cipher.ENCRYPT_MODE, key);
+            byte[] encrypted = cipher.doFinal(temperature.getBytes());
+            return Base64.getEncoder().encodeToString(encrypted);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public static int decryptTemperatures(File temperaturesFile, SecretKey key) {
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(temperaturesFile));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] content = line.split(",");
+                String temperature = decryptTemperature(content[1], key);
+                sb.append(content[0]).append("->")
+                        .append(temperature).append("\n");
+            }
+            br.close();
+            BufferedWriter bw = new BufferedWriter(new FileWriter(temperaturesFile));
+            bw.write(sb.toString());
+            bw.close();
+            return (int) temperaturesFile.length();
+        } catch (IOException e) {
+            return -1;
+        }
+    }
+
+    private static String decryptTemperature(String temperature, SecretKey key) {
+        try {
+            Cipher cipher = Cipher.getInstance("AES");
+            cipher.init(Cipher.DECRYPT_MODE, key);
+            byte[] plainText = cipher.doFinal(Base64.getDecoder()
+                    .decode(temperature));
+            return new String(plainText);
+        } catch (Exception e) {
+            return null;
         }
     }
 }
