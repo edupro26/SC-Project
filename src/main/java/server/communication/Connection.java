@@ -559,7 +559,23 @@ public class Connection {
         } else {
             String path = srvStorage.getDomainTemperatures(domain);
             if (path != null) {
+                String keyPath = "server-files/domain_keys/" + domain.getName()
+                        + "/" + devUser.getName() + ".key.cif";
+
+                // Find domain key
+                File keyFile = new File(keyPath);
+                if (!keyFile.exists()) {
+                    System.out.println("Error: Key not found!");
+                    output.writeObject(Codes.NOK.toString());
+                    return;
+                }
                 output.writeObject(Codes.OK.toString());
+
+                // Send the key
+                output.writeInt((int) keyFile.length());
+                sendFile(keyPath, (int) keyFile.length());
+
+                // Send the temperatures file
                 int size = (int) new File(path).length();
                 output.writeInt(size);
                 String result = sendFile(path, size) ?
