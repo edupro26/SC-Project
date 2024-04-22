@@ -420,45 +420,60 @@ public class Connection {
 
             List<Domain> domains = srvStorage.getDeviceDomains(device);
             String response, log = null;
-            System.out.println(domains.isEmpty());
-            if (!domains.isEmpty() && t.equals("DOMAINS")) {
-
-                StringBuilder sb = new StringBuilder();
-                for (Domain domain : domains) {
-                    sb.append(domain.getName()).append(";");
-                }
-                //send domains
-                output.writeObject(sb.toString());
-
-                for (Domain domain : domains) {
-                    // Send the key
-                    String keyPath = "server-files/domain_keys/" + domain.getName() + "/" + devUser.getName() + ".key.cif";
-                    System.out.println(keyPath);
-                    File keyFile = new File(keyPath);
-                    if (!keyFile.exists()) {
-                        System.out.println("Error: Key not found!");
-                        output.writeObject(Codes.NOK.toString());
-                        return;
-                    }
-                    output.writeInt((int) keyFile.length()); // Send key size
-                    sendFile(keyPath, (int) keyFile.length()); // Send key
-
-                    //cyphered temp
-                    String cypheredText = (String) this.input.readObject();
-                    System.out.println(cypheredText);
-                    //saving encripted temp
-                    response = srvStorage.saveTemperature(device, cypheredText, domain);
-                    log = response.equals(Codes.OK.toString()) ?
-                            log + "Success: Temperature received!"
-                            : log + "Error: Unable to receive temperature!";
-                    System.out.println(log);
-                    output.writeObject(response);
-                }
-
-            } else {
+            if (domains.isEmpty()) {
                 System.out.println("Error: Device not registered!");
                 output.writeObject(Codes.NRD.toString());
                 return;
+            }
+
+            StringBuilder sb = new StringBuilder();
+            for (Domain domain : domains) {
+                sb.append(domain.getName()).append(";");
+            }
+
+            // Send domains
+            output.writeObject(sb.toString()); // Send domains
+
+            // Receive confirmation of receiving the domains
+            input.readObject();
+
+            for (Domain domain : domains) {
+                // Send the key
+                String keyPath = "server-files/domain_keys/" + domain.getName() + "/" + devUser.getName() + ".key.cif";
+                File keyFile = new File(keyPath);
+                if (!keyFile.exists()) {
+                    System.out.println("Error: Key not found!");
+                    output.writeObject(Codes.NOK.toString());
+                    return;
+                }
+
+                output.writeInt((int) keyFile.length()); // Send key size
+                sendFile(keyPath, (int) keyFile.length()); // Send key
+
+                // Receiving encrypted temperature
+                String encTemp = (String) this.input.readObject();
+
+                // Save temperature
+                srvStorage.saveTemperature(device, encTemp, domain);
+                // TODO: Change response returns of sever storage methods
+
+                /*
+                log = response.equals(Codes.OK.toString()) ?
+                        log + "Success: Temperature received!"
+                        : log + "Error: Unable to receive temperature!";
+
+                 */
+                output.writeObject("TEMP_RECEIVED");
+            }
+
+            String allTempsReceived = (String) input.readObject(); // Receive confirmation of all temperatures were sent to the server
+
+            if (allTempsReceived.equals("ALL_TEMPS_SENT")) {
+                System.out.println("Success: All temperatures received!");
+                output.writeObject(Codes.OK.toString());
+            } else {
+                System.out.println("Error: Unable to receive temperatures!");
+                output.writeObject(Codes.NOK.toString());
             }
 
         } catch (Exception e) {

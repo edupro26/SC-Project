@@ -386,12 +386,18 @@ public class DeviceHandler {
             return;
         }
         try {
-            output.writeObject("ET;DOMAINS");
-            String[] domains = ((String) input.readObject()).split(":");
+            String res = this.sendReceive("ET;DOMAINS");
+            if (res.equals(Codes.NRD.toString())) {
+                System.out.println("Response: NRD # Device not registered");
+                return;
+            }
+
             String temperature = args[0];
 
-            for(String domain : domains){
+            String[] domains = res.split(";");
+            output.writeObject("RECEIVED_DOMAINS");
 
+            for(String domain : domains){
                 // Receive the domain key
                 int size = input.readInt();
                 String keyTempPath = domain + ".key.cif.temp";
@@ -399,27 +405,38 @@ public class DeviceHandler {
 
                 File encryptedKey = new File(keyTempPath);
                 SecretKey key = (SecretKey) SecurityUtils.decryptKeyWithRSA(encryptedKey, SecurityUtils.findPrivateKeyOnKeyStore(this.userId));
-                //cipher temperature
+
+                // Encrypt temperature
                 String cipheredTemp = SecurityUtils.cypherTemperature(temperature,key);
-                System.out.println(cipheredTemp);
-                //send cyphered temperature
+
+                // Send the encrypted temperature
                 output.writeObject(cipheredTemp);
-                //confirmation temperature has been received
+
+                // Confirmation temperature has been received
                 String response = (String) input.readObject();
 
-                if(!response.equals(Codes.OK.toString())){
-                    // da erro
-                    System.out.println(response.split(";")[1]);
+                if(!response.equals("TEMP_RECEIVED")){
+                    System.out.println("Response: NOK # Error sending temperature 1");
+                    return;
                 }
 
                 // Delete the temporary key file
-                new File(keyTempPath).delete(); // Delete the temporary key file
-                encryptedKey.delete(); // Delete the encrypted image
+                encryptedKey.delete();
+            }
+
+            output.writeObject("ALL_TEMPS_SENT");
+
+            String finalRes = (String) input.readObject();
+
+            if (finalRes.equals(Codes.OK.toString())) {
+                System.out.println("Response: OK # Temperature sent successfully");
+            } else {
+                System.out.println("Response: NOK # Error sending temperature 2");
             }
 
         } catch (Exception e) {
-            System.out.println("Something went wrong"); //msg
-            return;
+            e.printStackTrace();
+            System.out.println("Response: NOK # Error sending temperature");
         }
     }
 

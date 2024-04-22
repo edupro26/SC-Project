@@ -194,7 +194,7 @@ public class SecurityUtils {
 
     public static String cypherTemperature(String temperature, SecretKey key) {
         try {
-            Cipher cipher = Cipher.getInstance(ENC_ALGORITHM);
+            Cipher cipher = Cipher.getInstance("AES");
             cipher.init(Cipher.ENCRYPT_MODE, key);
             byte[] encryptedBytes = cipher.doFinal(temperature.getBytes());
             return Arrays.toString(encryptedBytes);
