@@ -6,16 +6,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
@@ -217,7 +208,7 @@ public class SecurityUtils {
             while ((line = br.readLine()) != null) {
                 String[] content = line.split(",");
                 String temperature = decryptTemperature(content[1], key);
-                sb.append(content[0]).append(",")
+                sb.append(content[0]).append("->")
                         .append(temperature).append("\n");
             }
             br.close();
