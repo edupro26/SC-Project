@@ -4,6 +4,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Scanner;
+import java.util.regex.Pattern;
 
 /**
  * Represents a {@code IoTDevice} capable of connecting to the {@code IoTServer}.
@@ -17,6 +18,8 @@ import java.util.Scanner;
  * @see DeviceHandler
  */
 public class IoTDevice {
+
+    private static final String EMAIL_REGEX = "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$";
 
     /**
      * This class is not meant to be constructed
@@ -42,6 +45,14 @@ public class IoTDevice {
         String devId = args[4];
         String userId = args[5];
         String[] server = serverAddress.split(":");
+
+        // Validate userId as an email address
+        Pattern emailPattern = Pattern.compile(EMAIL_REGEX, Pattern.CASE_INSENSITIVE);
+        if (!emailPattern.matcher(userId).matches()) {
+            System.out.println("Error: <user-id> must be a valid email address");
+            System.exit(1);
+        }
+
 
         System.out.println("Truststore: " + truststore);
         System.out.println("Keystore: " + keystore);
