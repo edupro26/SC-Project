@@ -155,7 +155,6 @@ public class Connection {
             throws IOException, ClassNotFoundException {
         SecureRandom secureRandom = new SecureRandom();
         long fiveDigitCode = secureRandom.nextInt(90000) + 10000;
-        System.out.println(fiveDigitCode);
         SecurityUtils.send2FACode(String.valueOf(fiveDigitCode), userId, apiKey);
         String codeStr = (String) input.readObject();
         try {
@@ -242,7 +241,7 @@ public class Connection {
                     case "ADD" -> handleADD(parsedMsg[1], parsedMsg[2]);
                     case "RD" -> handleRD(parsedMsg[1]);
                     case "MYDOMAINS" -> handleMYDOMAINS();
-                    case "ET" -> handleET(parsedMsg[1]);
+                    case "ET" -> handleET();
                     case "EI" -> handleEI();
                     case "RT" -> handleRT(parsedMsg[1]);
                     case "RI" -> {
@@ -410,12 +409,11 @@ public class Connection {
     /**
      * Handles the command ET
      *
-     * @param t the temperature in string format
      * @throws IOException if an error occurred when writing to the server
      *         files, or during the communication between client and server
      * @see Codes
      */
-    private void handleET(String t) throws IOException {
+    private void handleET() throws IOException {
         try {
             List<Domain> domains = srvStorage.getDeviceDomains(device);
             if (domains.isEmpty()) {
