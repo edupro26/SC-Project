@@ -13,6 +13,7 @@ import java.io.*;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * Represents a {@code IoTDevice} connection to the {@code IoTServer}.
@@ -48,6 +49,9 @@ public class Connection {
     private User devUser;           //The user of this connection
     private Device device;          //The device of this connection
 
+
+    private static final String EMAIL_REGEX = "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$";
+
     /**
      * Constructs a new {@code Connection}.
      *
@@ -71,6 +75,15 @@ public class Connection {
     public boolean userAuthentication(String apiKey) {
         try {
             String userId = (String) input.readObject();
+
+            // Validate userId as an email address
+            Pattern emailPattern = Pattern.compile(EMAIL_REGEX, Pattern.CASE_INSENSITIVE);
+            if (!emailPattern.matcher(userId).matches()) {
+                output.writeObject(Codes.NOK.toString());
+                System.out.println("Received invalid email address!");
+                return false;
+            }
+
             SecureRandom secureRandom = new SecureRandom();
             long nonce = secureRandom.nextLong();
 
