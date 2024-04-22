@@ -23,20 +23,43 @@ import java.util.Map;
  */
 public class IntegrityVerifier {
 
+    /**
+     * Algorithm for HMAC calculation
+     */
     private static final String HMAC_ALGORITHM = "HmacSHA256";
+
+    /**
+     * File paths
+     */
     private static final String CLIENT_COPY = "classes/device_info.csv";
     private static final String DOMAINS = "server-files/domains.txt";
 
+    /**
+     * Pointer to the hmacs.txt file
+     */
     private final String filePath;
+
+    /**
+     * Data structures
+     */
     private final SecretKey secret;
     private final Map<String, String> hmacs;
 
+    /**
+     * Constructs a new {@code IntegrityVerifier}
+     *
+     * @param filePath the file to save HMACs
+     * @param secret the secret key
+     */
     public IntegrityVerifier(String filePath, String secret) {
         this.filePath = filePath;
         this.secret = SecurityUtils.generateKey(secret);
         this.hmacs = new HashMap<>();
     }
 
+    /**
+     * Inicializes this {@code IntegrityVerifier}
+     */
     public void init() {
         try {
             File file = new File(filePath);
@@ -57,6 +80,12 @@ public class IntegrityVerifier {
         }
     }
 
+    /**
+     * Verifies the integrity of all the files
+     *
+     * @return true if there are no corrupted files,
+     *          false otherwise
+     */
     public boolean verifyAll() {
         boolean verified = true;
         for (Map.Entry<String, String> hmac : hmacs.entrySet()) {
@@ -65,6 +94,12 @@ public class IntegrityVerifier {
         return verified;
     }
 
+    /**
+     * Verifies the integrity of a file
+     *
+     * @param path the file path
+     * @return true if not corrupted, false otherwise
+     */
     public boolean verify(String path) {
         String savedHmac = hmacs.get(path);
         String newHmac = calculateHMAC(path);
@@ -76,6 +111,10 @@ public class IntegrityVerifier {
         }
     }
 
+    /**
+     * Updates the HMAC value of the domains.txt file, both
+     * in the map {@link #hmacs} and in the hmacs.txt file
+     */
     public void update() {
         StringBuilder sb = new StringBuilder();
         String hmac = calculateHMAC(DOMAINS);
@@ -99,6 +138,12 @@ public class IntegrityVerifier {
         }
     }
 
+    /**
+     * Loads the HMACS values saved in the hmacs.txt file
+     * to the map {@link #hmacs}
+     *
+     * @throws IOException If an I/ O error occurs
+     */
     private void loadHmacs() throws IOException {
         File file = new File(filePath);
         BufferedReader br = new BufferedReader(new FileReader(file));
@@ -117,6 +162,14 @@ public class IntegrityVerifier {
         br.close();
     }
 
+    /**
+     * Calculates the HMAC value of the file in
+     * the given path
+     *
+     * @param path the path to the file
+     * @return the HMAC value, null if the file is empty
+     *          or an exception occured
+     */
     private String calculateHMAC(String path) {
         try {
             byte[] data = readFile(path);
@@ -135,6 +188,14 @@ public class IntegrityVerifier {
         }
     }
 
+    /**
+     * Reads the content of a file to a byte array
+     *
+     * @param path the path of the file
+     * @return a byte array, null if the file is empty
+     *          or does not exist
+     * @throws IOException If an I/ O error occurs
+     */
     private byte[] readFile(String path) throws IOException {
         File file = new File(path);
         if (file.exists()) {
