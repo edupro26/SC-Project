@@ -15,7 +15,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
-import java.util.Arrays;
+import java.util.Base64;
 
 public class SecurityUtils {
 
@@ -192,15 +192,26 @@ public class SecurityUtils {
         }
     }
 
-    public static String cypherTemperature(String temperature, SecretKey key) {
+    public static String encryptTemperature(String temperature, SecretKey key) {
         try {
             Cipher cipher = Cipher.getInstance("AES");
             cipher.init(Cipher.ENCRYPT_MODE, key);
-            byte[] encryptedBytes = cipher.doFinal(temperature.getBytes());
-            return Arrays.toString(encryptedBytes);
-
+            byte[] encrypted = cipher.doFinal(temperature.getBytes());
+            return Base64.getEncoder().encodeToString(encrypted);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            return null;
+        }
+    }
+
+    public static String decryptTemperature(String temperature, SecretKey key) {
+        try {
+            Cipher cipher = Cipher.getInstance("AES");
+            cipher.init(Cipher.DECRYPT_MODE, key);
+            byte[] plainText = cipher.doFinal(Base64.getDecoder()
+                    .decode(temperature));
+            return new String(plainText);
+        } catch (Exception e) {
+            return null;
         }
     }
 }

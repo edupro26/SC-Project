@@ -406,7 +406,7 @@ public class DeviceHandler {
                         encryptedKey, SecurityUtils.findPrivateKeyOnKeyStore(this.userId));
 
                 // Encrypt and send the temperature
-                output.writeObject(SecurityUtils.cypherTemperature(args[0], key));
+                output.writeObject(SecurityUtils.encryptTemperature(args[0], key));
                 // Delete the temporary key file
                 encryptedKey.delete();
 
