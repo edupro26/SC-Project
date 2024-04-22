@@ -409,8 +409,24 @@ public class DeviceHandler {
             System.out.println("Usage: EI <filename.jpg>");
             return;
         }
+
+        // Check if filename ends in .jpg
+        if (!args[0].endsWith(".jpg")) {
+            System.out.println("File provided must be a JPG!");
+            return;
+        }
+
+        File image = new File(args[0]);
+
+        // Check if image exists
+        if (!image.exists() || !image.isFile()) {
+            System.out.println("The image provided doesn't exist!");
+            return;
+        }
+
         String msg = parseCommandToSend(command, args);
         try {
+
             String res = this.sendReceive(msg);
             if (res.equals(Codes.NRD.toString())) {
                 System.out.println("Response: NRD # Device not registered");
@@ -429,7 +445,7 @@ public class DeviceHandler {
                 SecretKey key = (SecretKey) SecurityUtils.decryptKeyWithRSA(encryptedKey, SecurityUtils.findPrivateKeyOnKeyStore(this.userId));
 
                 File imageEnc = new File(args[0] + ".cif");
-                SecurityUtils.encryptFile(new File(args[0]), imageEnc, key);
+                SecurityUtils.encryptFile(image, imageEnc, key);
 
                 int imageEncSize = (int) imageEnc.length();
 
