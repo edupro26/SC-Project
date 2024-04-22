@@ -1,8 +1,11 @@
 package server.communication;
 
-import common.*;
+import common.Codes;
+import common.Message;
 import common.security.CommonUtils;
-import server.components.*;
+import server.components.Device;
+import server.components.Domain;
+import server.components.User;
 import server.persistence.Storage;
 import server.security.SecurityUtils;
 
@@ -466,17 +469,11 @@ public class Connection {
                 receiveFile(imagePath, size); // Receive image
 
                 output.writeObject("ONE_IMAGE_RECEIVED"); // Confirm image received
-
-                int paramsSize = input.readInt(); // Receive params size
-                String paramsPath = "server-files/images/" + device.getUser() + "_" + device.getId() + "_" + domain.getName() + ".params";
-                receiveFile(paramsPath, paramsSize); // Receive params
-
-                output.writeObject("ONE_PARAMS_RECEIVED"); // Confirm params received
             }
 
             String allImagesReceived = (String) input.readObject(); // Receive confirmation of all images were sent to the server
 
-            if (allImagesReceived.equals("ALL_IMAGES_RECEIVED")) {
+            if (allImagesReceived.equals("ALL_IMAGES_SENT")) {
                 System.out.println("Success: All images received!");
                 output.writeObject(Codes.OK.toString());
             } else {
@@ -558,11 +555,6 @@ public class Connection {
                                 + device.getUser() + "_" + device.getId() + "_" + d.getName() + ".jpg.cif");
                         if (!imageEnc.exists()) continue;
 
-                        // Image encryption params
-                        File imageEncParams = new File("server-files/images/" 
-                                + device.getUser() + "_" + device.getId() + "_" + d.getName() + ".params");
-                        if (!imageEncParams.exists()) continue;
-
                         output.writeObject("SENDING_FILES"); // Warn client that server is going to send the files
 
                         //input.readObject(); // Client is ready to receive the key
@@ -577,10 +569,7 @@ public class Connection {
                         sendFile(imageEnc.getPath(), (int) imageEnc.length());
 
                         input.readObject(); // Client is ready to receive the image encryption params
-                        output.writeInt((int) imageEncParams.length());
-                        sendFile(imageEncParams.getPath(), (int) imageEncParams.length());
 
-                        input.readObject();
                         output.writeObject("OK");
                         return;
                     }

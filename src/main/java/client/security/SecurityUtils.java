@@ -5,23 +5,20 @@ import javax.crypto.CipherOutputStream;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.security.AlgorithmParameters;
-import java.security.Key;
-import java.security.KeyStore;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
 
 public class SecurityUtils {
 
-    private static final String ENC_ALGORITHM = "PBEWithHmacSHA256AndAES_128";
+    private static final String ENC_ALGORITHM = "PBKDF2WithHmacSHA256";
 
     private static final byte[] salt = { (byte) 0xc9, (byte) 0x36, (byte) 0x78,
                                         (byte) 0x99, (byte) 0x52, (byte) 0x3e,
@@ -29,12 +26,15 @@ public class SecurityUtils {
 
     private static final int ITERATION_COUNT = 20;
 
+    private static final int KEY_LENGTH = 128;
+
     public static SecretKey generateKey(String cipherPassword) {
-        PBEKeySpec keySpec = new PBEKeySpec(
-                cipherPassword.toCharArray(), salt, ITERATION_COUNT);
+        KeySpec keySpec = new PBEKeySpec(
+                cipherPassword.toCharArray(), salt, ITERATION_COUNT, KEY_LENGTH);
         try {
             SecretKeyFactory kf = SecretKeyFactory.getInstance(ENC_ALGORITHM);
-            return kf.generateSecret(keySpec);
+            byte[] key = kf.generateSecret(keySpec).getEncoded();
+            return new SecretKeySpec(key, "AES");
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
             System.out.println(e.getMessage());
             return null;
@@ -74,7 +74,7 @@ public class SecurityUtils {
                 fis.read(wrappedKey);
             }
 
-            return cipher.unwrap(wrappedKey, ENC_ALGORITHM, Cipher.SECRET_KEY);
+            return cipher.unwrap(wrappedKey, "AES", Cipher.SECRET_KEY);
         } catch (Exception e) {
             System.out.println(e.getMessage());
             return null;
@@ -172,7 +172,8 @@ public class SecurityUtils {
 
     public static void encryptFile(File fileToEncrypt, File encryptedFile, SecretKey key) {
         try {
-            Cipher cipher = Cipher.getInstance(ENC_ALGORITHM);
+
+            Cipher cipher = Cipher.getInstance("AES");
             cipher.init(Cipher.ENCRYPT_MODE, key);
 
             try (FileInputStream fis = new FileInputStream(fileToEncrypt);
@@ -184,9 +185,6 @@ public class SecurityUtils {
                     cos.write(buffer, 0, read);
                 }
             }
-            // Save params
-            saveParams(cipher.getParameters().getEncoded(),
-                    new File(encryptedFile.getAbsolutePath() + ".params"));
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
@@ -195,10 +193,8 @@ public class SecurityUtils {
 
     public static void decryptFile(File encryptedFile, File decryptedFile, SecretKey key) {
         try {
-            AlgorithmParameters p = AlgorithmParameters.getInstance(ENC_ALGORITHM);
-            p.init(readParams(new File(encryptedFile.getAbsolutePath() + ".params")));
-            Cipher cipher = Cipher.getInstance(ENC_ALGORITHM);
-            cipher.init(Cipher.DECRYPT_MODE, key, p);
+            Cipher cipher = Cipher.getInstance("AES");
+            cipher.init(Cipher.DECRYPT_MODE, key);
 
             try (FileInputStream fis = new FileInputStream(encryptedFile);
                  FileOutputStream fos = new FileOutputStream(decryptedFile);
