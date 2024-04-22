@@ -113,15 +113,15 @@ public class Storage {
      * updates the devices.txt file located in the server-files folder.
      * Returns "OK" if the method concluded with success, "NOK" otherwise
      *
-     * @param device the {@code Device}
+     * @param device      the {@code Device}
      * @param temperature the last temperature sent
+     * @param domain
      * @return status code
-     * @see Codes
      * @requires {@code device != null && temperature != null}
+     * @see Codes
      */
-    public String saveTemperature(Device device, String temperature) {
-        List<Domain> domains = deviceManager.getDeviceDomains(device);
-        return domainManager.saveTemperature(device, temperature, domains);
+    public String saveTemperature(Device device, String temperature, Domain domain) {
+        return domainManager.saveTemperature(device, temperature, domain);
     }
 
     /**

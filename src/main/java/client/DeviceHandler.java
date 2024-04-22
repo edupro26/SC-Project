@@ -391,14 +391,41 @@ public class DeviceHandler {
             System.out.println("Usage: ET <float>");
             return;
         }
-        String msg = parseCommandToSend(command, args);
-        String res = this.sendReceive(msg);
-        if (res.equals(Codes.OK.toString())) {
-            System.out.println("Response: OK # Temperature sent successfully");
-        } else if (res.equals(Codes.NRD.toString())) {
-            System.out.println("Response: NRD # Device not registered");
-        } else {
-            System.out.println("Response: NOK # Error sending temperature");
+        try {
+            output.writeObject("ET;DOMAINS");
+            String[] domains = ((String) input.readObject()).split(":");
+            String temperature = args[0];
+
+            for(String domain : domains){
+
+                // Receive the domain key
+                int size = input.readInt();
+                String keyTempPath = domain + ".key.cif.temp";
+                receiveFile(keyTempPath, size);
+
+                File encryptedKey = new File(keyTempPath);
+                SecretKey key = (SecretKey) SecurityUtils.decryptKeyWithRSA(encryptedKey, SecurityUtils.findPrivateKeyOnKeyStore(this.userId));
+                //cipher temperature
+                String cipheredTemp = SecurityUtils.cypherTemperature(temperature,key);
+                System.out.println(cipheredTemp);
+                //send cyphered temperature
+                output.writeObject(cipheredTemp);
+                //confirmation temperature has been received
+                String response = (String) input.readObject();
+
+                if(!response.equals(Codes.OK.toString())){
+                    // da erro
+                    System.out.println(response.split(";")[1]);
+                }
+
+                // Delete the temporary key file
+                new File(keyTempPath).delete(); // Delete the temporary key file
+                encryptedKey.delete(); // Delete the encrypted image
+            }
+
+        } catch (Exception e) {
+            System.out.println("Something went wrong"); //msg
+            return;
         }
     }
 

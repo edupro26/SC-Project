@@ -204,40 +204,39 @@ public class DomainManager {
      *
      * @param device the {@code Device}
      * @param temp the temperature to be saved
-     * @param domains the domains where the {@code Device} is
+     * @param domain the domains where the {@code Device} is
      * @return status code
      */
-    public String saveTemperature(Device device, String temp, List<Domain> domains) {
-        for (Domain domain : domains) {
-            String path = "server-files/temperatures/" + domain.getName() + ".txt";
-            try {
-                StringBuilder sb = new StringBuilder();
-                boolean replaced = false;
-                if (new File(path).exists()) {
-                    BufferedReader br = new BufferedReader(new FileReader(path));
-                    String line;
-                    while ((line = br.readLine()) != null) {
-                        if(line.split(",")[0].equals(device.toString())) {
-                            sb.append(device).append(",").append(temp).append("\n");
-                            replaced = true;
-                        } else {
-                            sb.append(line).append("\n");
-                        }
+    public String saveTemperature(Device device, String temp, Domain domain) {
+        String path = "server-files/temperatures/" + domain.getName() + ".txt";
+        try {
+            StringBuilder sb = new StringBuilder();
+            boolean replaced = false;
+            if (new File(path).exists()) {
+                BufferedReader br = new BufferedReader(new FileReader(path));
+                String line;
+                while ((line = br.readLine()) != null) {
+                    if(line.split(",")[0].equals(device.toString())) {
+                        sb.append(device).append(",").append(temp).append("\n");
+                        replaced = true;
+                    } else {
+                        sb.append(line).append("\n");
                     }
-                    br.close();
                 }
-                if (!replaced)
-                    sb.append(device).append(",").append(temp).append("\n");
-                synchronized (tempsLock) {
-                    BufferedWriter bw = new BufferedWriter(new FileWriter(path));
-                    bw.write(sb.toString());
-                    bw.close();
-                }
-            } catch (IOException e) {
-                System.out.println(e.getMessage());
-                return Codes.NOK.toString();
+                br.close();
             }
+            if (!replaced)
+                sb.append(device).append(",").append(temp).append("\n");
+            synchronized (tempsLock) {
+                BufferedWriter bw = new BufferedWriter(new FileWriter(path));
+                bw.write(sb.toString());
+                bw.close();
+            }
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+            return Codes.NOK.toString();
         }
+
         return Codes.OK.toString();
     }
 

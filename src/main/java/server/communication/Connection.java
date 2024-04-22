@@ -139,6 +139,7 @@ public class Connection {
             throws IOException, ClassNotFoundException {
         SecureRandom secureRandom = new SecureRandom();
         long fiveDigitCode = secureRandom.nextInt(90000) + 10000;
+        System.out.println(fiveDigitCode);
         SecurityUtils.send2FACode(String.valueOf(fiveDigitCode), userId, apiKey);
         String codeStr = (String) input.readObject();
         try {
@@ -400,18 +401,50 @@ public class Connection {
      */
     private void handleET(String t) throws IOException {
         try {
-            String response, log;
-            if (!srvStorage.getDeviceDomains(device).isEmpty()) {
-                response = srvStorage.saveTemperature(device, t);
-                log = response.equals(Codes.OK.toString()) ?
-                        "Success: Temperature received!"
-                        : "Error: Unable to receive temperature!";
+
+            List<Domain> domains = srvStorage.getDeviceDomains(device);
+            String response, log = null;
+            System.out.println(domains.isEmpty());
+            if (!domains.isEmpty() && t.equals("DOMAINS")) {
+
+                StringBuilder sb = new StringBuilder();
+                for (Domain domain : domains) {
+                    sb.append(domain.getName()).append(";");
+                }
+                //send domains
+                output.writeObject(sb.toString());
+
+                for (Domain domain : domains) {
+                    // Send the key
+                    String keyPath = "server-files/domain_keys/" + domain.getName() + "/" + devUser.getName() + ".key.cif";
+                    System.out.println(keyPath);
+                    File keyFile = new File(keyPath);
+                    if (!keyFile.exists()) {
+                        System.out.println("Error: Key not found!");
+                        output.writeObject(Codes.NOK.toString());
+                        return;
+                    }
+                    output.writeInt((int) keyFile.length()); // Send key size
+                    sendFile(keyPath, (int) keyFile.length()); // Send key
+
+                    //cyphered temp
+                    String cypheredText = (String) this.input.readObject();
+                    System.out.println(cypheredText);
+                    //saving encripted temp
+                    response = srvStorage.saveTemperature(device, cypheredText, domain);
+                    log = response.equals(Codes.OK.toString()) ?
+                            log + "Success: Temperature received!"
+                            : log + "Error: Unable to receive temperature!";
+                    System.out.println(log);
+                    output.writeObject(response);
+                }
+
             } else {
-                response = Codes.NRD.toString();
-                log = "Error: Device not registered!";
+                System.out.println("Error: Device not registered!");
+                output.writeObject(Codes.NRD.toString());
+                return;
             }
-            System.out.println(log);
-            output.writeObject(response);
+
         } catch (Exception e) {
             System.out.println("Error: Unable to receive temperature!");
             output.writeObject(Codes.NOK.toString());

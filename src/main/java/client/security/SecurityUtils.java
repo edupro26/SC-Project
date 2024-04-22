@@ -18,6 +18,7 @@ import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.spec.InvalidKeySpecException;
+import java.util.Arrays;
 
 public class SecurityUtils {
 
@@ -211,6 +212,18 @@ public class SecurityUtils {
             }
         } catch (Exception e) {
             System.out.println(e.getMessage());
+        }
+    }
+
+    public static String cypherTemperature(String temperature, SecretKey key) {
+        try {
+            Cipher cipher = Cipher.getInstance(ENC_ALGORITHM);
+            cipher.init(Cipher.ENCRYPT_MODE, key);
+            byte[] encryptedBytes = cipher.doFinal(temperature.getBytes());
+            return Arrays.toString(encryptedBytes);
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 }
