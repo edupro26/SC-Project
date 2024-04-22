@@ -386,56 +386,46 @@ public class DeviceHandler {
             return;
         }
         try {
-            String res = this.sendReceive("ET;DOMAINS");
+            String msg = parseCommandToSend(command, args);
+            String res = this.sendReceive(msg);
             if (res.equals(Codes.NRD.toString())) {
                 System.out.println("Response: NRD # Device not registered");
                 return;
             }
 
-            String temperature = args[0];
-
             String[] domains = res.split(";");
-            output.writeObject("RECEIVED_DOMAINS");
-
-            for(String domain : domains){
+            output.writeObject(Codes.OK.toString());
+            for(String domain : domains) {
                 // Receive the domain key
                 int size = input.readInt();
                 String keyTempPath = domain + ".key.cif.temp";
                 receiveFile(keyTempPath, size);
 
                 File encryptedKey = new File(keyTempPath);
-                SecretKey key = (SecretKey) SecurityUtils.decryptKeyWithRSA(encryptedKey, SecurityUtils.findPrivateKeyOnKeyStore(this.userId));
+                SecretKey key = (SecretKey) SecurityUtils.decryptKeyWithRSA(
+                        encryptedKey, SecurityUtils.findPrivateKeyOnKeyStore(this.userId));
 
-                // Encrypt temperature
-                String cipheredTemp = SecurityUtils.cypherTemperature(temperature,key);
-
-                // Send the encrypted temperature
-                output.writeObject(cipheredTemp);
+                // Encrypt and send the temperature
+                output.writeObject(SecurityUtils.cypherTemperature(args[0], key));
+                // Delete the temporary key file
+                encryptedKey.delete();
 
                 // Confirmation temperature has been received
                 String response = (String) input.readObject();
-
-                if(!response.equals("TEMP_RECEIVED")){
-                    System.out.println("Response: NOK # Error sending temperature 1");
+                if(response.equals(Codes.NOK.toString())){
+                    System.out.println("Response: NOK # Error sending temperature");
                     return;
                 }
-
-                // Delete the temporary key file
-                encryptedKey.delete();
             }
 
-            output.writeObject("ALL_TEMPS_SENT");
-
+            output.writeObject(Codes.OK.toString());
             String finalRes = (String) input.readObject();
-
             if (finalRes.equals(Codes.OK.toString())) {
                 System.out.println("Response: OK # Temperature sent successfully");
             } else {
-                System.out.println("Response: NOK # Error sending temperature 2");
+                System.out.println("Response: NOK # Error sending temperature");
             }
-
         } catch (Exception e) {
-            e.printStackTrace();
             System.out.println("Response: NOK # Error sending temperature");
         }
     }

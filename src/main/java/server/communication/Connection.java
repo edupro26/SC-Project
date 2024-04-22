@@ -417,9 +417,7 @@ public class Connection {
      */
     private void handleET(String t) throws IOException {
         try {
-
             List<Domain> domains = srvStorage.getDeviceDomains(device);
-            String response, log = null;
             if (domains.isEmpty()) {
                 System.out.println("Error: Device not registered!");
                 output.writeObject(Codes.NRD.toString());
@@ -430,16 +428,15 @@ public class Connection {
             for (Domain domain : domains) {
                 sb.append(domain.getName()).append(";");
             }
-
             // Send domains
-            output.writeObject(sb.toString()); // Send domains
+            output.writeObject(sb.toString());
 
             // Receive confirmation of receiving the domains
             input.readObject();
-
             for (Domain domain : domains) {
-                // Send the key
-                String keyPath = "server-files/domain_keys/" + domain.getName() + "/" + devUser.getName() + ".key.cif";
+                String keyPath = "server-files/domain_keys/" + domain.getName()
+                        + "/" + devUser.getName() + ".key.cif";
+
                 File keyFile = new File(keyPath);
                 if (!keyFile.exists()) {
                     System.out.println("Error: Key not found!");
@@ -447,6 +444,7 @@ public class Connection {
                     return;
                 }
 
+                // Send the key
                 output.writeInt((int) keyFile.length()); // Send key size
                 sendFile(keyPath, (int) keyFile.length()); // Send key
 
@@ -454,28 +452,23 @@ public class Connection {
                 String encTemp = (String) this.input.readObject();
 
                 // Save temperature
-                srvStorage.saveTemperature(device, encTemp, domain);
-                // TODO: Change response returns of sever storage methods
-
-                /*
-                log = response.equals(Codes.OK.toString()) ?
-                        log + "Success: Temperature received!"
-                        : log + "Error: Unable to receive temperature!";
-
-                 */
-                output.writeObject("TEMP_RECEIVED");
+                String res = srvStorage.saveTemperature(device, encTemp, domain);
+                if(res.equals(Codes.OK.toString())) {
+                    output.writeObject(Codes.OK.toString());
+                } else {
+                    output.writeObject(Codes.NOK.toString());
+                }
             }
 
-            String allTempsReceived = (String) input.readObject(); // Receive confirmation of all temperatures were sent to the server
-
-            if (allTempsReceived.equals("ALL_TEMPS_SENT")) {
-                System.out.println("Success: All temperatures received!");
+            // Receive confirmation of all temperatures were sent to the server
+            String allTempsReceived = (String) input.readObject();
+            if (allTempsReceived.equals(Codes.OK.toString())) {
+                System.out.println("Success: Temperature received!");
                 output.writeObject(Codes.OK.toString());
             } else {
-                System.out.println("Error: Unable to receive temperatures!");
+                System.out.println("Error: Unable to receive temperature!");
                 output.writeObject(Codes.NOK.toString());
             }
-
         } catch (Exception e) {
             System.out.println("Error: Unable to receive temperature!");
             output.writeObject(Codes.NOK.toString());
