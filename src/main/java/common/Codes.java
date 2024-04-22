@@ -25,7 +25,8 @@ public enum Codes {
     OKDEVID("OK-DEVID"),
     OKTESTED("OK-TESTED"),
     NOKDEVID("NOK-DEVID"),
-    NOKTESTED("NOK-TESTED");
+    NOKTESTED("NOK-TESTED"),
+    CRR("CRR");
 
     private final String name;
 

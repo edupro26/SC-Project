@@ -221,6 +221,8 @@ public class DeviceHandler {
             System.out.println("Response: OK # Domain created successfully");
         } else if (res.equals(Codes.NOK.toString())) {
             System.out.println("Response: NOK # Domain already exists");
+        } else if (res.equals(Codes.CRR.toString())) {
+            System.out.println("Response: CRR # Corrupted server files");
         } else {
             System.out.println("Response: NOK # Error creating domain");
         }
@@ -303,10 +305,12 @@ public class DeviceHandler {
             output.writeObject("WAITING_FINAL_RES");
             String finalRes = (String) input.readObject();
             if (finalRes.equals(Codes.OK.toString())) {
-                System.out.println("Response: " + finalRes + " # User added successfully");
-                return;
+                System.out.println("Response: OK # User added successfully");
+            } else if (finalRes.equals(Codes.CRR.toString())) {
+                System.out.println("Response: CRR # Corrupted server files");
+            } else {
+                System.out.println("Response: NOK # Error adding user");
             }
-            System.out.println("Response: NOK # Error adding user");
         } catch (Exception e) {
             System.out.println("Response: NOK # Error adding user");
         }
@@ -333,6 +337,8 @@ public class DeviceHandler {
             System.out.println("Response: NODM # Domain does not exist");
         } else if (res.equals(Codes.NOPERM.toString())) {
             System.out.println("Response: NOPERM # This user does not have permissions");
+        } else if (res.equals(Codes.CRR.toString())) {
+            System.out.println("Response: CRR # Corrupted server files");
         } else {
             System.out.println("Response: NOK # Error registering device");
         }

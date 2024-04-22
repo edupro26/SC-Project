@@ -36,10 +36,10 @@ public class Storage {
     /**
      * File paths
      */
-    private static final String INFO = "classes/device_info.csv";
+    private static final String CLIENT_COPY = "classes/device_info.csv";
     private static final String USERS = "server-files/users.txt";
     private static final String DOMAINS = "server-files/domains.txt";
-    private static final String CHECKSUMS = "server-files/checksums.txt";
+    private static final String HMACS = "server-files/hmacs.txt";
 
     /**
      * Storage managers
@@ -51,7 +51,7 @@ public class Storage {
     /**
      * Used for file integrity verification
      */
-    private final IntegrityVerifier fileVerifier;
+    private final IntegrityVerifier integrityVerifier;
 
     /**
      * Initiates a new Storage for the IoTServer
@@ -63,9 +63,8 @@ public class Storage {
         userManager = UserManager.getInstance(USERS, passwordCypher);
         domainManager = DomainManager.getInstance(DOMAINS);
         deviceManager = DeviceManager.getInstance();
+        integrityVerifier = new IntegrityVerifier(HMACS, passwordCypher);
         new FileLoader(this);
-
-        fileVerifier = new IntegrityVerifier(CHECKSUMS);
     }
 
     /**
@@ -104,7 +103,9 @@ public class Storage {
      * @see Codes
      */
     public String createDomain(String name, User owner) {
-        return domainManager.createDomain(name, owner, fileVerifier);
+        if (!integrityVerifier.verify(DOMAINS))
+            return Codes.CRR.toString();
+        return domainManager.createDomain(name, owner, integrityVerifier);
     }
 
     /**
@@ -153,7 +154,9 @@ public class Storage {
      * @see Codes
      */
     public String addUserToDomain(User user, User userToAdd, Domain domain) {
-        return domainManager.addUserToDomain(user, userToAdd, domain, fileVerifier);
+        if (!integrityVerifier.verify(DOMAINS))
+            return Codes.CRR.toString();
+        return domainManager.addUserToDomain(user, userToAdd, domain, integrityVerifier);
     }
 
     /**
@@ -172,7 +175,9 @@ public class Storage {
      * @see Codes
      */
     public String addDeviceToDomain(Domain domain, Device device, User user) {
-        String res = domainManager.addDeviceToDomain(domain, device, user, fileVerifier);
+        if (!integrityVerifier.verify(DOMAINS))
+            return Codes.CRR.toString();
+        String res = domainManager.addDeviceToDomain(domain, device, user, integrityVerifier);
         if (res.equals(Codes.OK.toString())) {
             deviceManager.addDomainToDevice(device, domain);
         }
@@ -198,7 +203,7 @@ public class Storage {
      */
     public String[] getCopyInfo() {
         String[] info = null;
-        try (BufferedReader br = new BufferedReader(new FileReader(INFO))) {
+        try (BufferedReader br = new BufferedReader(new FileReader(CLIENT_COPY))) {
             String line;
             while ((line = br.readLine()) != null) {
                 info = line.split(",");
@@ -284,6 +289,14 @@ public class Storage {
          */
         private FileLoader(Storage srvStorage) {
             createFolders();
+            IntegrityVerifier verifier = srvStorage.integrityVerifier;
+            verifier.init();
+            if (verifier.verifyAll()) {
+                System.out.println("File integrity verified!");
+            } else {
+                System.err.println("Corrupted files found! Shutting down...");
+                System.exit(1);
+            }
             this.start(srvStorage);
         }
 
@@ -299,10 +312,10 @@ public class Storage {
         private void start(Storage srvStorage) {
             loadUsers(srvStorage);
 
-            File domains = new File(DOMAINS);
-            if (!domains.exists()) {
+            File file = new File(DOMAINS);
+            if (!file.exists()) {
                 try {
-                    if (domains.createNewFile()){
+                    if (file.createNewFile()){
                         System.out.println("Domains text file created successfully");
                     }
                 } catch (IOException e) {
@@ -314,11 +327,14 @@ public class Storage {
             }
 
             StringBuilder sb = new StringBuilder();
-            for (Domain domain : srvStorage.domainManager.getDomains())
-                sb.append("Domain ").append(domain.getName()).append(" -> ")
-                        .append(domain).append(" ").append("\n");
-            System.out.println("Printing server domains...");
-            System.out.println(sb);
+            List<Domain> domains = srvStorage.domainManager.getDomains();
+            if (!domains.isEmpty()) {
+                for (Domain domain : domains)
+                    sb.append("Domain ").append(domain.getName()).append(" -> ")
+                            .append(domain).append(" ").append("\n");
+                System.out.println("Printing server domains...");
+                System.out.println(sb);
+            }
         }
 
         /**
@@ -354,11 +370,13 @@ public class Storage {
             try (BufferedReader in = new BufferedReader(new FileReader(DOMAINS))) {
                 String line;
                 while ((line = in.readLine()) != null) {
-                    srvStorage.domainManager.getDomains().add(new Domain(line, srvStorage));
+                    srvStorage.domainManager.getDomains()
+                            .add(new Domain(line, srvStorage));
                 }
                 for (Domain domain : srvStorage.domainManager.getDomains()){
                     for(Device device: domain.getDevices()) {
-                        List<Domain> domains = srvStorage.deviceManager.getDevices().get(device);
+                        List<Domain> domains = srvStorage.deviceManager
+                                .getDevices().get(device);
                         domains.add(domain);
                         srvStorage.getDevices().put(device, domains);
                     }
