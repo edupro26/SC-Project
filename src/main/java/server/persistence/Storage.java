@@ -294,7 +294,8 @@ public class Storage {
             if (verifier.verifyAll()) {
                 System.out.println("File integrity verified!");
             } else {
-                System.err.println("Corrupted files found!");
+                System.err.println("Corrupted files found! Shutting down...");
+                System.exit(1);
             }
             this.start(srvStorage);
         }
@@ -311,10 +312,10 @@ public class Storage {
         private void start(Storage srvStorage) {
             loadUsers(srvStorage);
 
-            File domains = new File(DOMAINS);
-            if (!domains.exists()) {
+            File file = new File(DOMAINS);
+            if (!file.exists()) {
                 try {
-                    if (domains.createNewFile()){
+                    if (file.createNewFile()){
                         System.out.println("Domains text file created successfully");
                     }
                 } catch (IOException e) {
@@ -326,11 +327,14 @@ public class Storage {
             }
 
             StringBuilder sb = new StringBuilder();
-            for (Domain domain : srvStorage.domainManager.getDomains())
-                sb.append("Domain ").append(domain.getName()).append(" -> ")
-                        .append(domain).append(" ").append("\n");
-            System.out.println("Printing server domains...");
-            System.out.println(sb);
+            List<Domain> domains = srvStorage.domainManager.getDomains();
+            if (!domains.isEmpty()) {
+                for (Domain domain : domains)
+                    sb.append("Domain ").append(domain.getName()).append(" -> ")
+                            .append(domain).append(" ").append("\n");
+                System.out.println("Printing server domains...");
+                System.out.println(sb);
+            }
         }
 
         /**
