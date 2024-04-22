@@ -104,7 +104,7 @@ public class Storage {
      */
     public String createDomain(String name, User owner) {
         if (!integrityVerifier.verify(DOMAINS))
-            return Codes.NOK.toString();
+            return Codes.CRR.toString();
         return domainManager.createDomain(name, owner, integrityVerifier);
     }
 
@@ -155,7 +155,7 @@ public class Storage {
      */
     public String addUserToDomain(User user, User userToAdd, Domain domain) {
         if (!integrityVerifier.verify(DOMAINS))
-            return Codes.NOK.toString();
+            return Codes.CRR.toString();
         return domainManager.addUserToDomain(user, userToAdd, domain, integrityVerifier);
     }
 
@@ -176,7 +176,7 @@ public class Storage {
      */
     public String addDeviceToDomain(Domain domain, Device device, User user) {
         if (!integrityVerifier.verify(DOMAINS))
-            return Codes.NOK.toString();
+            return Codes.CRR.toString();
         String res = domainManager.addDeviceToDomain(domain, device, user, integrityVerifier);
         if (res.equals(Codes.OK.toString())) {
             deviceManager.addDomainToDevice(device, domain);
