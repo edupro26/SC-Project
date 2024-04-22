@@ -1,12 +1,16 @@
 package server.security;
 
+import javax.crypto.Mac;
+import javax.crypto.SecretKey;
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Class to verify integrity of files
@@ -19,154 +23,129 @@ import java.security.NoSuchAlgorithmException;
  */
 public class IntegrityVerifier {
 
-    /**
-     * File paths
-     */
-    private static final String ALGORITHM = "SHA-256";
+    private static final String HMAC_ALGORITHM = "HmacSHA256";
+    private static final String CLIENT_COPY = "classes/device_info.csv";
     private static final String DOMAINS = "server-files/domains.txt";
 
-    /**
-     * Path and pointer to the checksums file
-     */
     private final String filePath;
-    private File fileInstance;
+    private final SecretKey secret;
+    private final Map<String, String> hmacs;
 
-    /**
-     * Checksums of each data file
-     */
-    //TODO private String clientChecksum;
-    private String domainsChecksum;
-
-    // TODO updated this class logic, given the recent
-    //  changes of the devices file.
-
-    /**
-     * Constructs a new {@code IntegrityVerifier}
-     *
-     * @param filePath the path of the file to save checksums
-     */
-    public IntegrityVerifier(String filePath) {
-        domainsChecksum = "";
+    public IntegrityVerifier(String filePath, String secret) {
         this.filePath = filePath;
-        if (new File(filePath).exists()) {
-            fileInstance = new File(filePath);
-            if (verifyAll()){
-                System.out.println("File integrity verified!");
-            } else {
-                System.err.println("Corrupted files found!");
-            }
-        }
+        this.secret = SecurityUtils.generateKey(secret);
+        this.hmacs = new HashMap<>();
     }
 
-    /**
-     * Verifies the integrity of all the files
-     *
-     * @return true if there are no corrupted files,
-     *      false otherwise
-     */
-    private boolean verifyAll() {
-        boolean result = loadChecksums();
-        if (!domainsChecksum.isEmpty()) result &= verify(DOMAINS);
-        return result;
-    }
-
-    /**
-     * Loads the checksum values from the file
-     *
-     * @return true if succeeded, false otherwise
-     */
-    private boolean loadChecksums() {
-        String data = SecurityUtils.verifySignature(fileInstance);
-        if (data != null) {
-            String[] checksums = data.split("\n");
-            domainsChecksum = checksums[0];
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Updated the content of the file with the
-     * {@link #domainsChecksum} and the {@link #domainsChecksum}.
-     */
-    private void updateFile() {
-        StringBuilder checksums = new StringBuilder();
-        checksums.append(domainsChecksum).append('\n');
+    public void init() {
         try {
-            if(fileInstance == null) {
-                new File(filePath).createNewFile();
-                fileInstance = new File(filePath);
+            File file = new File(filePath);
+            if (file.exists()) {
+                loadHmacs();
+            } else {
+                file.createNewFile();
+                hmacs.put(CLIENT_COPY, calculateHMAC(CLIENT_COPY));
+                hmacs.put(DOMAINS, null);
+                BufferedWriter bw = new BufferedWriter(new FileWriter(file));
+                bw.write("CLIENT: " + hmacs.get(CLIENT_COPY) + "\n"
+                        + "DOMAINS: " + hmacs.get(DOMAINS) + "\n");
+                bw.close();
             }
-            BufferedWriter bw = new BufferedWriter(
-                    new FileWriter(fileInstance, false));
-            bw.write(checksums.toString());
-            bw.close();
-            SecurityUtils.signFile(fileInstance, checksums.toString());
+            System.out.println("Integrity verifier initialized successfully!");
         } catch (IOException e) {
-            System.out.println("Error while updating checksums: " + e.getMessage());
+            System.err.println("Integrity verifier failed to initialize!");
         }
     }
 
-    /**
-     * Verifies the integrity of a file
-     *
-     * @param filePath the file path
-     * @return true if not corrupted, false otherwise
-     */
-    public boolean verify(String filePath) {
-        File file = new File(filePath);
-        String data = SecurityUtils.verifySignature(fileInstance);
-        if (data != null) {
-            switch (filePath) {
-                case DOMAINS -> {
-                    String checksum = calculateChecksum(file);
-                    if (checksum.equals(domainsChecksum))
-                        return true;
+    public boolean verifyAll() {
+        boolean verified = true;
+        for (Map.Entry<String, String> hmac : hmacs.entrySet()) {
+            verified &= verify(hmac.getKey());
+        }
+        return verified;
+    }
+
+    public boolean verify(String path) {
+        String savedHmac = hmacs.get(path);
+        String newHmac = calculateHMAC(path);
+        if (savedHmac == null) {
+            return newHmac == null;
+        } else {
+            if(newHmac == null) return false;
+            return newHmac.equals(savedHmac);
+        }
+    }
+
+    public void update() {
+        StringBuilder sb = new StringBuilder();
+        String hmac = calculateHMAC(DOMAINS);
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(filePath));
+            String line;
+            while ((line = br.readLine()) != null) {
+                if(line.contains("DOMAINS:")) {
+                    sb.append("DOMAINS: ").append(hmac).append("\n");
+                } else {
+                    sb.append(line).append("\n");
                 }
             }
+            br.close();
+            BufferedWriter bw = new BufferedWriter(new FileWriter(filePath, false));
+            bw.write(sb.toString());
+            hmacs.put(DOMAINS, hmac);
+            bw.close();
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
         }
-        return false;
     }
 
-    /**
-     * Returns the checksum value of a file
-     *
-     * @param file the file
-     * @return the checksum, or null in case of an error
-     */
-    public String calculateChecksum(File file) {
-        StringBuilder checksum = new StringBuilder();
-        try (FileInputStream fis = new FileInputStream(file)) {
-            MessageDigest md = MessageDigest.getInstance(ALGORITHM);
-            byte[] buffer = new byte[1024];
-            int bytesRead;
-            while ((bytesRead = fis.read(buffer)) != -1) {
-                md.update(buffer, 0, bytesRead);
+    private void loadHmacs() throws IOException {
+        File file = new File(filePath);
+        BufferedReader br = new BufferedReader(new FileReader(file));
+        String line;
+        while ((line = br.readLine()) != null) {
+            String[] info = line.split(":");
+            String hmac = info[1].trim();
+            String value = hmac.equals("null") ? null : hmac;
+            if (info[0].equals("CLIENT")) {
+                hmacs.put(CLIENT_COPY, value);
             }
-            fis.close();
-            byte[] digest = md.digest();
-            for (byte b : digest) {
-                checksum.append(Integer
-                        .toString((b & 0xff) + 0x100, 16)
-                        .substring(1));
+            if (info[0].equals("DOMAINS")) {
+                hmacs.put(DOMAINS, value);
             }
-            return checksum.toString();
-        } catch (IOException | NoSuchAlgorithmException e) {
+        }
+        br.close();
+    }
+
+    private String calculateHMAC(String path) {
+        try {
+            byte[] data = readFile(path);
+            if (data == null) return null;
+            Mac mac = Mac.getInstance(HMAC_ALGORITHM);
+            mac.init(secret);
+            byte[] hmac = mac.doFinal(data);
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hmac) {
+                hexString.append(String.format("%02x", b));
+            }
+            return hexString.toString();
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
             return null;
         }
     }
 
-    /**
-     * Updates the checksum, depending on the filepath that was given
-     *
-     * @param filePath the filepath
-     * @param checksum the checksum
-     */
-    public void updateChecksum(String filePath, String checksum) {
-        switch (filePath){
-            case DOMAINS -> this.domainsChecksum = checksum;
+    private byte[] readFile(String path) throws IOException {
+        File file = new File(path);
+        if (file.exists()) {
+            FileInputStream fis = new FileInputStream(file);
+            byte[] data = new byte[(int) file.length()];
+            fis.read(data);
+            fis.close();
+            if(data.length == 0) return null;
+            return data;
         }
-        updateFile();
+        return null;
     }
 
 }
