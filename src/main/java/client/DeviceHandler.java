@@ -2,6 +2,7 @@ package client;
 
 import common.*;
 import client.security.SecurityUtils;
+import common.security.CommonUtils;
 
 import javax.crypto.SecretKey;
 import javax.net.SocketFactory;
@@ -16,6 +17,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.security.CodeSource;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignedObject;
@@ -151,8 +153,7 @@ public class DeviceHandler {
     protected void deviceValidation(String devId) {
         String res = sendReceive(devId);
         if (res.equals(Codes.OKDEVID.toString())) {
-            //FIXME remote attestation is disabled
-            /*try {
+            try {
                 // Find the client executable
                 CodeSource src = IoTDevice.class.getProtectionDomain().getCodeSource();
                 String path = src.getLocation().toURI().getPath();
@@ -177,7 +178,7 @@ public class DeviceHandler {
             } catch (Exception e) {
                 System.err.println("Error during device validation");
                 System.exit(1);
-            }*/
+            }
         } else {
             System.out.println("Response: NOK-DEVID # Invalid device id");
             System.exit(1);

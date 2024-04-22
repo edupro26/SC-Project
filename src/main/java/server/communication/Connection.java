@@ -1,6 +1,7 @@
 package server.communication;
 
 import common.*;
+import common.security.CommonUtils;
 import server.components.*;
 import server.persistence.Storage;
 import server.security.SecurityUtils;
@@ -183,10 +184,8 @@ public class Connection {
                 srvStorage.saveDevice(device);
             }
             output.writeObject(Codes.OKDEVID.toString());
-            //FIXME remote attestation is disabled
-            this.device.setConnected(true);
-            return true;
-            /*// Remote attestation
+
+            // Remote attestation
             SecureRandom secureRandom = new SecureRandom();
             long nonce = secureRandom.nextLong();
             output.writeObject(nonce);
@@ -201,7 +200,7 @@ public class Connection {
                 return true;
             } else {
                 output.writeObject(Codes.NOKTESTED.toString());
-            }*/
+            }
         } catch (Exception e) {
             System.err.println("Error during device validation!");
         }
