@@ -66,3 +66,6 @@ build/
 
 ### Custom Setup Files ###
 **/mySetup.sh
+/runServer.sh
+/runClient2.sh
+/runClient1.sh

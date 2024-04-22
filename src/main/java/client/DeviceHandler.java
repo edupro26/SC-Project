@@ -1,21 +1,15 @@
 package client;
 
-import common.*;
 import client.security.SecurityUtils;
+import common.Codes;
+import common.Message;
 import common.security.CommonUtils;
 
 import javax.crypto.SecretKey;
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.net.Socket;
 import java.security.CodeSource;
 import java.security.PublicKey;
@@ -472,18 +466,11 @@ public class DeviceHandler {
 
                 input.readObject(); // Receive confirmation of the image received
 
-                File imageEncParams = new File(args[0] + ".cif.params");
-                output.writeInt((int) imageEncParams.length());
-                sendFile(imageEncParams.getPath(), (int) imageEncParams.length());
-
-                input.readObject(); // Receive confirmation of the image params received
-
                 // Delete the temporary key file
                 new File(keyTempPath).delete(); // Delete the temporary key file
                 imageEnc.delete(); // Delete the encrypted image
-                imageEncParams.delete(); // Delete the encrypted image params
             }
-            output.writeObject("ALL_IMAGES_RECEIVED");
+            output.writeObject("ALL_IMAGES_SENT");
 
             String finalRes = (String) input.readObject();
             if (finalRes.equals(Codes.OK.toString())) {
@@ -556,7 +543,6 @@ public class DeviceHandler {
                 String domain = (String) input.readObject();
                 File domainKeyENc = new File(SERVER_OUT + domain + ".key.enc");
                 File imageEnc = new File(SERVER_OUT + temp[0] + "_" + temp[1] + ".jpg.cif");
-                File imageEncParams = new File(SERVER_OUT + temp[0] + "_" + temp[1] + ".jpg.cif.params");
 
                 // Receive the domain key
                 int domainKeyEncSize = input.readInt();
@@ -567,11 +553,6 @@ public class DeviceHandler {
                 int imageEncSize = input.readInt();
                 receiveFile(imageEnc.getPath(), imageEncSize);
                 output.writeObject("RECEIVED_IMAGE");
-
-                // Receive the encrypted image params
-                int imageEncParamsSize = input.readInt();
-                receiveFile(imageEncParams.getPath(), imageEncParamsSize);
-                output.writeObject("RECEIVED_IMAGE_PARAMS");
 
                 String finalRes = (String) input.readObject();
                 if (!finalRes.equals(Codes.OK.toString())) {
@@ -589,9 +570,10 @@ public class DeviceHandler {
                 // Delete the encrypted files
                 domainKeyENc.delete();
                 imageEnc.delete();
-                imageEncParams.delete();
                 System.out.println("Response: " + finalRes + " # Image received successfully");
                 System.out.println("Image saved as: " + image.getPath());
+
+                // TODO: Print bytes and other info
                     /*
                     String result = received == size
                             ? "Response: " + res + ", " + received
