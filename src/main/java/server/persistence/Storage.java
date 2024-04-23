@@ -288,15 +288,6 @@ public class Storage {
          * @see Storage
          */
         private FileLoader(Storage srvStorage) {
-            createFolders();
-            IntegrityVerifier verifier = srvStorage.integrityVerifier;
-            verifier.init();
-            if (verifier.verifyAll()) {
-                System.out.println("File integrity verified!");
-            } else {
-                System.err.println("Corrupted files found! Shutting down...");
-                System.exit(1);
-            }
             this.start(srvStorage);
         }
 
@@ -310,7 +301,17 @@ public class Storage {
          * @see #loadDomains(Storage)
          */
         private void start(Storage srvStorage) {
+            createFolders();
             loadUsers(srvStorage);
+
+            IntegrityVerifier verifier = srvStorage.integrityVerifier;
+            verifier.init();
+            if (verifier.verifyAll()) {
+                System.out.println("File integrity verified!");
+            } else {
+                System.err.println("Corrupted files found! Shutting down...");
+                System.exit(1);
+            }
 
             File file = new File(DOMAINS);
             if (!file.exists()) {
@@ -350,9 +351,14 @@ public class Storage {
                 if (usersData != null) {
                     String[] users = usersData.split("\n");
                     for (String user : users) {
-                        String[] data = user.split(",");
-                        User newUser = new User(data[0], data[1]);
-                        srvStorage.userManager.getUsers().add(newUser);
+                        try {
+                            String[] data = user.split(",");
+                            User newUser = new User(data[0], data[1]);
+                            srvStorage.userManager.getUsers().add(newUser);
+                        } catch (IndexOutOfBoundsException e)  {
+                            System.err.println("Cipher password is incorrect! Shutting down...");
+                            System.exit(1);
+                        }
                     }
                     System.out.println("Users text file loaded successfully");
                 } else {
