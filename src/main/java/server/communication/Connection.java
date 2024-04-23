@@ -229,10 +229,10 @@ public class Connection {
         try {
             while (true) {
                 String msg = (String) input.readObject();
-                System.out.println("Received: " + msg + " from -> " + device);
                 String[] parsedMsg = msg.split(";");
-                String command = parsedMsg[0];
 
+                String command = parsedMsg[0];
+                System.out.println("Received " + command + " request from " + device);
                 switch (command) {
                     case "CREATE" -> handleCREATE(parsedMsg[1]);
                     case "ADD" -> handleADD(parsedMsg[1], parsedMsg[2]);
@@ -277,7 +277,8 @@ public class Connection {
         String result = srvStorage.createDomain(d, devUser);
         output.writeObject(result);
         result = result.equals(Codes.OK.toString()) ?
-                "Success: Domain created!" : "Error: Domain not created!";
+                "Success: Domain " + d + " created!"
+                : "Error: Domain " + d + " not created!";
         System.out.println(result);
     }
 
@@ -356,10 +357,9 @@ public class Connection {
             output.writeObject(result);
 
             result = result.equals(Codes.OK.toString()) ?
-                    "Success: User added!" : "Error: Unable to add user!";
+                    "Success: Added " + user.name() + " to domain " + d
+                    : "Error: Unable to add " + user.name() + " to domain " + d;
             System.out.println(result);
-
-
         } catch (Exception e) {
             output.writeObject(Codes.NOK.toString());
         }
@@ -378,7 +378,8 @@ public class Connection {
         String result = srvStorage.addDeviceToDomain(domain, device, devUser);
         output.writeObject(result);
         result = result.equals(Codes.OK.toString()) ?
-                "Success: Device registered!" : "Error: Unable to register device!";
+                "Success: Registered " + device + " to domain " + d
+                : "Error: Unable to register " + device + " to domain " + d;
         System.out.println(result);
     }
 
@@ -576,8 +577,8 @@ public class Connection {
                 int size = (int) new File(path).length();
                 output.writeInt(size);
                 String result = sendFile(path, size) ?
-                        "Success: Temperatures sent successfully!"
-                        : "Error: Failed to send temperatures!";
+                        "Success: Temperatures from domain " + d + " sent successfully"
+                        : "Error: Failed to send temperatures from domain " + d;
                 System.out.println(result);
             }
             else {
