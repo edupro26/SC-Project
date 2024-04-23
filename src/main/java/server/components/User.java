@@ -15,19 +15,19 @@ public class User {
     /**
      * User attributes
      */
-    private final String name;      // the name of this user
-    private final String password;        // the password of this user
+    private final String name;          // the name of this user
+    private final String certificate;   // the certificate of this user
 
     /**
      * Constructs a new {@code User} with a name and a password.
      *
      * @param name the name of this user
-     * @param password the password of this user
+     * @param certificate the certificate of this user
      * @requires {@code name != null && password != null}
      */
-    public User(String name, String password) {
+    public User(String name, String certificate) {
         this.name = name;
-        this.password = password;
+        this.certificate = certificate;
     }
 
     /**
@@ -63,7 +63,7 @@ public class User {
      */
     @Override
     public String toString() {
-        return this.name + "," + this.password;
+        return this.name;
     }
 
 }
