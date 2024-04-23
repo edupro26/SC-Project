@@ -83,8 +83,8 @@ public class Connection {
 
             SecureRandom secureRandom = new SecureRandom();
             long nonce = secureRandom.nextLong();
-
-            if (srvStorage.getUser(userId) == null) {
+            User exists = srvStorage.getUser(userId);
+            if (exists == null) {
                 String newUserRes = Codes.NEWUSER + ";" + nonce;
                 output.writeObject(newUserRes);
                 Message msg = (Message) input.readObject();
@@ -115,7 +115,7 @@ public class Connection {
                 Message msg = (Message) input.readObject();
 
                 long clientNonce = Long.parseLong((String) msg.getSignedObject().getObject());
-                File pubKeyFile = new File("server-files/users_pub_keys/" + userId + ".cer");
+                File pubKeyFile = new File(exists.getCertificate());
                 PublicKey userPublicKey = SecurityUtils.readPublicKeyFromFile(pubKeyFile);
                 boolean verified = SecurityUtils.verifySignature(userPublicKey, msg.getSignedObject());
                 if(clientNonce == nonce && verified) {

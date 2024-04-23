@@ -40,6 +40,15 @@ public class User {
     }
 
     /**
+     * Returns the certificate of this user.
+     *
+     * @return the certificate of this user
+     */
+    public String getCertificate() {
+        return certificate;
+    }
+
+    /**
      * Compares if this user is equal to the {@link Object} given.
      *
      * @param obj the object to compare
