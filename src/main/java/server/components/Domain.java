@@ -117,7 +117,7 @@ public class Domain {
     public String toString() {
         StringJoiner userJoiner = new StringJoiner(";");
         for (User user : this.users) {
-            userJoiner.add(user.getName());
+            userJoiner.add(user.name());
         }
         String user = "[" + userJoiner + "]";
         String devices;
@@ -131,6 +131,6 @@ public class Domain {
         else {
             devices = "[]";
         }
-        return name + "," + owner.getName() + "," + user + "," + devices;
+        return name + "," + owner.name() + "," + user + "," + devices;
     }
 }

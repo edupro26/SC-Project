@@ -4,30 +4,24 @@ package server.components;
 /**
  * Represents a user with a name and a password.
  *
+ * @param name        User attributes
+ *                    the name of this user
+ * @param certificate the certificate of this user
  * @author Eduardo Proença (57551)
  * @author Manuel Barral (52026)
  * @author Tiago Oliveira (54979)
- *
  * @see Device
  */
-public class User {
-
-    /**
-     * User attributes
-     */
-    private final String name;          // the name of this user
-    private final String certificate;   // the certificate of this user
+public record User(String name, String certificate) {
 
     /**
      * Constructs a new {@code User} with a name and a password.
      *
-     * @param name the name of this user
+     * @param name        the name of this user
      * @param certificate the certificate of this user
      * @requires {@code name != null && password != null}
      */
-    public User(String name, String certificate) {
-        this.name = name;
-        this.certificate = certificate;
+    public User {
     }
 
     /**
@@ -35,7 +29,8 @@ public class User {
      *
      * @return the name of this user
      */
-    public String getName() {
+    @Override
+    public String name() {
         return name;
     }
 
@@ -44,7 +39,8 @@ public class User {
      *
      * @return the certificate of this user
      */
-    public String getCertificate() {
+    @Override
+    public String certificate() {
         return certificate;
     }
 
@@ -62,7 +58,7 @@ public class User {
         if (!(obj instanceof User user)) {
             return false;
         }
-        return user.getName().equals(this.name);
+        return user.name().equals(this.name);
     }
 
     /**

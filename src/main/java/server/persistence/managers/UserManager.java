@@ -84,7 +84,7 @@ public class UserManager {
         String currentUsersData = file.exists() ? decryptDataFromFile(file, this.secretKey) : "";
         currentUsersData += user + "\n";
         synchronized (usersLock) {
-            if (getUser(user.getName()) == null) {
+            if (getUser(user.name()) == null) {
                 users.add(user);
                 encryptDataIntoFile(currentUsersData, file, this.secretKey);
             }
@@ -100,7 +100,7 @@ public class UserManager {
      */
     public User getUser(String username) {
         for (User user : users) {
-            if (username.equals(user.getName()))
+            if (username.equals(user.name()))
                 return user;
         }
         return null;

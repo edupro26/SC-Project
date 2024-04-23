@@ -115,7 +115,7 @@ public class Connection {
                 Message msg = (Message) input.readObject();
 
                 long clientNonce = Long.parseLong((String) msg.getSignedObject().getObject());
-                File pubKeyFile = new File(exists.getCertificate());
+                File pubKeyFile = new File(exists.certificate());
                 PublicKey userPublicKey = SecurityUtils.readPublicKeyFromFile(pubKeyFile);
                 boolean verified = SecurityUtils.verifySignature(userPublicKey, msg.getSignedObject());
                 if(clientNonce == nonce && verified) {
@@ -183,7 +183,7 @@ public class Connection {
                 output.writeObject(Codes.NOKDEVID.toString());
                 return false;
             }
-            this.device = new Device(devUser.getName(), devId);
+            this.device = new Device(devUser.name(), devId);
             Device exists = srvStorage.getDevice(this.device);
             if (exists != null) {
                 if (!exists.isConnected()) {
@@ -430,7 +430,7 @@ public class Connection {
             input.readObject();
             for (Domain domain : domains) {
                 String keyPath = "server-files/domain_keys/" + domain.getName()
-                        + "/" + devUser.getName() + ".key.cif";
+                        + "/" + devUser.name() + ".key.cif";
 
                 File keyFile = new File(keyPath);
                 if (!keyFile.exists()) {
@@ -502,7 +502,7 @@ public class Connection {
             // Start receiving the images - one image per domain
             for (Domain domain : domains) {
                 // Send the key
-                String keyPath = "server-files/domain_keys/" + domain.getName() + "/" + devUser.getName() + ".key.cif";
+                String keyPath = "server-files/domain_keys/" + domain.getName() + "/" + devUser.name() + ".key.cif";
                 File keyFile = new File(keyPath);
                 if (!keyFile.exists()) {
                     System.out.println("Error: Key not found!");
@@ -557,7 +557,7 @@ public class Connection {
             String path = srvStorage.getDomainTemperatures(domain);
             if (path != null) {
                 String keyPath = "server-files/domain_keys/" + domain.getName()
-                        + "/" + devUser.getName() + ".key.cif";
+                        + "/" + devUser.name() + ".key.cif";
 
                 // Find domain key
                 File keyFile = new File(keyPath);
@@ -612,7 +612,7 @@ public class Connection {
                     if (d.getUsers().contains(devUser) || d.getOwner().equals(devUser)) {
                         // Domain key
                         File domainKeyEnc = new File("server-files/domain_keys/" 
-                                + d.getName() + "/" + devUser.getName() + ".key.cif");
+                                + d.getName() + "/" + devUser.name() + ".key.cif");
                         if (!domainKeyEnc.exists()) continue;
 
                         // Image encrypted
