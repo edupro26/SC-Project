@@ -132,18 +132,17 @@ public class IoTServer {
          * Runs this ServerThread
          */
         public void run() {
-            String clientAddress = cliSocket.getInetAddress().getHostAddress();
-            System.out.println("Connection request received (" + clientAddress + ")");
-
             try {
                 ObjectInputStream input = new ObjectInputStream(cliSocket.getInputStream());
                 ObjectOutputStream output = new ObjectOutputStream(cliSocket.getOutputStream());
 
-                Connection connection = new Connection(input, output, srvStorage, clientAddress);
-                boolean auth = connection.userAuthentication(this.apiKey);
+                String deviceIP = cliSocket.getInetAddress().getHostAddress();
+                Connection connection = new Connection(input, output, srvStorage);
+                System.out.println("Connection request from " + deviceIP);
 
+                boolean auth = connection.userAuthentication(apiKey);
                 if (!auth) {
-                    System.out.println("Client not authenticated (" + clientAddress + ")");
+                    System.out.println("User from " + deviceIP + " not authenticated!");
                     output.close();
                     input.close();
                     cliSocket.close();
@@ -152,12 +151,12 @@ public class IoTServer {
 
                 System.out.print("Validating device... ");
                 boolean isValid = connection.validateDevice();
-
                 if (isValid) {
                     System.out.println("Device validated!");
-                    System.out.println("Client connected (" + clientAddress + ")");
+                    System.out.println("Device connected " + connection.getDevice());
                     System.out.println("Active connections: " + ++counter);
                     connection.handleRequests();
+                    System.out.println("Device disconnected " + connection.getDevice());
                     System.out.println("Active connections: " + --counter);
                 } else {
                     System.out.println("Device not validated!");

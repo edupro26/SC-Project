@@ -45,7 +45,6 @@ public class Connection {
     /**
      * Connection attributes
      */
-    private final String clientIP;  //The client IP
     private User devUser;           //The user of this connection
     private Device device;          //The device of this connection
 
@@ -58,13 +57,11 @@ public class Connection {
      * @param input the {@link ObjectInputStream} for this connection
      * @param output the {@link ObjectOutputStream} for this connection
      * @param srvStorage the {@code Storage}
-     * @param clientIP the client IP address
      */
-    public Connection(ObjectInputStream input, ObjectOutputStream output, Storage srvStorage, String clientIP) {
+    public Connection(ObjectInputStream input, ObjectOutputStream output, Storage srvStorage) {
         this.srvStorage = srvStorage;
         this.input = input;
         this.output = output;
-        this.clientIP = clientIP;
         this.devUser = null;
         this.device = null;
     }
@@ -232,7 +229,7 @@ public class Connection {
         try {
             while (true) {
                 String msg = (String) input.readObject();
-                System.out.println("Received: " + msg + " from -> " + clientIP);
+                System.out.println("Received: " + msg + " from -> " + device);
                 String[] parsedMsg = msg.split(";");
                 String command = parsedMsg[0];
 
@@ -264,8 +261,8 @@ public class Connection {
                 }
             }
         } catch (Exception e) {
+            // Terminate this connection
             this.device.setConnected(false);
-            System.out.println("Client disconnected (" + this.clientIP + ")");
         }
     }
 
@@ -702,6 +699,15 @@ public class Connection {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Returns the {@code Device} of this {@code Connection}
+     *
+     * @return the {@code Device} of this {@code Connection}
+     */
+    public Device getDevice() {
+        return device;
     }
 
 }
