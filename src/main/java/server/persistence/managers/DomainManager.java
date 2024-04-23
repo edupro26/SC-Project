@@ -181,10 +181,7 @@ public class DomainManager {
     public String addDeviceToDomain(Domain domain, Device device, User user, IntegrityVerifier verifier) {
         if(domain == null) return Codes.NODM.toString();
         if(domain.getDevices().contains(device)) return Codes.NOK.toString();
-        String owner = domain.getOwner().name();
-        if (!owner.equals(user.name())) {
-            if(!domain.getUsers().contains(user)) return Codes.NOPERM.toString();
-        }
+        if (!domain.getUsers().contains(user)) return Codes.NOPERM.toString();
         synchronized (domainsLock) {
             domain.getDevices().add(device);
             String res = updateDomainInFile(domain) ? Codes.OK.toString() : Codes.NOK.toString();

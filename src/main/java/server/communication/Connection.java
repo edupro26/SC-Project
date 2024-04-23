@@ -550,8 +550,7 @@ public class Connection {
         if (domain == null) {
             System.out.println("Error: Domain does not exist!");
             output.writeObject(Codes.NODM.toString());
-        } else if (!domain.getUsers().contains(devUser) &&
-                !domain.getOwner().equals(devUser)) {
+        } else if (!domain.getUsers().contains(devUser)) {
             System.out.println("Error: User does not have permissions!");
             output.writeObject(Codes.NOPERM.toString());
         } else {
@@ -610,7 +609,7 @@ public class Connection {
             } else {
                 List<Domain> domainsDevice = srvStorage.getDeviceDomains(device);
                 for (Domain d : domainsDevice) {
-                    if (d.getUsers().contains(devUser) || d.getOwner().equals(devUser)) {
+                    if (d.getUsers().contains(devUser)) {
                         // Domain key
                         File domainKeyEnc = new File("server-files/domain_keys/" 
                                 + d.getName() + "/" + devUser.name() + ".key.cif");
