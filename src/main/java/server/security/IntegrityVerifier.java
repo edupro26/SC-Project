@@ -2,12 +2,8 @@ package server.security;
 
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -64,17 +60,20 @@ public class IntegrityVerifier {
         try {
             File file = new File(filePath);
             if (file.exists()) {
-                loadHmacs();
+                if (loadHmacs()) {
+                    System.out.println("Integrity verifier initialized successfully!");
+                } else {
+                    System.err.println("Integrity verifier failed to initialize!");
+                }
             } else {
                 file.createNewFile();
                 hmacs.put(CLIENT_COPY, calculateHMAC(CLIENT_COPY));
                 hmacs.put(DOMAINS, null);
-                BufferedWriter bw = new BufferedWriter(new FileWriter(file));
-                bw.write("CLIENT: " + hmacs.get(CLIENT_COPY) + "\n"
-                        + "DOMAINS: " + hmacs.get(DOMAINS) + "\n");
-                bw.close();
+                String init = "CLIENT: " + hmacs.get(CLIENT_COPY) + "\n"
+                        + "DOMAINS: " + hmacs.get(DOMAINS) + "\n";
+                SecurityUtils.signFile(file, init);
+                System.out.println("Integrity verifier initialized successfully!");
             }
-            System.out.println("Integrity verifier initialized successfully!");
         } catch (IOException e) {
             System.err.println("Integrity verifier failed to initialize!");
         }
@@ -87,11 +86,11 @@ public class IntegrityVerifier {
      *          false otherwise
      */
     public boolean verifyAll() {
-        boolean verified = true;
+        if (hmacs.entrySet().isEmpty()) return false;
         for (Map.Entry<String, String> hmac : hmacs.entrySet()) {
-            verified &= verify(hmac.getKey());
+            if (!verify(hmac.getKey())) return false;
         }
-        return verified;
+        return true;
     }
 
     /**
@@ -101,6 +100,8 @@ public class IntegrityVerifier {
      * @return true if not corrupted, false otherwise
      */
     public boolean verify(String path) {
+        String data = SecurityUtils.verifySignature(new File(filePath));
+        if (data == null) return false;
         String savedHmac = hmacs.get(path);
         String newHmac = calculateHMAC(path);
         if (savedHmac == null) {
@@ -116,25 +117,20 @@ public class IntegrityVerifier {
      * in the map {@link #hmacs} and in the hmacs.txt file
      */
     public void update() {
-        StringBuilder sb = new StringBuilder();
-        String hmac = calculateHMAC(DOMAINS);
-        try {
-            BufferedReader br = new BufferedReader(new FileReader(filePath));
-            String line;
-            while ((line = br.readLine()) != null) {
-                if(line.contains("DOMAINS:")) {
+        String data = SecurityUtils.verifySignature(new File(filePath));
+        if (data != null) {
+            StringBuilder sb = new StringBuilder();
+            String hmac = calculateHMAC(DOMAINS);
+            String[] lines = data.split("\n");
+            for (String line : lines) {
+                if (line.contains("DOMAINS:")) {
                     sb.append("DOMAINS: ").append(hmac).append("\n");
                 } else {
                     sb.append(line).append("\n");
                 }
             }
-            br.close();
-            BufferedWriter bw = new BufferedWriter(new FileWriter(filePath, false));
-            bw.write(sb.toString());
+            SecurityUtils.signFile(new File(filePath), sb.toString());
             hmacs.put(DOMAINS, hmac);
-            bw.close();
-        } catch (IOException e) {
-            System.err.println(e.getMessage());
         }
     }
 
@@ -142,24 +138,26 @@ public class IntegrityVerifier {
      * Loads the HMACS values saved in the hmacs.txt file
      * to the map {@link #hmacs}
      *
+     * @return true if the HMACs were loaded, false otherwise
      * @throws IOException If an I/ O error occurs
      */
-    private void loadHmacs() throws IOException {
-        File file = new File(filePath);
-        BufferedReader br = new BufferedReader(new FileReader(file));
-        String line;
-        while ((line = br.readLine()) != null) {
-            String[] info = line.split(":");
-            String hmac = info[1].trim();
-            String value = hmac.equals("null") ? null : hmac;
-            if (info[0].equals("CLIENT")) {
-                hmacs.put(CLIENT_COPY, value);
-            }
-            if (info[0].equals("DOMAINS")) {
-                hmacs.put(DOMAINS, value);
+    private boolean loadHmacs() throws IOException {
+        String data = SecurityUtils.verifySignature(new File(filePath));
+        if (data != null) {
+            String[] lines = data.split("\n");
+            for (String line : lines) {
+                String[] temp = line.split(":");
+                String hmac = temp[1].trim();
+                hmac = hmac.equals("null") ? null : hmac;
+                if (temp[0].equals("CLIENT")) {
+                    hmacs.put(CLIENT_COPY, hmac);
+                }
+                if (temp[0].equals("DOMAINS")) {
+                    hmacs.put(DOMAINS, hmac);
+                }
             }
         }
-        br.close();
+        return data != null;
     }
 
     /**

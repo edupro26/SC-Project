@@ -28,7 +28,6 @@ import java.util.Scanner;
 public class SecurityUtils {
 
     private static final String API_URL = "https://lmpinto.eu.pythonanywhere.com/2FA";
-    private static final String SERVER_KEYPAIR_ALIAS = "ServerKeyPair";
     private static final String ENC_ALGORITHM = "PBEWithHmacSHA256AndAES_128";
     private static final String SIG_ALGORITHM = "SHA256withRSA";
 
@@ -140,7 +139,7 @@ public class SecurityUtils {
         }
     }
 
-    public static PublicKey getPublicKey(String alias) {
+    public static PublicKey getPublicKey() {
         try {
             KeyStore ks = KeyStore.getInstance("JKS");
             ks.load(new FileInputStream(
@@ -148,14 +147,14 @@ public class SecurityUtils {
                     System.getProperty("javax.net.ssl.keyStorePassword")
                             .toCharArray());
 
-            return ks.getCertificate(alias).getPublicKey();
+            return ks.getCertificate("ServerKeyPair").getPublicKey();
         } catch (Exception e) {
             System.out.println(e.getMessage());
             return null;
         }
     }
 
-    public static PrivateKey getPrivateKey(String alias) {
+    public static PrivateKey getPrivateKey() {
         try {
             KeyStore ks = KeyStore.getInstance("JKS");
             ks.load(new FileInputStream(
@@ -163,7 +162,7 @@ public class SecurityUtils {
                     System.getProperty("javax.net.ssl.keyStorePassword")
                             .toCharArray());
 
-            return (PrivateKey) ks.getKey(alias,
+            return (PrivateKey) ks.getKey("ServerKeyPair",
                     System.getProperty("javax.net.ssl.keyStorePassword")
                             .toCharArray());
         } catch (Exception e) {
@@ -182,7 +181,7 @@ public class SecurityUtils {
         try {
             FileOutputStream fos = new FileOutputStream(file);
             ObjectOutputStream oos = new ObjectOutputStream(fos);
-            PrivateKey privateKey = getPrivateKey(SERVER_KEYPAIR_ALIAS);
+            PrivateKey privateKey = getPrivateKey();
             Signature signature = Signature.getInstance(SIG_ALGORITHM);
             signature.initSign(privateKey);
             byte[] buffer = data.getBytes();
@@ -208,7 +207,7 @@ public class SecurityUtils {
             ObjectInputStream ois = new ObjectInputStream(fis);
             String data = (String) ois.readObject();
             byte[] signature = (byte[]) ois.readObject();
-            PublicKey publicKey = getPublicKey(SERVER_KEYPAIR_ALIAS);
+            PublicKey publicKey = getPublicKey();
             Signature sig = Signature.getInstance(SIG_ALGORITHM);
             sig.initVerify(publicKey);
             sig.update(data.getBytes());
