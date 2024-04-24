@@ -13,7 +13,6 @@ import java.io.*;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.util.List;
-import java.util.regex.Pattern;
 
 /**
  * Represents a {@code IoTDevice} connection to the {@code IoTServer}.
@@ -48,9 +47,6 @@ public class Connection {
     private User devUser;           //The user of this connection
     private Device device;          //The device of this connection
 
-
-    private static final String EMAIL_REGEX = "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$";
-
     /**
      * Constructs a new {@code Connection}.
      *
@@ -71,15 +67,8 @@ public class Connection {
      */
     public boolean userAuthentication(String apiKey) {
         try {
-            String email = (String) input.readObject();
-            Pattern emailPattern = Pattern.compile(EMAIL_REGEX, Pattern.CASE_INSENSITIVE);
-            if (!emailPattern.matcher(email).matches()) {   // Validate email address
-                output.writeObject(Codes.NOK.toString());
-                System.out.println("Received invalid email address!");
-                return false;
-            }
-
-            User user = srvStorage.getUser(email);
+            String userId = (String) input.readObject();
+            User user = srvStorage.getUser(userId);
             String res = user == null ?
                     Codes.NEWUSER.toString() : Codes.FOUNDUSER.toString();
             long generated = new SecureRandom().nextLong();
@@ -95,17 +84,17 @@ public class Connection {
             boolean verified = SecurityUtils.verifySignature(pubKey, msg.getSignedObject());
             if (generated == received && verified) {
                 if (user == null) {
-                    String keyPath = "server-files/users_pub_keys/" + email + ".cer";
+                    String keyPath = "server-files/users_pub_keys/" + userId + ".cer";
                     File pubKeyFile = new File(keyPath);
                     SecurityUtils.savePublicKeyToFile(msg.getCertificate().getPublicKey(), pubKeyFile);
                     output.writeObject(Codes.OKNEWUSER.toString());
-                    if (!authentication2FA(apiKey, email)) return false;
-                    devUser = new User(email, keyPath);
+                    if (!authentication2FA(apiKey, userId)) return false;
+                    devUser = new User(userId, keyPath);
                     srvStorage.saveUser(this.devUser);
                 } else {
                     output.writeObject(Codes.OKUSER.toString());
-                    if (!authentication2FA(apiKey, email)) return false;
-                    devUser = srvStorage.getUser(email);
+                    if (!authentication2FA(apiKey, userId)) return false;
+                    devUser = srvStorage.getUser(userId);
                 }
                 return true;
             } else {
