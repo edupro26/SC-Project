@@ -70,56 +70,39 @@ public class DeviceHandler {
         try {
             SocketFactory sf = SSLSocketFactory.getDefault();
             socket = (SSLSocket) sf.createSocket(address, port);
-            this.output = new ObjectOutputStream(socket.getOutputStream());
-            this.input = new ObjectInputStream(socket.getInputStream());
+            output = new ObjectOutputStream(socket.getOutputStream());
+            input = new ObjectInputStream(socket.getInputStream());
 
-            System.out.println("Sending user id:" + userId);
-            String res = this.sendReceive(userId);
-            if(res == null) {
-                System.out.println("Error in the response");
+            System.out.println("Requesting authentication for " + userId);
+            String res = sendReceive(userId);
+            if (res == null || res.split(";").length != 2) {
+                System.out.println("Error in the response from the server");
                 System.exit(1);
             }
 
-            String[] resSplit = res.split(";");
-            if (resSplit.length != 2) {
-                System.out.println("Error in the response");
+            long nonce = Long.parseLong(res.split(";")[1]);
+            SignedObject signedObject = new SignedObject(Long.toString(nonce),
+                    SecurityUtils.findPrivateKeyOnKeyStore(userId), Signature.getInstance("SHA256withRSA"));
+            Message signedMessage = new Message(signedObject, SecurityUtils.getOwnCertificate(userId));
+            output.writeObject(signedMessage);
+
+            res = (String) input.readObject();
+            if (res.equals(Codes.OKUSER.toString()) || res.equals(Codes.OKNEWUSER.toString())) {
+                System.out.print("Enter 2FA Code: ");
+                String code2FA = new Scanner(System.in).nextLine();
+                output.writeObject(code2FA);
+                String res2FA = (String) input.readObject();
+                if (res2FA.equals(Codes.OK2FA.toString())) {
+                    System.out.println(res + " # User authenticated!");
+                    this.userId = userId;
+                } else {
+                    System.out.println("Authentication failed: Invalid 2FA code.");
+                    System.exit(1);
+                }
+            } else {
+                System.out.println("Authentication failed: Invalid user certificate.");
                 System.exit(1);
             }
-
-            String flag = resSplit[0];
-            long nonce = Long.parseLong(resSplit[1]);
-
-            // If the user is not registered
-            if(flag.equals(Codes.NEWUSER.toString())) {
-                SignedObject signedObject = new SignedObject(Long.toString(nonce), SecurityUtils.findPrivateKeyOnKeyStore(userId), Signature.getInstance("SHA256withRSA"));
-                Message signedMessage = new Message(signedObject, SecurityUtils.getOwnCertificate(userId));
-                output.writeObject(signedMessage);
-            }
-            else { // If the user is registered
-                SignedObject signedObject = new SignedObject(Long.toString(nonce), SecurityUtils.findPrivateKeyOnKeyStore(userId), Signature.getInstance("SHA256withRSA"));
-                Message signedMessage = new Message(signedObject, SecurityUtils.getOwnCertificate(userId));
-                output.writeObject(signedMessage);
-            }
-
-            String authRes = (String) input.readObject();
-            if (!authRes.equals(Codes.OKUSER.toString()) && !authRes.equals(Codes.OKNEWUSER.toString())) {
-                System.out.println("Authentication failed. Certificate not valid.");
-                System.exit(1);
-            }
-
-            // 2FA Process
-            System.out.print("2FA Code: ");
-            Scanner scanner = new Scanner(System.in);
-            String input = scanner.nextLine();
-            output.writeObject(input);
-
-            String finalAuthRes = (String) this.input.readObject();
-            if (!finalAuthRes.equals(Codes.OK2FA.toString())) {
-                System.out.println("Authentication failed. 2FA code not valid.");
-                System.exit(1);
-            }
-
-            this.userId = userId;
         } catch (Exception e) {
             System.out.println(e.getMessage());
             System.exit(1);

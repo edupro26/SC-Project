@@ -71,67 +71,49 @@ public class Connection {
      */
     public boolean userAuthentication(String apiKey) {
         try {
-            String userId = (String) input.readObject();
-
-            // Validate userId as an email address
+            String email = (String) input.readObject();
             Pattern emailPattern = Pattern.compile(EMAIL_REGEX, Pattern.CASE_INSENSITIVE);
-            if (!emailPattern.matcher(userId).matches()) {
+            if (!emailPattern.matcher(email).matches()) {   // Validate email address
                 output.writeObject(Codes.NOK.toString());
                 System.out.println("Received invalid email address!");
                 return false;
             }
 
-            SecureRandom secureRandom = new SecureRandom();
-            long nonce = secureRandom.nextLong();
-            User exists = srvStorage.getUser(userId);
-            if (exists == null) {
-                String newUserRes = Codes.NEWUSER + ";" + nonce;
-                output.writeObject(newUserRes);
-                Message msg = (Message) input.readObject();
-                long clientNonce = Long.parseLong((String) msg.getSignedObject().getObject());
-                boolean verified = SecurityUtils.verifySignature(
-                        msg.getCertificate().getPublicKey(),
-                        msg.getSignedObject());
-                if(clientNonce == nonce && verified) {
-                    String userPublicKeyPath = "server-files/users_pub_keys/" + userId + ".cer";
-                    File pubKeyFile = new File(userPublicKeyPath);
+            User user = srvStorage.getUser(email);
+            String res = user == null ?
+                    Codes.NEWUSER.toString() : Codes.FOUNDUSER.toString();
+            long generated = new SecureRandom().nextLong();
+            output.writeObject(res + ";" + generated);
+
+            Message msg = (Message) input.readObject();
+            long received = Long.parseLong((String) msg.getSignedObject().getObject());
+            PublicKey pubKey = user == null ?
+                    msg.getCertificate().getPublicKey()
+                    : SecurityUtils.readPublicKeyFromFile(new File(user.certificate()));
+
+            boolean verified = SecurityUtils.verifySignature(pubKey, msg.getSignedObject());
+            if (generated == received && verified) {
+                if (user == null) {
+                    String keyPath = "server-files/users_pub_keys/" + email + ".cer";
+                    File pubKeyFile = new File(keyPath);
                     SecurityUtils.savePublicKeyToFile(msg.getCertificate().getPublicKey(), pubKeyFile);
                     output.writeObject(Codes.OKNEWUSER.toString());
-                    if (!authentication2FA(apiKey, userId)) {
-                        return false;
-                    }
-                    this.devUser = new User(userId, userPublicKeyPath);
+                    if (!authentication2FA(apiKey, email)) return false;
+                    devUser = new User(email, keyPath);
                     srvStorage.saveUser(this.devUser);
-                    return true;
-                }
-                else {
-                    output.writeObject(Codes.NOK.toString());
-                    return false;
-                }
-            }
-            else {
-                String foundUserRes = Codes.FOUNDUSER + ";" + nonce;
-                output.writeObject(foundUserRes);
-                Message msg = (Message) input.readObject();
-
-                long clientNonce = Long.parseLong((String) msg.getSignedObject().getObject());
-                File pubKeyFile = new File(exists.certificate());
-                PublicKey userPublicKey = SecurityUtils.readPublicKeyFromFile(pubKeyFile);
-                boolean verified = SecurityUtils.verifySignature(userPublicKey, msg.getSignedObject());
-                if(clientNonce == nonce && verified) {
-                    output.writeObject(Codes.OKUSER.toString());
-                    if (!authentication2FA(apiKey, userId)) {
-                        return false;
-                    }
-                    this.devUser = srvStorage.getUser(userId);
-                    return true;
                 } else {
-                    output.writeObject(Codes.NOK.toString());
-                    return false;
+                    output.writeObject(Codes.OKUSER.toString());
+                    if (!authentication2FA(apiKey, email)) return false;
+                    devUser = srvStorage.getUser(email);
                 }
+                System.out.println("User authenticated!");
+                return true;
+            } else {
+                output.writeObject(Codes.NOK.toString());
+                return false;
             }
         } catch (Exception e) {
-            System.out.println("Error on auth process!");
+            System.out.println("Error on authentication process!");
             return false;
         }
     }
