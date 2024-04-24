@@ -87,9 +87,10 @@ public class Connection {
 
             Message msg = (Message) input.readObject();
             long received = Long.parseLong((String) msg.getSignedObject().getObject());
+            // TODO better exception handling here in case of FileNotFound
             PublicKey pubKey = user == null ?
                     msg.getCertificate().getPublicKey()
-                    : SecurityUtils.readPublicKeyFromFile(new File(user.certificate()));
+                    : SecurityUtils.getUserPubKey(new File(user.certificate()));
 
             boolean verified = SecurityUtils.verifySignature(pubKey, msg.getSignedObject());
             if (generated == received && verified) {

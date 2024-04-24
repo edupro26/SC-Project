@@ -242,7 +242,7 @@ public class SecurityUtils {
         }
     }
 
-    public static PublicKey readPublicKeyFromFile(File file) {
+    public static PublicKey getUserPubKey(File file) {
         try (FileInputStream fis = new FileInputStream(file);
              ObjectInputStream ois = new ObjectInputStream(fis)) {
             return (PublicKey) ois.readObject();

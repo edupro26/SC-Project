@@ -79,7 +79,7 @@ public class SecurityUtils {
         }
     }
 
-    public static Certificate getOwnCertificate(String alias) {
+    public static Certificate getCertificate(String alias) {
         try {
             KeyStore ks = KeyStore.getInstance("JKS");
             ks.load(new FileInputStream(
@@ -109,7 +109,7 @@ public class SecurityUtils {
         }
     }
 
-    public static PrivateKey findPrivateKeyOnKeyStore(String alias) {
+    public static PrivateKey getPrivateKey(String alias) {
         try {
             KeyStore ks = KeyStore.getInstance("JKS");
             ks.load(new FileInputStream(

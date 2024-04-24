@@ -82,8 +82,8 @@ public class DeviceHandler {
 
             long nonce = Long.parseLong(res.split(";")[1]);
             SignedObject signedObject = new SignedObject(Long.toString(nonce),
-                    SecurityUtils.findPrivateKeyOnKeyStore(userId), Signature.getInstance("SHA256withRSA"));
-            Message signedMessage = new Message(signedObject, SecurityUtils.getOwnCertificate(userId));
+                    SecurityUtils.getPrivateKey(userId), Signature.getInstance("SHA256withRSA"));
+            Message signedMessage = new Message(signedObject, SecurityUtils.getCertificate(userId));
             output.writeObject(signedMessage);
 
             res = (String) input.readObject();
@@ -386,7 +386,7 @@ public class DeviceHandler {
 
                 File encryptedKey = new File(keyTempPath);
                 SecretKey key = (SecretKey) SecurityUtils.decryptKeyWithRSA(
-                        encryptedKey, SecurityUtils.findPrivateKeyOnKeyStore(this.userId));
+                        encryptedKey, SecurityUtils.getPrivateKey(this.userId));
 
                 // Encrypt and send the temperature
                 output.writeObject(SecurityUtils.encryptTemperature(args[0], key));
@@ -459,7 +459,7 @@ public class DeviceHandler {
                 receiveFile(keyTempPath, size);
 
                 File encryptedKey = new File(keyTempPath);
-                SecretKey key = (SecretKey) SecurityUtils.decryptKeyWithRSA(encryptedKey, SecurityUtils.findPrivateKeyOnKeyStore(this.userId));
+                SecretKey key = (SecretKey) SecurityUtils.decryptKeyWithRSA(encryptedKey, SecurityUtils.getPrivateKey(this.userId));
 
                 File imageEnc = new File(args[0] + ".cif");
                 SecurityUtils.encryptFile(image, imageEnc, key);
@@ -518,7 +518,7 @@ public class DeviceHandler {
 
                 File encryptedKey = new File(keyTempPath);
                 SecretKey key = (SecretKey) SecurityUtils.decryptKeyWithRSA(
-                        encryptedKey, SecurityUtils.findPrivateKeyOnKeyStore(this.userId));
+                        encryptedKey, SecurityUtils.getPrivateKey(this.userId));
 
                 // Delete temp key file
                 encryptedKey.delete();
@@ -585,7 +585,7 @@ public class DeviceHandler {
                 }
 
                 // Decrypt the domain key
-                SecretKey key = (SecretKey) SecurityUtils.decryptKeyWithRSA(domainKeyENc, SecurityUtils.findPrivateKeyOnKeyStore(this.userId));
+                SecretKey key = (SecretKey) SecurityUtils.decryptKeyWithRSA(domainKeyENc, SecurityUtils.getPrivateKey(this.userId));
 
                 // Decrypt the image
                 File image = new File(SERVER_OUT + temp[0] + "_" + temp[1] + ".jpg");
