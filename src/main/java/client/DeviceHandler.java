@@ -128,9 +128,14 @@ public class DeviceHandler {
      * @param devId id of this IoTDevice
      */
     protected void deviceValidation(String devId) {
-        String res = sendReceive(devId);
-        if (res.equals(Codes.OKDEVID.toString())) {
-            try {
+        try {
+            if (Integer.parseInt(devId) < 0) {
+                System.err.println("NOK-DEVID # Invalid device ID");
+                System.exit(1);
+            }
+            String res = sendReceive(devId);
+            if (res.equals(Codes.OKDEVID.toString())) {
+                System.out.println(res + " # Device ID is valid");
                 // Find the client executable
                 CodeSource src = IoTDevice.class.getProtectionDomain().getCodeSource();
                 String path = src.getLocation().toURI().getPath();
@@ -141,23 +146,23 @@ public class DeviceHandler {
                 if (hash != null) {
                     output.writeObject(exec.getName());
                     output.writeObject(hash);
-                    String tested = (String) input.readObject();
-                    if (tested.equals(Codes.OKTESTED.toString())) {
-                        System.out.println("OK-TESTED # This IoTDevice is valid!");
+                    res = (String) input.readObject();
+                    if (res.equals(Codes.OKTESTED.toString())) {
+                        System.out.println(res + " # IoTDevice is valid!");
                     } else {
-                        System.out.println("NOK-TESTED # This IoTDevice is not valid!");
+                        System.out.println(res + " # IoTDevice is not valid!");
                         System.exit(1);
                     }
                 } else {
-                    System.err.println("Error calculating hash during device validation");
+                    System.err.println("Error calculating hash during device attestation");
                     System.exit(1);
                 }
-            } catch (Exception e) {
-                System.err.println("Error during device validation");
+            } else {
+                System.out.println(res + " # Invalid device ID");
                 System.exit(1);
             }
-        } else {
-            System.out.println("Response: NOK-DEVID # Invalid device id");
+        } catch (Exception e) {
+            System.err.println("Error during device attestation");
             System.exit(1);
         }
     }

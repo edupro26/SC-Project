@@ -107,7 +107,6 @@ public class Connection {
                     if (!authentication2FA(apiKey, email)) return false;
                     devUser = srvStorage.getUser(email);
                 }
-                System.out.println("User authenticated!");
                 return true;
             } else {
                 output.writeObject(Codes.NOK.toString());
@@ -159,38 +158,27 @@ public class Connection {
      */
     public boolean validateDevice() {
         try {
-            // Id validation
-            String strDevId = (String) input.readObject();
-            int devId = Integer.parseInt(strDevId);
-            if (devId < 0) {
-                output.writeObject(Codes.NOKDEVID.toString());
-                return false;
-            }
+            int devId = Integer.parseInt((String) input.readObject());
             this.device = new Device(devUser.name(), devId);
             Device exists = srvStorage.getDevice(this.device);
-            if (exists != null) {
-                if (!exists.isConnected()) {
-                    this.device = exists;
-                } else {
-                    output.writeObject(Codes.NOKDEVID.toString());
-                    return false;
-                }
-            }
-            else {
-                srvStorage.saveDevice(device);
+            if (exists != null && exists.isConnected()) {
+                output.writeObject(Codes.NOKDEVID.toString());
+                return false;
+            } else if (exists == null) {
+                srvStorage.saveDevice(this.device);
+            } else {
+                this.device = exists;
             }
             output.writeObject(Codes.OKDEVID.toString());
 
             // Remote attestation
-            SecureRandom secureRandom = new SecureRandom();
-            long nonce = secureRandom.nextLong();
+            long nonce = new SecureRandom().nextLong();
             output.writeObject(nonce);
             String[] copyInfo = srvStorage.getCopyInfo();
-            File clientCopy = new File(copyInfo[1]);
-            byte[] server = CommonUtils.calculateHashWithNonce(clientCopy, nonce);
-            String clientName = (String) input.readObject();
+            byte[] server = CommonUtils.calculateHashWithNonce(new File(copyInfo[1]), nonce);
+            String name = (String) input.readObject();
             byte[] client = (byte[]) input.readObject();
-            if(clientName.equals(copyInfo[0]) && CommonUtils.compareHashes(client, server)) {
+            if(name.equals(copyInfo[0]) && CommonUtils.compareHashes(client, server)) {
                 this.device.setConnected(true);
                 output.writeObject(Codes.OKTESTED.toString());
                 return true;
