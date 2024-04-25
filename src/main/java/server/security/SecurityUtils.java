@@ -28,6 +28,10 @@ import java.util.Scanner;
 /**
  * Utility class with security
  * methods used by the server
+ *
+ * @author Eduardo Proença (57551)
+ * @author Manuel Barral (52026)
+ * @author Tiago Oliveira (54979)
  */
 public class SecurityUtils {
 

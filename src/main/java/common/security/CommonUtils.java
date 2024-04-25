@@ -8,6 +8,10 @@ import java.security.NoSuchAlgorithmException;
 
 /**
  * A utility class with methods use for device validation
+ *
+ * @author Eduardo Proença (57551)
+ * @author Manuel Barral (52026)
+ * @author Tiago Oliveira (54979)
  */
 public class CommonUtils {
 

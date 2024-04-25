@@ -16,6 +16,10 @@ import java.util.Base64;
 /**
  * Utility class with security
  * methods used by the client
+ *
+ * @author Eduardo Proença (57551)
+ * @author Manuel Barral (52026)
+ * @author Tiago Oliveira (54979)
  */
 public class SecurityUtils {
 
