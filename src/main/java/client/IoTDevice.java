@@ -53,12 +53,7 @@ public class IoTDevice {
             System.exit(1);
         }
 
-
-        System.out.println("Truststore: " + truststore);
-        System.out.println("Keystore: " + keystore);
-
         System.setProperty("javax.net.ssl.trustStore", truststore);
-        // FIXME Dont use the same password for truststore and keystore
         System.setProperty("javax.net.ssl.trustStorePassword", passwordKeystore);
         System.setProperty("javax.net.ssl.keyStore", keystore);
         System.setProperty("javax.net.ssl.keyStorePassword", passwordKeystore);
@@ -130,7 +125,7 @@ public class IoTDevice {
      */
     private static void printMenu() {
         System.out.println("""
-                CREATE <dm>
+                \nCREATE <dm>
                 ADD <user1> <dm> <password-domain>
                 RD <dm>
                 ET <float>

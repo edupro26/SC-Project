@@ -76,7 +76,6 @@ public class Connection {
 
             Message msg = (Message) input.readObject();
             long received = Long.parseLong((String) msg.getSignedObject().getObject());
-            // TODO better exception handling here in case of FileNotFound
             PublicKey pubKey = user == null ?
                     msg.getCertificate().getPublicKey()
                     : SecurityUtils.getUserPubKey(new File(user.certificate()));
@@ -528,6 +527,7 @@ public class Connection {
 
                                 input.readObject(); // Receive confirmation
                                 output.writeObject(Codes.OK.toString());
+                                System.out.println("Success: Image from " + device + " sent successfully");
                                 return;
                             }
                         }

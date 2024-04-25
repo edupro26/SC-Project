@@ -323,7 +323,7 @@ public class Storage {
             } else {
                 loadDomains(srvStorage);
             }
-
+            System.out.println();
             StringBuilder sb = new StringBuilder();
             List<Domain> domains = srvStorage.domainManager.getDomains();
             if (!domains.isEmpty()) {
