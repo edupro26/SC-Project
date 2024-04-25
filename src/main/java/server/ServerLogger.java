@@ -23,7 +23,7 @@ public class ServerLogger {
     private ServerLogger() {}
 
     /**
-     * Log an info output message
+     * Logs an info output message
      *
      * @param msg the message
      */
@@ -32,7 +32,7 @@ public class ServerLogger {
     }
 
     /**
-     * Log a warning output message
+     * Logs a warning output message
      *
      * @param msg the message
      */
@@ -41,12 +41,22 @@ public class ServerLogger {
     }
 
     /**
-     * Log an error output message
+     * Logs an error output message
      *
      * @param msg the message
      */
     public static void logError(String msg) {
         logger.severe(msg);
+    }
+
+    /**
+     * Logs an error output message and exits the program
+     *
+     * @param msg the message
+     */
+    public static void logErrorAndExit(String msg) {
+        logError(msg);
+        System.exit(1);
     }
 
 }
