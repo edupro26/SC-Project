@@ -9,6 +9,13 @@ import java.security.SignedObject;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 
+/**
+ * A serializable message used for user authentication
+ *
+ * @author Eduardo Proença (57551)
+ * @author Manuel Barral (52026)
+ * @author Tiago Oliveira (54979)
+ */
 public class Message implements Serializable {
 
     private final SignedObject object;
