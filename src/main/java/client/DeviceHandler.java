@@ -593,14 +593,12 @@ public class DeviceHandler {
      * in the output folder.
      *
      * @param filePath the path where the file will be saved
-     * @param size the size of the file to receive
-     * @return file size if the file was received, -1 otherwise
+     * @param size     the size of the file to receive
      * @requires {@code filePath != null}
      */
-    private int receiveFile(String filePath, int size) {
+    private void receiveFile(String filePath, int size) {
         File outputFolder = new File(SERVER_OUT);
         if (!outputFolder.isDirectory()) outputFolder.mkdir();
-        int bytesRead = 0;
         try {
             FileOutputStream out = new FileOutputStream(filePath);
             BufferedOutputStream bos = new BufferedOutputStream(out);
@@ -608,7 +606,6 @@ public class DeviceHandler {
             int bytesLeft = size;
             while (bytesLeft > 0) {
                 int bytes = input.read(buffer);
-                bytesRead += bytes;
                 bos.write(buffer, 0, bytes);
                 bytesLeft -= bytes;
             }
@@ -616,9 +613,8 @@ public class DeviceHandler {
             bos.close();
             out.close();
         } catch (IOException e) {
-            return -1;
+            System.out.println(e.getMessage());
         }
-        return bytesRead;
     }
 
     /**
