@@ -94,7 +94,6 @@ public class DomainManager {
             }
             return Codes.OK.toString();
         } catch (IOException e) {
-            System.out.println(e.getMessage());
             return Codes.NOK.toString();
         }
     }
@@ -124,7 +123,6 @@ public class DomainManager {
             out.write(file.toString());
             out.close();
         } catch (IOException e) {
-            System.out.println(e.getMessage());
             return false;
         }
         return true;
@@ -224,7 +222,6 @@ public class DomainManager {
                 bw.close();
             }
         } catch (IOException e) {
-            System.out.println(e.getMessage());
             return Codes.NOK.toString();
         }
 
