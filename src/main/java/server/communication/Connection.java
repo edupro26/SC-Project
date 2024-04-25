@@ -84,11 +84,11 @@ public class Connection {
             boolean verified = SecurityUtils.verifySignature(pubKey, msg.getSignedObject());
             if (generated == received && verified) {
                 if (user == null) {
+                    output.writeObject(Codes.OKNEWUSER.toString());
+                    if (!authentication2FA(apiKey, userId)) return false;
                     String keyPath = "server-files/users_pub_keys/" + userId + ".cer";
                     File pubKeyFile = new File(keyPath);
                     SecurityUtils.savePublicKeyToFile(msg.getCertificate().getPublicKey(), pubKeyFile);
-                    output.writeObject(Codes.OKNEWUSER.toString());
-                    if (!authentication2FA(apiKey, userId)) return false;
                     devUser = new User(userId, keyPath);
                     srvStorage.saveUser(this.devUser);
                 } else {
