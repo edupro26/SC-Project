@@ -4,7 +4,6 @@ import client.security.SecurityUtils;
 import common.Codes;
 import common.Message;
 import common.security.CommonUtils;
-import server.ServerLogger;
 
 import javax.crypto.SecretKey;
 import javax.net.SocketFactory;
