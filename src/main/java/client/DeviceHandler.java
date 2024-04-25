@@ -224,77 +224,40 @@ public class DeviceHandler {
             System.out.println("Usage: ADD <user1> <dm> <password-domain>");
             return;
         }
-        String msg = parseCommandToSend(command, args);
-        // TODO: Handle first response
-        String res = this.sendReceive(msg);
-        if (!res.equals(Codes.OK.toString())) {
-            if (res.equals(Codes.NODM.toString())) {
-                System.out.println("Response: NODM # Domain does not exist");
-                return;
-            } else if (res.equals(Codes.NOUSER.toString())) {
-                System.out.println("Response: NOUSER # User does not exist");
-                return;
-            } else if (res.equals(Codes.NOPERM.toString())) {
-                System.out.println("Response: NOPERM # User does not exist");
-                return;
-            } else {
-                System.out.println("Response: NOK # Error adding user");
-                return;
-            }
-        }
-
         PublicKey pk = SecurityUtils.findPublicKeyOnTrustStore(args[0]);
-        try {
-            if (pk == null) {
-                String resNoPk = this.sendReceive("NO_PK");
-                System.out.println("Response: NOK # Error adding user. Public key not found to encrypt the key.");
-                /*
-                output.writeObject("NO_PK");
-                String findPkRes = (String) input.readObject();
-                if (findPkRes.equals("NOK")) {
-                    System.out.println("Response: NOK # Error adding user. Public key not found on the server.");
-                    return;
-                }
-                output.writeObject("WAITING_PK");
-                int size = input.readInt();
-                receiveFile("server-output/" + args[0] + ".cer", size);
-                Encryption.storePubKeyOnTrustStore(new File("server-output/" + args[0] + ".cer"), args[0]);
-                */
-            } else {
-                String resFoundPk = this.sendReceive("SENDING_PK");
-            }
-        } catch (Exception e) {
-            System.out.println("Response: NOK # Error adding user");
+        if (pk == null) {
+            System.out.println("Response: NOUSER # This user is unknown");
             return;
         }
 
-        String keyEncFilename = args[1] + "_" + args[0] + ".key.enc";
-        SecurityUtils.encryptKeyWithRSA(SecurityUtils.generateKey(args[2]), pk, keyEncFilename);
-        File keyEncFile = new File(keyEncFilename);
-
+        String msg = parseCommandToSend(command, args);
         try {
-            output.writeInt((int) keyEncFile.length());
-            sendFile(keyEncFilename, (int) keyEncFile.length());
-            String resKeySent = (String) input.readObject();
-
-            if (keyEncFile.exists()) {
-                keyEncFile.delete();
+            String res = this.sendReceive(msg);
+            if (res.equals(Codes.NODM.toString())) {
+                System.out.println("Response: NODM # This domain does not exist");
+            } else if (res.equals(Codes.NOUSER.toString())) {
+                System.out.println("Response: NOUSER # This user never signed in");
+            } else if (res.equals(Codes.NOPERM.toString())) {
+                System.out.println("Response: NOPERM # No permission to add this user");
             }
-            if (!resKeySent.equals(Codes.OK.toString())) {
-                System.out.println("Response: NOK # Error adding user");
-                return;
-            }
+            if (!res.equals(Codes.OK.toString())) return;
 
-            output.writeObject("WAITING_FINAL_RES");
-            String finalRes = (String) input.readObject();
-            if (finalRes.equals(Codes.OK.toString())) {
+            String path = args[1] + "_" + args[0] + ".key.enc";
+            SecurityUtils.encryptKeyWithRSA(SecurityUtils.generateKey(args[2]), pk, path);
+            File tempFile = new File(path);
+            output.writeInt((int) tempFile.length());
+            sendFile(path, (int) tempFile.length());
+            if (tempFile.exists()) tempFile.delete();
+
+            res = (String) input.readObject();
+            if (res.equals(Codes.OK.toString())) {
                 System.out.println("Response: OK # User added successfully");
-            } else if (finalRes.equals(Codes.CRR.toString())) {
+            } else if (res.equals(Codes.CRR.toString())) {
                 System.out.println("Response: CRR # Corrupted server files");
             } else {
                 System.out.println("Response: NOK # Error adding user");
             }
-        } catch (Exception e) {
+        } catch (IOException | ClassNotFoundException e) {
             System.out.println("Response: NOK # Error adding user");
         }
     }

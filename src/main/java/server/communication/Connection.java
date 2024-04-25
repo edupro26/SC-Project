@@ -254,73 +254,37 @@ public class Connection {
     private void handleADD(String u, String d) throws IOException {
         try {
             User user = srvStorage.getUser(u);
-            if (user == null) {
-                output.writeObject(Codes.NOUSER.toString());
-                return;
-            }
             Domain domain = srvStorage.getDomain(d);
-            if (domain == null) {
-                output.writeObject(Codes.NODM.toString());
-                return;
+            String res = Codes.OK.toString();
+            if (domain == null) res = Codes.NODM.toString();
+            else if (user == null) res = Codes.NOUSER.toString();
+            else if (!domain.getOwner().equals(devUser)) {
+                res = Codes.NOPERM.toString();
             }
-            if (!domain.getOwner().equals(devUser)) {
-                output.writeObject(Codes.NOPERM.toString());
-                return;
-            }
+            output.writeObject(res);
 
-            output.writeObject(Codes.OK.toString());
-
-            String hasPK = (String) input.readObject();
-            if (hasPK.equals("NO_PK")) {
-                output.writeObject("NOK");
-                return;
-                /*
-                String path = "server-files/users_pub_keys/" + u + ".cer";
-                File file = new File(path);
-                if (file.isFile() && file.exists()) {
-                    output.writeObject("SENDING_KEY");
-                    input.readObject();
-                    output.writeObject(Codes.OK.toString());
-                    output.writeInt((int) file.length());
-                    sendFile(path, (int) file.length());
-                    System.out.println("Success: File send successfully!");
-
+            if (res.equals(Codes.OK.toString())) {
+                int size = input.readInt();
+                String parent = "server-files/domain_keys/" + d;
+                File domainDir = new File(parent);
+                if (!domainDir.exists()) domainDir.mkdirs();
+                String path = parent + "/" + u + ".key.cif";
+                if (receiveFile(path, size)) {
+                    System.out.println("Success: User key received!");
+                    res = srvStorage.addUserToDomain(user, domain);
+                    output.writeObject(res);
                 } else {
-                    output.writeObject("NOK");
-                    return;
+                    System.out.println("Error: Unable to receive user key!");
+                    output.writeObject(Codes.NOK.toString());
                 }
-                */
-            } else {
-                output.writeObject("WAITING_KEY");
             }
 
-            int size = input.readInt();
-            File domainDir = new File("server-files/domain_keys/" + d);
-            if (!domainDir.exists()) {
-                domainDir.mkdirs();
-            }
-            String path = "server-files/domain_keys/" + d + "/" + u + ".key.cif";
-
-            if (receiveFile(path, size)) {
-                System.out.println("Success: Key received!");
-                output.writeObject(Codes.OK.toString());
-            } else {
-                System.out.println("Error: Unable to receive key!");
-                output.writeObject(Codes.NOK.toString());
-                return;
-            }
-
-            input.readObject();
-
-            String result = srvStorage.addUserToDomain(this.devUser, user, domain);
-
-            output.writeObject(result);
-
-            result = result.equals(Codes.OK.toString()) ?
-                    "Success: Added " + user.name() + " to domain " + d
-                    : "Error: Unable to add " + user.name() + " to domain " + d;
-            System.out.println(result);
+            String log = res.equals(Codes.OK.toString()) ?
+                    "Success: Added " + u + " to domain " + d
+                    : "Error: Unable to add " + u + " to domain " + d;
+            System.out.println(log);
         } catch (Exception e) {
+            System.out.println("Error when trying to add user!");
             output.writeObject(Codes.NOK.toString());
         }
     }

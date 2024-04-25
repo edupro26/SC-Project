@@ -104,7 +104,6 @@ public class SecurityUtils {
 
             return ks.getCertificate(alias).getPublicKey();
         } catch (Exception e) {
-            System.out.println(e.getMessage());
             return null;
         }
     }
