@@ -4,6 +4,7 @@ import client.security.SecurityUtils;
 import common.Codes;
 import common.Message;
 import common.security.CommonUtils;
+import server.ServerLogger;
 
 import javax.crypto.SecretKey;
 import javax.net.SocketFactory;
@@ -505,6 +506,12 @@ public class DeviceHandler {
      */
     protected void sendReceiveRI(String[] args, String command) {
         if (args.length != 1 || !args[0].contains(":")) {
+            System.out.println("Usage: RI <user-id>:<dev_id>");
+            return;
+        }
+        try {
+            Integer.parseInt(args[0].split(":")[1]);
+        } catch (NumberFormatException e) {
             System.out.println("Usage: RI <user-id>:<dev_id>");
             return;
         }

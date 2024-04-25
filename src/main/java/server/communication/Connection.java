@@ -201,22 +201,7 @@ public class Connection {
                     case "ET" -> handleET();
                     case "EI" -> handleEI();
                     case "RT" -> handleRT(parsedMsg[1]);
-                    case "RI" -> {
-                        String[] devParts = parsedMsg[1].split(":");
-                        if (devParts.length != 2) {
-                            output.writeObject(Codes.NOK.toString());
-                            ServerLogger.logError("Invalid request");
-                            break;
-                        }
-                        try {
-                            Integer.parseInt(devParts[1]);
-                        } catch (NumberFormatException e) {
-                            output.writeObject(Codes.NOK.toString());
-                            ServerLogger.logWarning("Invalid request");
-                            break;
-                        }
-                        handleRI(devParts[0], Integer.parseInt(devParts[1]));
-                    }
+                    case "RI" -> handleRI(parsedMsg[1]);
                     default -> output.writeObject(Codes.NOK.toString());
                 }
             }
@@ -493,15 +478,16 @@ public class Connection {
     /**
      * Handles the command RI
      *
-     * @param user the user of the {@code Device}
-     * @param id the id of the {@code Device}
+     * @param dev the {@code Device}
      * @throws IOException if an error occurred when sending the image,
      *         or during the communication between client and server
      * @see #sendFile(String, int)
      * @see Codes
      */
-    private void handleRI(String user, int id) throws IOException {
+    private void handleRI(String dev) throws IOException {
         try {
+            String user = dev.split(":")[0];
+            int id = Integer.parseInt(dev.split(":")[1]);
             Device device = srvStorage.getDevice(new Device(user, id));
             if (device == null) {
                 ServerLogger.logWarning("Device " + user + id + " not found");
