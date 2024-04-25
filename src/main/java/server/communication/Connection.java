@@ -3,6 +3,7 @@ package server.communication;
 import common.Codes;
 import common.Message;
 import common.security.CommonUtils;
+import server.ServerLogger;
 import server.components.Device;
 import server.components.Domain;
 import server.components.User;
@@ -101,7 +102,7 @@ public class Connection {
                 return false;
             }
         } catch (Exception e) {
-            System.out.println("Error on authentication process!");
+            ServerLogger.logError("Error on authentication process");
             return false;
         }
     }
@@ -174,7 +175,7 @@ public class Connection {
                 output.writeObject(Codes.NOKTESTED.toString());
             }
         } catch (Exception e) {
-            System.err.println("Error during device validation!");
+            ServerLogger.logError("Error during device validation");
         }
         return false;
     }
@@ -200,22 +201,7 @@ public class Connection {
                     case "ET" -> handleET();
                     case "EI" -> handleEI();
                     case "RT" -> handleRT(parsedMsg[1]);
-                    case "RI" -> {
-                        String[] devParts = parsedMsg[1].split(":");
-                        if (devParts.length != 2) {
-                            output.writeObject(Codes.NOK.toString());
-                            System.out.println("Error: Unable to send image!");
-                            break;
-                        }
-                        try {
-                            Integer.parseInt(devParts[1]);
-                        } catch (NumberFormatException e) {
-                            output.writeObject(Codes.NOK.toString());
-                            System.out.println("Error: Unable to send image!");
-                            break;
-                        }
-                        handleRI(devParts[0], Integer.parseInt(devParts[1]));
-                    }
+                    case "RI" -> handleRI(parsedMsg[1]);
                     default -> output.writeObject(Codes.NOK.toString());
                 }
             }
@@ -235,10 +221,11 @@ public class Connection {
     private void handleCREATE(String d) throws IOException {
         String result = srvStorage.createDomain(d, devUser);
         output.writeObject(result);
-        result = result.equals(Codes.OK.toString()) ?
-                "Success: Domain " + d + " created!"
-                : "Error: Domain " + d + " not created!";
-        System.out.println(result);
+        if (result.equals(Codes.OK.toString())) {
+            ServerLogger.logInfo("Domain " + d + " created");
+        } else {
+            ServerLogger.logWarning("Domain " + d + " not created");
+        }
     }
 
     /**
@@ -269,21 +256,22 @@ public class Connection {
                 if (!domainDir.exists()) domainDir.mkdirs();
                 String path = parent + "/" + u + ".key.cif";
                 if (receiveFile(path, size)) {
-                    System.out.println("Success: User key received!");
+                    ServerLogger.logInfo("User key received");
                     res = srvStorage.addUserToDomain(user, domain);
                     output.writeObject(res);
                 } else {
-                    System.out.println("Error: Unable to receive user key!");
+                    ServerLogger.logWarning("Unable to receive user key");
                     output.writeObject(Codes.NOK.toString());
                 }
             }
 
-            String log = res.equals(Codes.OK.toString()) ?
-                    "Success: Added " + u + " to domain " + d
-                    : "Error: Unable to add " + u + " to domain " + d;
-            System.out.println(log);
+            if (res.equals(Codes.OK.toString())) {
+                ServerLogger.logInfo( "Added " + u + " to domain " + d);
+            } else {
+                ServerLogger.logWarning("Unable to add " + u + " to domain " + d);
+            }
         } catch (Exception e) {
-            System.out.println("Error when trying to add user!");
+            System.out.println("Error when trying to add user");
             output.writeObject(Codes.NOK.toString());
         }
     }
@@ -300,10 +288,11 @@ public class Connection {
         Domain domain = srvStorage.getDomain(d);
         String result = srvStorage.addDeviceToDomain(domain, device, devUser);
         output.writeObject(result);
-        result = result.equals(Codes.OK.toString()) ?
-                "Success: Registered " + device + " to domain " + d
-                : "Error: Unable to register " + device + " to domain " + d;
-        System.out.println(result);
+        if (result.equals(Codes.OK.toString())) {
+            ServerLogger.logInfo("Registered " + device + " to domain " + d);
+        } else {
+            ServerLogger.logWarning("Unable to register " + device + " to domain " + d);
+        }
     }
 
     /**
@@ -313,17 +302,17 @@ public class Connection {
      *          communication between client and server
      */
     private void handleMYDOMAINS() throws IOException {
-        List<Domain> domains = srvStorage.getDeviceDomains(this.device);
+        List<Domain> domains = srvStorage.getDeviceDomains(device);
         if (!domains.isEmpty()) {
             output.writeObject(Codes.OK.toString());
             StringBuilder sb = new StringBuilder("Domains:\n");
             for (Domain domain : domains)
                 sb.append(domain.toString()).append("\n");
             output.writeObject(sb.toString());
-            System.out.println("Success: Domains sent!");
+            ServerLogger.logInfo("Sent domains from " + device);
         } else {
             output.writeObject(Codes.NOK.toString());
-            System.out.println("Error: Device not registered!");
+            ServerLogger.logWarning("Device " + device + " not registered");
         }
     }
 
@@ -338,7 +327,7 @@ public class Connection {
         try {
             List<Domain> domains = srvStorage.getDeviceDomains(device);
             if (domains.isEmpty()) {
-                System.out.println("Error: Device not registered!");
+                ServerLogger.logWarning("Device " + device + " not registered");
                 output.writeObject(Codes.NRD.toString());
                 return;
             }
@@ -352,7 +341,7 @@ public class Connection {
                         + "/" + devUser.name() + ".key.cif";
                 File keyFile = new File(keyPath);
                 if (!keyFile.exists()) {
-                    System.out.println("Error: Key not found!");
+                    ServerLogger.logError("Key not found");
                     output.writeObject(Codes.NOK.toString());
                     return;
                 }
@@ -371,14 +360,14 @@ public class Connection {
             // Receive final confirmation
             String res = (String) input.readObject();
             if (res.equals(Codes.OK.toString())) {
-                System.out.println("Success: Temperature received!");
+                ServerLogger.logInfo("Temperature received");
                 output.writeObject(Codes.OK.toString());
             } else {
-                System.out.println("Error: Unable to receive temperature!");
+                ServerLogger.logWarning("Unable to receive temperature");
                 output.writeObject(Codes.NOK.toString());
             }
         } catch (Exception e) {
-            System.out.println("Error: Unable to receive temperature!");
+            ServerLogger.logError("Error when trying to receive temperature");
             output.writeObject(Codes.NOK.toString());
         }
     }
@@ -396,7 +385,7 @@ public class Connection {
             // Check domains device is in
             List<Domain> domains = srvStorage.getDeviceDomains(device);
             if (domains.isEmpty()) {
-                System.out.println("Error: Device not registered!");
+                ServerLogger.logWarning("Device " + device + " not registered");
                 output.writeObject(Codes.NRD.toString());
                 return;
             }
@@ -410,7 +399,7 @@ public class Connection {
                         + "/" + devUser.name() + ".key.cif";
                 File keyFile = new File(keyPath);
                 if (!keyFile.exists()) {
-                    System.out.println("Error: Key not found!");
+                    ServerLogger.logError("Key not found");
                     output.writeObject(Codes.NOK.toString());
                     return;
                 }
@@ -426,14 +415,14 @@ public class Connection {
             // Receive final confirmation
             String res = (String) input.readObject();
             if (res.equals(Codes.OK.toString())) {
-                System.out.println("Success: All images received!");
+                ServerLogger.logInfo("Image received");
                 output.writeObject(Codes.OK.toString());
             } else {
-                System.out.println("Error: Unable to receive images!");
+                ServerLogger.logWarning("Unable to receive image");
                 output.writeObject(Codes.NOK.toString());
             }
         } catch (Exception e) {
-            System.out.println("Error: Unable to receive image!");
+            ServerLogger.logError("Error when trying to receive image");
             output.writeObject(Codes.NOK.toString());
         }
     }
@@ -450,10 +439,10 @@ public class Connection {
     private void handleRT(String d) throws IOException {
         Domain domain = srvStorage.getDomain(d);
         if (domain == null) {
-            System.out.println("Error: Domain does not exist!");
+            ServerLogger.logWarning("Domain " + d + " does not exist");
             output.writeObject(Codes.NODM.toString());
         } else if (!domain.getUsers().contains(devUser)) {
-            System.out.println("Error: User does not have permissions!");
+            ServerLogger.logWarning("User does not have permission");
             output.writeObject(Codes.NOPERM.toString());
         } else {
             String path = srvStorage.getDomainTemperatures(domain);
@@ -462,7 +451,7 @@ public class Connection {
                         + "/" + devUser.name() + ".key.cif";
                 File keyFile = new File(keyPath);
                 if (!keyFile.exists()) { // Find domain key
-                    System.out.println("Error: Key not found!");
+                    ServerLogger.logError("Key not found");
                     output.writeObject(Codes.NOK.toString());
                     return;
                 }
@@ -473,13 +462,14 @@ public class Connection {
 
                 int size = (int) new File(path).length();
                 output.writeInt(size);
-                String result = sendFile(path, size) ? // Send the temperatures file
-                        "Success: Temperatures from domain " + d + " sent successfully"
-                        : "Error: Failed to send temperatures from domain " + d;
-                System.out.println(result);
+                if (sendFile(path, size)) { // Send the temperatures file
+                    ServerLogger.logInfo("Temperatures from domain " + d + " sent successfully");
+                } else {
+                    ServerLogger.logWarning("Failed to send temperatures from domain " + d);
+                }
             }
             else {
-                System.out.println("Error: No data found in this domain!");
+                ServerLogger.logWarning("No data found in domain " + d);
                 output.writeObject(Codes.NODATA.toString());
             }
         }
@@ -488,21 +478,22 @@ public class Connection {
     /**
      * Handles the command RI
      *
-     * @param user the user of the {@code Device}
-     * @param id the id of the {@code Device}
+     * @param dev the {@code Device}
      * @throws IOException if an error occurred when sending the image,
      *         or during the communication between client and server
      * @see #sendFile(String, int)
      * @see Codes
      */
-    private void handleRI(String user, int id) throws IOException {
+    private void handleRI(String dev) throws IOException {
         try {
+            String user = dev.split(":")[0];
+            int id = Integer.parseInt(dev.split(":")[1]);
             Device device = srvStorage.getDevice(new Device(user, id));
             if (device == null) {
-                System.out.println("Error: Device id not found!");
+                ServerLogger.logWarning("Device " + user + id + " not found");
                 output.writeObject(Codes.NOID.toString());
             } else if (!srvStorage.hasPerm(devUser, device)) {
-                System.out.println("Error: User does not have permissions!");
+                ServerLogger.logWarning("User does not have permission");
                 output.writeObject(Codes.NOPERM.toString());
             } else {
                 List<Domain> domains = srvStorage.getDeviceDomains(device);
@@ -527,17 +518,18 @@ public class Connection {
 
                                 input.readObject(); // Receive confirmation
                                 output.writeObject(Codes.OK.toString());
-                                System.out.println("Success: Image from " + device + " sent successfully");
+                                ServerLogger.logInfo("Image from " + device + " sent successfully");
                                 return;
                             }
                         }
                     }
                 }
-                System.out.println("Error: No data found for this device!");
+                ServerLogger.logWarning("No data found for " + device);
                 output.writeObject(Codes.NODATA.toString());
             }
         } catch (Exception e) {
-            output.writeObject(Codes.NOK);
+            ServerLogger.logError("Error when trying to send image");
+            output.writeObject(Codes.NOK.toString());
         }
     }
 

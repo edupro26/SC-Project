@@ -1,5 +1,7 @@
 package server.security;
 
+import server.ServerLogger;
+
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import java.io.File;
@@ -61,9 +63,9 @@ public class IntegrityVerifier {
             File file = new File(filePath);
             if (file.exists()) {
                 if (loadHmacs()) {
-                    System.out.println("Integrity verifier initialized successfully!");
+                    ServerLogger.logInfo("Integrity verifier initialized successfully!");
                 } else {
-                    System.err.println("Integrity verifier failed to initialize!");
+                    ServerLogger.logError("Integrity verifier failed to initialize!");
                 }
             } else {
                 file.createNewFile();
@@ -72,10 +74,10 @@ public class IntegrityVerifier {
                 String init = "CLIENT: " + hmacs.get(CLIENT_COPY) + "\n"
                         + "DOMAINS: " + hmacs.get(DOMAINS) + "\n";
                 SecurityUtils.signFile(file, init);
-                System.out.println("Integrity verifier initialized successfully!");
+                ServerLogger.logInfo("Integrity verifier initialized successfully!");
             }
         } catch (IOException e) {
-            System.err.println("Integrity verifier failed to initialize!");
+            ServerLogger.logError("Integrity verifier failed to initialize!");
         }
     }
 

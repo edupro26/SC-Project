@@ -508,6 +508,12 @@ public class DeviceHandler {
             System.out.println("Usage: RI <user-id>:<dev_id>");
             return;
         }
+        try {
+            Integer.parseInt(args[0].split(":")[1]);
+        } catch (NumberFormatException e) {
+            System.out.println("Usage: RI <user-id>:<dev_id>");
+            return;
+        }
         String msg = parseCommandToSend(command, args);
         String res = this.sendReceive(msg);
         String[] temp = args[0].split(":");

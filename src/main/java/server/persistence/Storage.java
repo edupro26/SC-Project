@@ -1,9 +1,11 @@
 package server.persistence;
 
 import common.Codes;
+import server.ServerLogger;
 import server.components.*;
 import server.persistence.managers.*;
 import server.security.IntegrityVerifier;
+import server.security.SecurityUtils;
 
 import javax.crypto.SecretKey;
 import java.io.BufferedReader;
@@ -206,7 +208,7 @@ public class Storage {
                 info = line.split(",");
             }
         } catch (IOException e) {
-            System.out.println(e.getMessage());
+            ServerLogger.logError("Client copy information not found");
         }
         return info;
     }
@@ -304,21 +306,20 @@ public class Storage {
             IntegrityVerifier verifier = srvStorage.integrityVerifier;
             verifier.init();
             if (verifier.verifyAll()) {
-                System.out.println("File integrity verified!");
+                ServerLogger.logInfo("File integrity verified!");
             } else {
-                System.err.println("Corrupted files found! Shutting down...");
-                System.exit(1);
+                ServerLogger.logErrorAndExit("Corrupted files found!" +
+                        " Shutting down...");
             }
 
             File file = new File(DOMAINS);
             if (!file.exists()) {
                 try {
                     if (file.createNewFile()){
-                        System.out.println("Domains text file created successfully");
+                        ServerLogger.logInfo("Domains text file created successfully");
                     }
                 } catch (IOException e) {
-                    System.err.println("Unable to create domains text file");
-                    System.exit(1);
+                    ServerLogger.logErrorAndExit("Unable to create domains text file");
                 }
             } else {
                 loadDomains(srvStorage);
@@ -330,7 +331,7 @@ public class Storage {
                 for (Domain domain : domains)
                     sb.append("Domain ").append(domain.getName()).append(" -> ")
                             .append(domain).append(" ").append("\n");
-                System.out.println("Printing server domains...");
+                ServerLogger.logInfo("Printing server domains...");
                 System.out.println(sb);
             }
         }
@@ -348,18 +349,17 @@ public class Storage {
                 if (usersData != null) {
                     String[] users = usersData.split("\n");
                     for (String user : users) {
-                        try {
-                            String[] data = user.split(",");
-                            User newUser = new User(data[0], data[1]);
-                            srvStorage.userManager.getUsers().add(newUser);
-                        } catch (IndexOutOfBoundsException e)  {
-                            System.err.println("Cipher password is incorrect! Shutting down...");
-                            System.exit(1);
+                        String[] data = user.split(",");
+                        User newUser = new User(data[0], data[1]);
+                        if (SecurityUtils.getUserPubKey(new File(data[1])) == null){
+                            ServerLogger.logErrorAndExit("Cipher password is incorrect!" +
+                                    " Shutting down...");
                         }
+                        srvStorage.userManager.getUsers().add(newUser);
                     }
-                    System.out.println("Users text file loaded successfully");
+                    ServerLogger.logInfo("Users text file loaded successfully");
                 } else {
-                    System.out.println("Users text file could not be loaded");
+                    ServerLogger.logErrorAndExit("Users text file could not be loaded");
                 }
             }
         }
@@ -384,10 +384,9 @@ public class Storage {
                         srvStorage.getDevices().put(device, domains);
                     }
                 }
-                System.out.println("Domains text file loaded successfully");
+                ServerLogger.logInfo("Domains text file loaded successfully");
             } catch (IOException e) {
-                System.out.println(e.getMessage());
-                System.out.println("Unable to load domains text file");
+                ServerLogger.logErrorAndExit("Unable to load domains text file");
             }
         }
 
