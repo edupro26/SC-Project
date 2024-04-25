@@ -25,18 +25,39 @@ import java.security.SignedObject;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Scanner;
 
+/**
+ * Utility class with security
+ * methods used by the server
+ */
 public class SecurityUtils {
 
+    /**
+     * The API url
+     */
     private static final String API_URL = "https://lmpinto.eu.pythonanywhere.com/2FA";
+
+    /**
+     * Algorithms
+     */
     private static final String ENC_ALGORITHM = "PBEWithHmacSHA256AndAES_128";
     private static final String SIG_ALGORITHM = "SHA256withRSA";
 
+    /**
+     * Parameters for {@code SecretKey} generation
+     */
     private static final byte[] salt = { (byte) 0xc9, (byte) 0x36, (byte) 0x78,
                                         (byte) 0x99, (byte) 0x52, (byte) 0x3e,
                                         (byte) 0xea, (byte) 0xf2 };
     private static final int ITERATION_COUNT = 20;
 
+    /**
+     * File to store encryption parameters
+     */
     private static final File PARAMS_FILE = new File("params.txt");
+
+    /**
+     * A {@code HttpClient}
+     */
     private static final HttpClient client = HttpClient.newHttpClient();
 
     /**
@@ -62,6 +83,13 @@ public class SecurityUtils {
         }
     }
 
+    /**
+     * Encrypts a {@code String} of data and writes it to a file
+     *
+     * @param data the data to be encrypted
+     * @param file the file to write to
+     * @param key the {@code SecretKey}
+     */
     public static void encryptDataIntoFile(String data, File file, SecretKey key) {
         try {
             Cipher cipher = Cipher.getInstance(ENC_ALGORITHM);
@@ -78,6 +106,13 @@ public class SecurityUtils {
         }
     }
 
+    /**
+     * Decrypts data from a encryted file
+     *
+     * @param file the encrypted file
+     * @param key the {@code SecretKey}
+     * @return a string with the decryted data
+     */
     public static String decryptDataFromFile(File file, SecretKey key) {
         try {
             AlgorithmParameters p = AlgorithmParameters.getInstance(ENC_ALGORITHM);
@@ -91,6 +126,35 @@ public class SecurityUtils {
                 // Read the encrypted data from the file and convert it to a String.
                 return scanner.useDelimiter("\\A").next();
             }
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Saves the {@code Cipher} parameters to the file params.txt
+     *
+     * @param params the parameters
+     */
+    private static void saveParams(byte[] params) {
+        try (FileOutputStream fos = new FileOutputStream(PARAMS_FILE)) {
+            fos.write(params);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    /**
+     * Reads the {@code Cipher} parameters from the file params.txt
+     *
+     * @return the parameters or null in case of error
+     */
+    private static byte[] readParams() {
+        try (FileInputStream fis = new FileInputStream(PARAMS_FILE)) {
+            byte[] params = new byte[(int) PARAMS_FILE.length()];
+            fis.read(params);
+            return params;
         } catch (Exception e) {
             System.out.println(e.getMessage());
             return null;
@@ -119,25 +183,11 @@ public class SecurityUtils {
         return true;
     }
 
-    public static void saveParams(byte[] params) {
-        try (FileOutputStream fos = new FileOutputStream(PARAMS_FILE)) {
-            fos.write(params);
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-        }
-    }
-
-    public static byte[] readParams() {
-        try (FileInputStream fis = new FileInputStream(PARAMS_FILE)) {
-            byte[] params = new byte[(int) PARAMS_FILE.length()];
-            fis.read(params);
-            return params;
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-            return null;
-        }
-    }
-
+    /**
+     * Gets the server {@code PublicKey}
+     *
+     * @return the server {@code PublicKey} or null in case of error
+     */
     public static PublicKey getPublicKey() {
         try {
             KeyStore ks = KeyStore.getInstance("JKS");
@@ -153,6 +203,11 @@ public class SecurityUtils {
         }
     }
 
+    /**
+     * Gets the server {@code PrivateKey}
+     *
+     * @return the server {@code PrivateKey} or null in case of error
+     */
     public static PrivateKey getPrivateKey() {
         try {
             KeyStore ks = KeyStore.getInstance("JKS");
@@ -220,6 +275,12 @@ public class SecurityUtils {
         }
     }
 
+    /**
+     * Verifies the signature of a {@code SignedObject}
+     * @param publicKey the public key used for verification
+     * @param signedObject the signed object
+     * @return true if verified, false otherwise
+     */
     public static boolean verifySignature(PublicKey publicKey, SignedObject signedObject) {
         try {
             String algorithm = signedObject.getAlgorithm();
@@ -231,6 +292,12 @@ public class SecurityUtils {
         }
     }
 
+    /**
+     * Writes a {@code PublicKey} to a file
+     *
+     * @param publicKey the public key
+     * @param file the file
+     */
     public static void savePublicKeyToFile(PublicKey publicKey, File file) {
         try (FileOutputStream fos = new FileOutputStream(file);
              ObjectOutputStream oos = new ObjectOutputStream(fos)) {
@@ -240,6 +307,11 @@ public class SecurityUtils {
         }
     }
 
+    /**
+     * Gets a user's {@code PublicKey}
+     * @param file the file holding the public key
+     * @return the public key or null in case of error
+     */
     public static PublicKey getUserPubKey(File file) {
         try (FileInputStream fis = new FileInputStream(file);
              ObjectInputStream ois = new ObjectInputStream(fis)) {
