@@ -46,6 +46,7 @@ public class IoTServer {
         String keystore = null;
         String passwordKeystore = null;
         String apiKey = null;
+        System.setProperty("java.util.logging.SimpleFormatter.format", "%4$s: %5$s %n");
 
         /*
         Check if the arguments are valid
@@ -65,27 +66,26 @@ public class IoTServer {
             passwordKeystore = args[2];
             apiKey = args[3];
         } else {
-            System.out.println("Usage: IoTServer <port> <password-cifra> <keystore> <password-keystore> <2FA-APIKey>");
-            System.exit(1);
+            ServerLogger.logWarningAndExit("Usage - IoTServer <port> <password-cifra> <keystore>" +
+                    " <password-keystore> <2FA-APIKey>");
         }
 
-        if (passwordCipher == null || keystore == null || passwordKeystore == null || apiKey == null) {
-            System.out.println("Usage: IoTServer <port> <password-cifra> <keystore> <password-keystore> <2FA-APIKey>");
-            System.exit(1);
+        if (passwordCipher != null && keystore != null && passwordKeystore != null && apiKey != null) {
+            System.setProperty("javax.net.ssl.keyStore", keystore);
+            System.setProperty("javax.net.ssl.keyStorePassword", passwordKeystore);
+        } else {
+            ServerLogger.logWarningAndExit("Usage - IoTServer <port> <password-cifra> <keystore>" +
+                    " <password-keystore> <2FA-APIKey>");
         }
 
-        System.setProperty("javax.net.ssl.keyStore", keystore);
-        System.setProperty("javax.net.ssl.keyStorePassword", passwordKeystore);
-        System.setProperty("java.util.logging.SimpleFormatter.format", "%4$s: %5$s %n");
-
-        System.out.println("Server started on port " + port);
+        ServerLogger.logInfo("Server started on port " + port);
         SSLServerSocket srvSocket = null;
 
         try {
             ServerSocketFactory ssf = SSLServerSocketFactory.getDefault();
             srvSocket = (SSLServerSocket) ssf.createServerSocket(port);
             Storage srvStorage = new Storage(passwordCipher);
-            System.out.println("Waiting for clients...");
+            ServerLogger.logInfo("Waiting for clients...");
             while (true) {
                 new ServerThread(srvSocket.accept(), srvStorage, apiKey).start();
             }
@@ -139,28 +139,28 @@ public class IoTServer {
 
                 String deviceIP = cliSocket.getInetAddress().getHostAddress();
                 Connection connection = new Connection(input, output, srvStorage);
-                System.out.println("Connection request from " + deviceIP);
+                ServerLogger.logInfo("Connection request from " + deviceIP);
 
                 boolean auth = connection.userAuthentication(apiKey);
                 if (!auth) {
-                    System.out.println("User from " + deviceIP + " not authenticated!");
+                    ServerLogger.logWarning("User from " + deviceIP + " not authenticated!");
                     output.close();
                     input.close();
                     cliSocket.close();
                     return;
                 }
-                System.out.println("User from " + deviceIP + " authenticated!");
+                ServerLogger.logInfo("User from " + deviceIP + " authenticated!");
 
                 boolean isValid = connection.validateDevice();
                 if (isValid) {
-                    System.out.println("Device from " + deviceIP + " validated!");
-                    System.out.println("Device connected " + connection.getDevice());
-                    System.out.println("Active connections: " + ++counter);
+                    ServerLogger.logInfo("Device from " + deviceIP + " validated!");
+                    ServerLogger.logInfo("Device connected " + connection.getDevice());
+                    ServerLogger.logInfo("Active connections: " + ++counter);
                     connection.handleRequests();
-                    System.out.println("Device disconnected " + connection.getDevice());
-                    System.out.println("Active connections: " + --counter);
+                    ServerLogger.logInfo("Device disconnected " + connection.getDevice());
+                    ServerLogger.logInfo("Active connections: " + --counter);
                 } else {
-                    System.out.println("Device from " + deviceIP + " not validated!");
+                    ServerLogger.logWarning("Device from " + deviceIP + " not validated!");
                 }
 
                 output.close();

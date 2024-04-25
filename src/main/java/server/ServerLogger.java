@@ -41,6 +41,16 @@ public class ServerLogger {
     }
 
     /**
+     * Logs a warning output message and exits the program
+     *
+     * @param msg the message
+     */
+    public static void logWarningAndExit(String msg) {
+        logWarning(msg);
+        System.exit(1);
+    }
+
+    /**
      * Logs an error output message
      *
      * @param msg the message
