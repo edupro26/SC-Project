@@ -139,9 +139,8 @@ public class IntegrityVerifier {
      * to the map {@link #hmacs}
      *
      * @return true if the HMACs were loaded, false otherwise
-     * @throws IOException If an I/ O error occurs
      */
-    private boolean loadHmacs() throws IOException {
+    private boolean loadHmacs() {
         String data = SecurityUtils.verifySignature(new File(filePath));
         if (data != null) {
             String[] lines = data.split("\n");

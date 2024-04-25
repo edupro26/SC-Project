@@ -141,22 +141,19 @@ public class Storage {
     /**
      * Adds a given {@code User} to a given {@code Domain} of this storage.
      * It also updates the content of the {@code Domain} in the domains.txt
-     * file located in the server-files folder. Returns "NODM" if the
-     * {@code domain} does not exist, "NOUSER" if the {@code userToAdd} does
-     * not exist, "NOPERM" if the {@code user} does not have permission, "NOK"
-     * if there was an error writing to the file, "OK" if the method concluded
+     * file located in the server-files folder. Returns "NOK" or "CRR" if
+     * there was an error writing to the file, "OK" if the method concluded
      * with success.
      *
-     * @param user the {@code User} of the current {@code Device}
      * @param userToAdd the {@code User} to add to the {@code Domain}
      * @param domain the {@code Domain}
      * @return status code
      * @see Codes
      */
-    public String addUserToDomain(User user, User userToAdd, Domain domain) {
+    public String addUserToDomain(User userToAdd, Domain domain) {
         if (!integrityVerifier.verify(DOMAINS))
             return Codes.CRR.toString();
-        return domainManager.addUserToDomain(user, userToAdd, domain, integrityVerifier);
+        return domainManager.addUserToDomain(userToAdd, domain, integrityVerifier);
     }
 
     /**
@@ -326,7 +323,7 @@ public class Storage {
             } else {
                 loadDomains(srvStorage);
             }
-
+            System.out.println();
             StringBuilder sb = new StringBuilder();
             List<Domain> domains = srvStorage.domainManager.getDomains();
             if (!domains.isEmpty()) {

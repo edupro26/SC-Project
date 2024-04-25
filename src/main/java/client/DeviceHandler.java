@@ -70,56 +70,39 @@ public class DeviceHandler {
         try {
             SocketFactory sf = SSLSocketFactory.getDefault();
             socket = (SSLSocket) sf.createSocket(address, port);
-            this.output = new ObjectOutputStream(socket.getOutputStream());
-            this.input = new ObjectInputStream(socket.getInputStream());
+            output = new ObjectOutputStream(socket.getOutputStream());
+            input = new ObjectInputStream(socket.getInputStream());
 
-            System.out.println("Sending user id:" + userId);
-            String res = this.sendReceive(userId);
-            if(res == null) {
-                System.out.println("Error in the response");
+            System.out.println("Requesting authentication for " + userId);
+            String res = sendReceive(userId);
+            if (res == null || res.split(";").length != 2) {
+                System.out.println("Error in the response from the server");
                 System.exit(1);
             }
 
-            String[] resSplit = res.split(";");
-            if (resSplit.length != 2) {
-                System.out.println("Error in the response");
+            long nonce = Long.parseLong(res.split(";")[1]);
+            SignedObject signedObject = new SignedObject(Long.toString(nonce),
+                    SecurityUtils.getPrivateKey(userId), Signature.getInstance("SHA256withRSA"));
+            Message signedMessage = new Message(signedObject, SecurityUtils.getCertificate(userId));
+            output.writeObject(signedMessage);
+
+            res = (String) input.readObject();
+            if (res.equals(Codes.OKUSER.toString()) || res.equals(Codes.OKNEWUSER.toString())) {
+                System.out.print("Enter 2FA Code: ");
+                String code2FA = new Scanner(System.in).nextLine();
+                output.writeObject(code2FA);
+                String res2FA = (String) input.readObject();
+                if (res2FA.equals(Codes.OK2FA.toString())) {
+                    System.out.println(res + " # User authenticated!");
+                    this.userId = userId;
+                } else {
+                    System.out.println("Authentication failed: Invalid 2FA code.");
+                    System.exit(1);
+                }
+            } else {
+                System.out.println("Authentication failed: Invalid user certificate.");
                 System.exit(1);
             }
-
-            String flag = resSplit[0];
-            long nonce = Long.parseLong(resSplit[1]);
-
-            // If the user is not registered
-            if(flag.equals(Codes.NEWUSER.toString())) {
-                SignedObject signedObject = new SignedObject(Long.toString(nonce), SecurityUtils.findPrivateKeyOnKeyStore(userId), Signature.getInstance("SHA256withRSA"));
-                Message signedMessage = new Message(signedObject, SecurityUtils.getOwnCertificate(userId));
-                output.writeObject(signedMessage);
-            }
-            else { // If the user is registered
-                SignedObject signedObject = new SignedObject(Long.toString(nonce), SecurityUtils.findPrivateKeyOnKeyStore(userId), Signature.getInstance("SHA256withRSA"));
-                Message signedMessage = new Message(signedObject, SecurityUtils.getOwnCertificate(userId));
-                output.writeObject(signedMessage);
-            }
-
-            String authRes = (String) input.readObject();
-            if (!authRes.equals(Codes.OKUSER.toString()) && !authRes.equals(Codes.OKNEWUSER.toString())) {
-                System.out.println("Authentication failed. Certificate not valid.");
-                System.exit(1);
-            }
-
-            // 2FA Process
-            System.out.print("2FA Code: ");
-            Scanner scanner = new Scanner(System.in);
-            String input = scanner.nextLine();
-            output.writeObject(input);
-
-            String finalAuthRes = (String) this.input.readObject();
-            if (!finalAuthRes.equals(Codes.OK2FA.toString())) {
-                System.out.println("Authentication failed. 2FA code not valid.");
-                System.exit(1);
-            }
-
-            this.userId = userId;
         } catch (Exception e) {
             System.out.println(e.getMessage());
             System.exit(1);
@@ -145,9 +128,14 @@ public class DeviceHandler {
      * @param devId id of this IoTDevice
      */
     protected void deviceValidation(String devId) {
-        String res = sendReceive(devId);
-        if (res.equals(Codes.OKDEVID.toString())) {
-            try {
+        try {
+            if (Integer.parseInt(devId) < 0) {
+                System.err.println("NOK-DEVID # Invalid device ID");
+                System.exit(1);
+            }
+            String res = sendReceive(devId);
+            if (res.equals(Codes.OKDEVID.toString())) {
+                System.out.println(res + " # Device ID is valid");
                 // Find the client executable
                 CodeSource src = IoTDevice.class.getProtectionDomain().getCodeSource();
                 String path = src.getLocation().toURI().getPath();
@@ -158,23 +146,23 @@ public class DeviceHandler {
                 if (hash != null) {
                     output.writeObject(exec.getName());
                     output.writeObject(hash);
-                    String tested = (String) input.readObject();
-                    if (tested.equals(Codes.OKTESTED.toString())) {
-                        System.out.println("OK-TESTED # This IoTDevice is valid!");
+                    res = (String) input.readObject();
+                    if (res.equals(Codes.OKTESTED.toString())) {
+                        System.out.println(res + " # IoTDevice is valid!");
                     } else {
-                        System.out.println("NOK-TESTED # This IoTDevice is not valid!");
+                        System.out.println(res + " # IoTDevice is not valid!");
                         System.exit(1);
                     }
                 } else {
-                    System.err.println("Error calculating hash during device validation");
+                    System.err.println("Error calculating hash during device attestation");
                     System.exit(1);
                 }
-            } catch (Exception e) {
-                System.err.println("Error during device validation");
+            } else {
+                System.out.println(res + " # Invalid device ID");
                 System.exit(1);
             }
-        } else {
-            System.out.println("Response: NOK-DEVID # Invalid device id");
+        } catch (Exception e) {
+            System.err.println("Error during device attestation");
             System.exit(1);
         }
     }
@@ -236,77 +224,40 @@ public class DeviceHandler {
             System.out.println("Usage: ADD <user1> <dm> <password-domain>");
             return;
         }
-        String msg = parseCommandToSend(command, args);
-        // TODO: Handle first response
-        String res = this.sendReceive(msg);
-        if (!res.equals(Codes.OK.toString())) {
-            if (res.equals(Codes.NODM.toString())) {
-                System.out.println("Response: NODM # Domain does not exist");
-                return;
-            } else if (res.equals(Codes.NOUSER.toString())) {
-                System.out.println("Response: NOUSER # User does not exist");
-                return;
-            } else if (res.equals(Codes.NOPERM.toString())) {
-                System.out.println("Response: NOPERM # User does not exist");
-                return;
-            } else {
-                System.out.println("Response: NOK # Error adding user");
-                return;
-            }
-        }
-
         PublicKey pk = SecurityUtils.findPublicKeyOnTrustStore(args[0]);
-        try {
-            if (pk == null) {
-                String resNoPk = this.sendReceive("NO_PK");
-                System.out.println("Response: NOK # Error adding user. Public key not found to encrypt the key.");
-                /*
-                output.writeObject("NO_PK");
-                String findPkRes = (String) input.readObject();
-                if (findPkRes.equals("NOK")) {
-                    System.out.println("Response: NOK # Error adding user. Public key not found on the server.");
-                    return;
-                }
-                output.writeObject("WAITING_PK");
-                int size = input.readInt();
-                receiveFile("server-output/" + args[0] + ".cer", size);
-                Encryption.storePubKeyOnTrustStore(new File("server-output/" + args[0] + ".cer"), args[0]);
-                */
-            } else {
-                String resFoundPk = this.sendReceive("SENDING_PK");
-            }
-        } catch (Exception e) {
-            System.out.println("Response: NOK # Error adding user");
+        if (pk == null) {
+            System.out.println("Response: NOUSER # This user is unknown");
             return;
         }
 
-        String keyEncFilename = args[1] + "_" + args[0] + ".key.enc";
-        SecurityUtils.encryptKeyWithRSA(SecurityUtils.generateKey(args[2]), pk, keyEncFilename);
-        File keyEncFile = new File(keyEncFilename);
-
+        String msg = parseCommandToSend(command, args);
         try {
-            output.writeInt((int) keyEncFile.length());
-            sendFile(keyEncFilename, (int) keyEncFile.length());
-            String resKeySent = (String) input.readObject();
-
-            if (keyEncFile.exists()) {
-                keyEncFile.delete();
+            String res = this.sendReceive(msg);
+            if (res.equals(Codes.NODM.toString())) {
+                System.out.println("Response: NODM # This domain does not exist");
+            } else if (res.equals(Codes.NOUSER.toString())) {
+                System.out.println("Response: NOUSER # This user never signed in");
+            } else if (res.equals(Codes.NOPERM.toString())) {
+                System.out.println("Response: NOPERM # No permission to add this user");
             }
-            if (!resKeySent.equals(Codes.OK.toString())) {
-                System.out.println("Response: NOK # Error adding user");
-                return;
-            }
+            if (!res.equals(Codes.OK.toString())) return;
 
-            output.writeObject("WAITING_FINAL_RES");
-            String finalRes = (String) input.readObject();
-            if (finalRes.equals(Codes.OK.toString())) {
+            String path = args[1] + "_" + args[0] + ".key.enc";
+            SecurityUtils.encryptKeyWithRSA(SecurityUtils.generateKey(args[2]), pk, path);
+            File tempFile = new File(path);
+            output.writeInt((int) tempFile.length());
+            sendFile(path, (int) tempFile.length());
+            if (tempFile.exists()) tempFile.delete();
+
+            res = (String) input.readObject();
+            if (res.equals(Codes.OK.toString())) {
                 System.out.println("Response: OK # User added successfully");
-            } else if (finalRes.equals(Codes.CRR.toString())) {
+            } else if (res.equals(Codes.CRR.toString())) {
                 System.out.println("Response: CRR # Corrupted server files");
             } else {
                 System.out.println("Response: NOK # Error adding user");
             }
-        } catch (Exception e) {
+        } catch (IOException | ClassNotFoundException e) {
             System.out.println("Response: NOK # Error adding user");
         }
     }
@@ -396,19 +347,17 @@ public class DeviceHandler {
             String[] domains = res.split(";");
             output.writeObject(Codes.OK.toString());
             for(String domain : domains) {
-                // Receive the domain key
                 int size = input.readInt();
                 String keyTempPath = domain + ".key.cif.temp";
-                receiveFile(keyTempPath, size);
+                receiveFile(keyTempPath, size); // Receive the domain key
 
                 File encryptedKey = new File(keyTempPath);
                 SecretKey key = (SecretKey) SecurityUtils.decryptKeyWithRSA(
-                        encryptedKey, SecurityUtils.findPrivateKeyOnKeyStore(this.userId));
+                        encryptedKey, SecurityUtils.getPrivateKey(userId));
 
                 // Encrypt and send the temperature
                 output.writeObject(SecurityUtils.encryptTemperature(args[0], key));
-                // Delete the temporary key file
-                encryptedKey.delete();
+                encryptedKey.delete(); // Delete the temporary key file
 
                 // Confirmation temperature has been received
                 String response = (String) input.readObject();
@@ -443,24 +392,17 @@ public class DeviceHandler {
             System.out.println("Usage: EI <filename.jpg>");
             return;
         }
-
-        // Check if filename ends in .jpg
-        if (!args[0].endsWith(".jpg")) {
+        if (!args[0].endsWith(".jpg")) { // Check if filename ends in .jpg
             System.out.println("File provided must be a JPG!");
             return;
         }
-
-        File image = new File(args[0]);
-
-        // Check if image exists
+        File image = new File(args[0]); // Check if image exists
         if (!image.exists() || !image.isFile()) {
             System.out.println("The image provided doesn't exist!");
             return;
         }
-
         String msg = parseCommandToSend(command, args);
         try {
-
             String res = this.sendReceive(msg);
             if (res.equals(Codes.NRD.toString())) {
                 System.out.println("Response: NRD # Device not registered");
@@ -468,33 +410,27 @@ public class DeviceHandler {
             }
 
             String[] domains = res.split(";");
-            output.writeObject("RECEIVED_DOMAINS");
+            output.writeObject(Codes.OK.toString());
             for (String domain : domains) {
-                // Receive the domain key
-                int size = input.readInt();
-                String keyTempPath = domain + ".key.cif.temp";
-                receiveFile(keyTempPath, size);
+                String temp = domain + ".key.cif.temp";
+                receiveFile(temp, input.readInt()); // Receive the domain key
 
-                File encryptedKey = new File(keyTempPath);
-                SecretKey key = (SecretKey) SecurityUtils.decryptKeyWithRSA(encryptedKey, SecurityUtils.findPrivateKeyOnKeyStore(this.userId));
+                File encryptedKey = new File(temp);
+                SecretKey key = (SecretKey) SecurityUtils.decryptKeyWithRSA(
+                        encryptedKey, SecurityUtils.getPrivateKey(userId));
 
                 File imageEnc = new File(args[0] + ".cif");
                 SecurityUtils.encryptFile(image, imageEnc, key);
 
-                int imageEncSize = (int) imageEnc.length();
+                int size = (int) imageEnc.length();
+                output.writeInt(size);
+                sendFile(imageEnc.getPath(), size); // Send the encrypted image
 
-                // Send the encrypted image
-                output.writeInt(imageEncSize);
-                sendFile(imageEnc.getPath(), imageEncSize);
-
-                input.readObject(); // Receive confirmation of the image received
-
-                // Delete the temporary key file
-                new File(keyTempPath).delete(); // Delete the temporary key file
+                input.readObject(); // Receive confirmation
+                new File(temp).delete(); // Delete the temporary key file
                 imageEnc.delete(); // Delete the encrypted image
             }
-            output.writeObject("ALL_IMAGES_SENT");
-
+            output.writeObject(Codes.OK.toString());
             String finalRes = (String) input.readObject();
             if (finalRes.equals(Codes.OK.toString())) {
                 System.out.println("Response: OK # Image sent successfully");
@@ -524,10 +460,9 @@ public class DeviceHandler {
         String outputPath = SERVER_OUT + args[0] + ".txt";
         if (res.equals(Codes.OK.toString())) {
             try {
-                // Receive the domain key
                 int keySize = input.readInt();
                 String keyTempPath = args[0] + ".key.cif.temp";
-                receiveFile(keyTempPath, keySize);
+                receiveFile(keyTempPath, keySize); // Receive the domain key
 
                 // Receive the file with encryted temperatures
                 int fileSize = input.readInt();
@@ -535,17 +470,14 @@ public class DeviceHandler {
 
                 File encryptedKey = new File(keyTempPath);
                 SecretKey key = (SecretKey) SecurityUtils.decryptKeyWithRSA(
-                        encryptedKey, SecurityUtils.findPrivateKeyOnKeyStore(this.userId));
+                        encryptedKey, SecurityUtils.getPrivateKey(this.userId));
 
-                // Delete temp key file
-                encryptedKey.delete();
-
-                // Decrypt the temperatures
-                File outputFile = new File(outputPath);
+                encryptedKey.delete();// Delete temp key file
+                File outputFile = new File(outputPath); // Decrypt the temperatures
                 int received = SecurityUtils.decryptTemperatures(outputFile, key);
                 if (received > 0) {
-                    System.out.println("Response: OK, " + received
-                            + " (long), followed by " + received + " bytes of data");
+                    System.out.println("Response: OK, " + received + " (long), " +
+                            "followed by " + outputFile.length() + " bytes of data");
                 } else {
                     System.out.println("Response: NOK # Error getting temperatures");
                 }
@@ -579,7 +511,7 @@ public class DeviceHandler {
         String msg = parseCommandToSend(command, args);
         String res = this.sendReceive(msg);
         String[] temp = args[0].split(":");
-        if (res.equals("SENDING_FILES")) {
+        if (res.equals(Codes.OK.toString())) {
             try {
                 String domain = (String) input.readObject();
                 File domainKeyENc = new File(SERVER_OUT + domain + ".key.enc");
@@ -588,12 +520,12 @@ public class DeviceHandler {
                 // Receive the domain key
                 int domainKeyEncSize = input.readInt();
                 receiveFile(domainKeyENc.getPath(), domainKeyEncSize);
-                output.writeObject("RECEIVED_DOMAIN_KEY");
+                output.writeObject(Codes.OK.toString());
 
                 // Receive the encrypted image
                 int imageEncSize = input.readInt();
                 receiveFile(imageEnc.getPath(), imageEncSize);
-                output.writeObject("RECEIVED_IMAGE");
+                output.writeObject(Codes.OK.toString());
 
                 String finalRes = (String) input.readObject();
                 if (!finalRes.equals(Codes.OK.toString())) {
@@ -601,27 +533,20 @@ public class DeviceHandler {
                     return;
                 }
 
-                // Decrypt the domain key
-                SecretKey key = (SecretKey) SecurityUtils.decryptKeyWithRSA(domainKeyENc, SecurityUtils.findPrivateKeyOnKeyStore(this.userId));
-
-                // Decrypt the image
+                // Decrypt the domain key and the image
+                SecretKey key = (SecretKey) SecurityUtils.decryptKeyWithRSA(
+                        domainKeyENc, SecurityUtils.getPrivateKey(userId));
                 File image = new File(SERVER_OUT + temp[0] + "_" + temp[1] + ".jpg");
-                SecurityUtils.decryptFile(imageEnc, image, key);
+                int received = SecurityUtils.decryptFile(imageEnc, image, key);
+                domainKeyENc.delete(); // Delete the key
+                imageEnc.delete(); // Delete the encrypted image
 
-                // Delete the encrypted files
-                domainKeyENc.delete();
-                imageEnc.delete();
-                System.out.println("Response: " + finalRes + " # Image received successfully");
-                System.out.println("Image saved as: " + image.getPath());
-
-                // TODO: Print bytes and other info
-                    /*
-                    String result = received == size
-                            ? "Response: " + res + ", " + received
-                            + " (long), followed by " + received + " bytes of data"
-                            : "Response: NOK # Error getting image";
-                    System.out.println(result);
-                    */
+                if (received > 0) {
+                    System.out.println("Response: OK, " + received + " (long), " +
+                            "followed by " + image.length() + " bytes of data");
+                } else {
+                    System.out.println("Response: NOK # Error getting temperatures");
+                }
             } catch (IOException | ClassNotFoundException e) {
                 System.out.println("Response: NOK # Error getting image");
             }
@@ -668,14 +593,12 @@ public class DeviceHandler {
      * in the output folder.
      *
      * @param filePath the path where the file will be saved
-     * @param size the size of the file to receive
-     * @return file size if the file was received, -1 otherwise
+     * @param size     the size of the file to receive
      * @requires {@code filePath != null}
      */
-    private int receiveFile(String filePath, int size) {
+    private void receiveFile(String filePath, int size) {
         File outputFolder = new File(SERVER_OUT);
         if (!outputFolder.isDirectory()) outputFolder.mkdir();
-        int bytesRead = 0;
         try {
             FileOutputStream out = new FileOutputStream(filePath);
             BufferedOutputStream bos = new BufferedOutputStream(out);
@@ -683,7 +606,6 @@ public class DeviceHandler {
             int bytesLeft = size;
             while (bytesLeft > 0) {
                 int bytes = input.read(buffer);
-                bytesRead += bytes;
                 bos.write(buffer, 0, bytes);
                 bytesLeft -= bytes;
             }
@@ -691,9 +613,8 @@ public class DeviceHandler {
             bos.close();
             out.close();
         } catch (IOException e) {
-            return -1;
+            System.out.println(e.getMessage());
         }
-        return bytesRead;
     }
 
     /**

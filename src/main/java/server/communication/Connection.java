@@ -13,7 +13,6 @@ import java.io.*;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.util.List;
-import java.util.regex.Pattern;
 
 /**
  * Represents a {@code IoTDevice} connection to the {@code IoTServer}.
@@ -48,9 +47,6 @@ public class Connection {
     private User devUser;           //The user of this connection
     private Device device;          //The device of this connection
 
-
-    private static final String EMAIL_REGEX = "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$";
-
     /**
      * Constructs a new {@code Connection}.
      *
@@ -72,66 +68,40 @@ public class Connection {
     public boolean userAuthentication(String apiKey) {
         try {
             String userId = (String) input.readObject();
+            User user = srvStorage.getUser(userId);
+            String res = user == null ?
+                    Codes.NEWUSER.toString() : Codes.FOUNDUSER.toString();
+            long generated = new SecureRandom().nextLong();
+            output.writeObject(res + ";" + generated);
 
-            // Validate userId as an email address
-            Pattern emailPattern = Pattern.compile(EMAIL_REGEX, Pattern.CASE_INSENSITIVE);
-            if (!emailPattern.matcher(userId).matches()) {
+            Message msg = (Message) input.readObject();
+            long received = Long.parseLong((String) msg.getSignedObject().getObject());
+            PublicKey pubKey = user == null ?
+                    msg.getCertificate().getPublicKey()
+                    : SecurityUtils.getUserPubKey(new File(user.certificate()));
+
+            boolean verified = SecurityUtils.verifySignature(pubKey, msg.getSignedObject());
+            if (generated == received && verified) {
+                if (user == null) {
+                    output.writeObject(Codes.OKNEWUSER.toString());
+                    if (!authentication2FA(apiKey, userId)) return false;
+                    String keyPath = "server-files/users_pub_keys/" + userId + ".cer";
+                    File pubKeyFile = new File(keyPath);
+                    SecurityUtils.savePublicKeyToFile(msg.getCertificate().getPublicKey(), pubKeyFile);
+                    devUser = new User(userId, keyPath);
+                    srvStorage.saveUser(this.devUser);
+                } else {
+                    output.writeObject(Codes.OKUSER.toString());
+                    if (!authentication2FA(apiKey, userId)) return false;
+                    devUser = srvStorage.getUser(userId);
+                }
+                return true;
+            } else {
                 output.writeObject(Codes.NOK.toString());
-                System.out.println("Received invalid email address!");
                 return false;
             }
-
-            SecureRandom secureRandom = new SecureRandom();
-            long nonce = secureRandom.nextLong();
-            User exists = srvStorage.getUser(userId);
-            if (exists == null) {
-                String newUserRes = Codes.NEWUSER + ";" + nonce;
-                output.writeObject(newUserRes);
-                Message msg = (Message) input.readObject();
-                long clientNonce = Long.parseLong((String) msg.getSignedObject().getObject());
-                boolean verified = SecurityUtils.verifySignature(
-                        msg.getCertificate().getPublicKey(),
-                        msg.getSignedObject());
-                if(clientNonce == nonce && verified) {
-                    String userPublicKeyPath = "server-files/users_pub_keys/" + userId + ".cer";
-                    File pubKeyFile = new File(userPublicKeyPath);
-                    SecurityUtils.savePublicKeyToFile(msg.getCertificate().getPublicKey(), pubKeyFile);
-                    output.writeObject(Codes.OKNEWUSER.toString());
-                    if (!authentication2FA(apiKey, userId)) {
-                        return false;
-                    }
-                    this.devUser = new User(userId, userPublicKeyPath);
-                    srvStorage.saveUser(this.devUser);
-                    return true;
-                }
-                else {
-                    output.writeObject(Codes.NOK.toString());
-                    return false;
-                }
-            }
-            else {
-                String foundUserRes = Codes.FOUNDUSER + ";" + nonce;
-                output.writeObject(foundUserRes);
-                Message msg = (Message) input.readObject();
-
-                long clientNonce = Long.parseLong((String) msg.getSignedObject().getObject());
-                File pubKeyFile = new File(exists.certificate());
-                PublicKey userPublicKey = SecurityUtils.readPublicKeyFromFile(pubKeyFile);
-                boolean verified = SecurityUtils.verifySignature(userPublicKey, msg.getSignedObject());
-                if(clientNonce == nonce && verified) {
-                    output.writeObject(Codes.OKUSER.toString());
-                    if (!authentication2FA(apiKey, userId)) {
-                        return false;
-                    }
-                    this.devUser = srvStorage.getUser(userId);
-                    return true;
-                } else {
-                    output.writeObject(Codes.NOK.toString());
-                    return false;
-                }
-            }
         } catch (Exception e) {
-            System.out.println("Error on auth process!");
+            System.out.println("Error on authentication process!");
             return false;
         }
     }
@@ -176,38 +146,27 @@ public class Connection {
      */
     public boolean validateDevice() {
         try {
-            // Id validation
-            String strDevId = (String) input.readObject();
-            int devId = Integer.parseInt(strDevId);
-            if (devId < 0) {
-                output.writeObject(Codes.NOKDEVID.toString());
-                return false;
-            }
+            int devId = Integer.parseInt((String) input.readObject());
             this.device = new Device(devUser.name(), devId);
             Device exists = srvStorage.getDevice(this.device);
-            if (exists != null) {
-                if (!exists.isConnected()) {
-                    this.device = exists;
-                } else {
-                    output.writeObject(Codes.NOKDEVID.toString());
-                    return false;
-                }
-            }
-            else {
-                srvStorage.saveDevice(device);
+            if (exists != null && exists.isConnected()) {
+                output.writeObject(Codes.NOKDEVID.toString());
+                return false;
+            } else if (exists == null) {
+                srvStorage.saveDevice(this.device);
+            } else {
+                this.device = exists;
             }
             output.writeObject(Codes.OKDEVID.toString());
 
             // Remote attestation
-            SecureRandom secureRandom = new SecureRandom();
-            long nonce = secureRandom.nextLong();
+            long nonce = new SecureRandom().nextLong();
             output.writeObject(nonce);
             String[] copyInfo = srvStorage.getCopyInfo();
-            File clientCopy = new File(copyInfo[1]);
-            byte[] server = CommonUtils.calculateHashWithNonce(clientCopy, nonce);
-            String clientName = (String) input.readObject();
+            byte[] server = CommonUtils.calculateHashWithNonce(new File(copyInfo[1]), nonce);
+            String name = (String) input.readObject();
             byte[] client = (byte[]) input.readObject();
-            if(clientName.equals(copyInfo[0]) && CommonUtils.compareHashes(client, server)) {
+            if(name.equals(copyInfo[0]) && CommonUtils.compareHashes(client, server)) {
                 this.device.setConnected(true);
                 output.writeObject(Codes.OKTESTED.toString());
                 return true;
@@ -294,73 +253,37 @@ public class Connection {
     private void handleADD(String u, String d) throws IOException {
         try {
             User user = srvStorage.getUser(u);
-            if (user == null) {
-                output.writeObject(Codes.NOUSER.toString());
-                return;
-            }
             Domain domain = srvStorage.getDomain(d);
-            if (domain == null) {
-                output.writeObject(Codes.NODM.toString());
-                return;
+            String res = Codes.OK.toString();
+            if (domain == null) res = Codes.NODM.toString();
+            else if (user == null) res = Codes.NOUSER.toString();
+            else if (!domain.getOwner().equals(devUser)) {
+                res = Codes.NOPERM.toString();
             }
-            if (!domain.getOwner().equals(devUser)) {
-                output.writeObject(Codes.NOPERM.toString());
-                return;
-            }
+            output.writeObject(res);
 
-            output.writeObject(Codes.OK.toString());
-
-            String hasPK = (String) input.readObject();
-            if (hasPK.equals("NO_PK")) {
-                output.writeObject("NOK");
-                return;
-                /*
-                String path = "server-files/users_pub_keys/" + u + ".cer";
-                File file = new File(path);
-                if (file.isFile() && file.exists()) {
-                    output.writeObject("SENDING_KEY");
-                    input.readObject();
-                    output.writeObject(Codes.OK.toString());
-                    output.writeInt((int) file.length());
-                    sendFile(path, (int) file.length());
-                    System.out.println("Success: File send successfully!");
-
+            if (res.equals(Codes.OK.toString())) {
+                int size = input.readInt();
+                String parent = "server-files/domain_keys/" + d;
+                File domainDir = new File(parent);
+                if (!domainDir.exists()) domainDir.mkdirs();
+                String path = parent + "/" + u + ".key.cif";
+                if (receiveFile(path, size)) {
+                    System.out.println("Success: User key received!");
+                    res = srvStorage.addUserToDomain(user, domain);
+                    output.writeObject(res);
                 } else {
-                    output.writeObject("NOK");
-                    return;
+                    System.out.println("Error: Unable to receive user key!");
+                    output.writeObject(Codes.NOK.toString());
                 }
-                */
-            } else {
-                output.writeObject("WAITING_KEY");
             }
 
-            int size = input.readInt();
-            File domainDir = new File("server-files/domain_keys/" + d);
-            if (!domainDir.exists()) {
-                domainDir.mkdirs();
-            }
-            String path = "server-files/domain_keys/" + d + "/" + u + ".key.cif";
-
-            if (receiveFile(path, size)) {
-                System.out.println("Success: Key received!");
-                output.writeObject(Codes.OK.toString());
-            } else {
-                System.out.println("Error: Unable to receive key!");
-                output.writeObject(Codes.NOK.toString());
-                return;
-            }
-
-            input.readObject();
-
-            String result = srvStorage.addUserToDomain(this.devUser, user, domain);
-
-            output.writeObject(result);
-
-            result = result.equals(Codes.OK.toString()) ?
-                    "Success: Added " + user.name() + " to domain " + d
-                    : "Error: Unable to add " + user.name() + " to domain " + d;
-            System.out.println(result);
+            String log = res.equals(Codes.OK.toString()) ?
+                    "Success: Added " + u + " to domain " + d
+                    : "Error: Unable to add " + u + " to domain " + d;
+            System.out.println(log);
         } catch (Exception e) {
+            System.out.println("Error when trying to add user!");
             output.writeObject(Codes.NOK.toString());
         }
     }
@@ -419,46 +342,35 @@ public class Connection {
                 output.writeObject(Codes.NRD.toString());
                 return;
             }
-
             StringBuilder sb = new StringBuilder();
-            for (Domain domain : domains) {
-                sb.append(domain.getName()).append(";");
-            }
-            // Send domains
-            output.writeObject(sb.toString());
+            for (Domain d : domains) sb.append(d.getName()).append(";");
+            output.writeObject(sb.toString()); // Send domains
+            input.readObject(); // Receive confirmation of receiving the domains
 
-            // Receive confirmation of receiving the domains
-            input.readObject();
-            for (Domain domain : domains) {
-                String keyPath = "server-files/domain_keys/" + domain.getName()
+            for (Domain d : domains) {
+                String keyPath = "server-files/domain_keys/" + d.getName()
                         + "/" + devUser.name() + ".key.cif";
-
                 File keyFile = new File(keyPath);
                 if (!keyFile.exists()) {
                     System.out.println("Error: Key not found!");
                     output.writeObject(Codes.NOK.toString());
                     return;
                 }
-
-                // Send the key
                 output.writeInt((int) keyFile.length()); // Send key size
                 sendFile(keyPath, (int) keyFile.length()); // Send key
 
-                // Receiving encrypted temperature
+                // Receive and save encrypted temperature
                 String encTemp = (String) this.input.readObject();
-
-                // Save temperature
-                String res = srvStorage.saveTemperature(device, encTemp, domain);
+                String res = srvStorage.saveTemperature(device, encTemp, d);
                 if(res.equals(Codes.OK.toString())) {
                     output.writeObject(Codes.OK.toString());
                 } else {
                     output.writeObject(Codes.NOK.toString());
                 }
             }
-
-            // Receive confirmation of all temperatures were sent to the server
-            String allTempsReceived = (String) input.readObject();
-            if (allTempsReceived.equals(Codes.OK.toString())) {
+            // Receive final confirmation
+            String res = (String) input.readObject();
+            if (res.equals(Codes.OK.toString())) {
                 System.out.println("Success: Temperature received!");
                 output.writeObject(Codes.OK.toString());
             } else {
@@ -488,22 +400,14 @@ public class Connection {
                 output.writeObject(Codes.NRD.toString());
                 return;
             }
-
             StringBuilder sb = new StringBuilder();
-            for (Domain domain : domains) {
-                sb.append(domain.getName()).append(";");
-            }
+            for (Domain d : domains) sb.append(d.getName()).append(";");
+            output.writeObject(sb.toString()); // Send domains
+            input.readObject(); // Receive confirmation of receiving the domains
 
-            // Send domains
-            output.writeObject(sb.toString());
-
-            // Receive confirmation of receiving the domains
-            input.readObject();
-
-            // Start receiving the images - one image per domain
-            for (Domain domain : domains) {
-                // Send the key
-                String keyPath = "server-files/domain_keys/" + domain.getName() + "/" + devUser.name() + ".key.cif";
+            for (Domain d : domains) { // Receive one image per domain
+                String keyPath = "server-files/domain_keys/" + d.getName()
+                        + "/" + devUser.name() + ".key.cif";
                 File keyFile = new File(keyPath);
                 if (!keyFile.exists()) {
                     System.out.println("Error: Key not found!");
@@ -514,16 +418,14 @@ public class Connection {
                 sendFile(keyPath, (int) keyFile.length()); // Send key
 
                 int size = input.readInt(); // Receive image size
-                String imagePath = "server-files/images/" + device.getUser() + "_" + device.getId() + "_" + domain.getName() + ".jpg.cif";
-
+                String imagePath = "server-files/images/" + device.getUser()
+                        + "_" + device.getId() + "_" + d.getName() + ".jpg.cif";
                 receiveFile(imagePath, size); // Receive image
-
-                output.writeObject("ONE_IMAGE_RECEIVED"); // Confirm image received
+                output.writeObject(Codes.OK.toString()); // Send confirmation
             }
-
-            String allImagesReceived = (String) input.readObject(); // Receive confirmation of all images were sent to the server
-
-            if (allImagesReceived.equals("ALL_IMAGES_SENT")) {
+            // Receive final confirmation
+            String res = (String) input.readObject();
+            if (res.equals(Codes.OK.toString())) {
                 System.out.println("Success: All images received!");
                 output.writeObject(Codes.OK.toString());
             } else {
@@ -558,24 +460,20 @@ public class Connection {
             if (path != null) {
                 String keyPath = "server-files/domain_keys/" + domain.getName()
                         + "/" + devUser.name() + ".key.cif";
-
-                // Find domain key
                 File keyFile = new File(keyPath);
-                if (!keyFile.exists()) {
+                if (!keyFile.exists()) { // Find domain key
                     System.out.println("Error: Key not found!");
                     output.writeObject(Codes.NOK.toString());
                     return;
                 }
                 output.writeObject(Codes.OK.toString());
 
-                // Send the key
-                output.writeInt((int) keyFile.length());
-                sendFile(keyPath, (int) keyFile.length());
+                output.writeInt((int) keyFile.length()); // Send the key size
+                sendFile(keyPath, (int) keyFile.length()); // Send the key
 
-                // Send the temperatures file
                 int size = (int) new File(path).length();
                 output.writeInt(size);
-                String result = sendFile(path, size) ?
+                String result = sendFile(path, size) ? // Send the temperatures file
                         "Success: Temperatures from domain " + d + " sent successfully"
                         : "Error: Failed to send temperatures from domain " + d;
                 System.out.println(result);
@@ -607,38 +505,35 @@ public class Connection {
                 System.out.println("Error: User does not have permissions!");
                 output.writeObject(Codes.NOPERM.toString());
             } else {
-                List<Domain> domainsDevice = srvStorage.getDeviceDomains(device);
-                for (Domain d : domainsDevice) {
+                List<Domain> domains = srvStorage.getDeviceDomains(device);
+                for (Domain d : domains) {
                     if (d.getUsers().contains(devUser)) {
-                        // Domain key
                         File domainKeyEnc = new File("server-files/domain_keys/" 
                                 + d.getName() + "/" + devUser.name() + ".key.cif");
-                        if (!domainKeyEnc.exists()) continue;
+                        if (domainKeyEnc.exists()) { // Domain key
+                            File imageEnc = new File("server-files/images/"
+                                    + device.getUser() + "_" + device.getId()
+                                    + "_" + d.getName() + ".jpg.cif");
+                            if (imageEnc.exists()) { // Image encrypted
+                                output.writeObject(Codes.OK.toString());
 
-                        // Image encrypted
-                        File imageEnc = new File("server-files/images/" 
-                                + device.getUser() + "_" + device.getId() + "_" + d.getName() + ".jpg.cif");
-                        if (!imageEnc.exists()) continue;
+                                output.writeObject(d.getName());
+                                output.writeInt((int) domainKeyEnc.length());
+                                sendFile(domainKeyEnc.getPath(), (int) domainKeyEnc.length());
 
-                        output.writeObject("SENDING_FILES"); // Warn client that server is going to send the files
+                                input.readObject(); // Receive confirmation
+                                output.writeInt((int) imageEnc.length());
+                                sendFile(imageEnc.getPath(), (int) imageEnc.length());
 
-                        //input.readObject(); // Client is ready to receive the key
-
-                        output.writeObject(d.getName());
-
-                        output.writeInt((int) domainKeyEnc.length());
-                        sendFile(domainKeyEnc.getPath(), (int) domainKeyEnc.length());
-
-                        input.readObject(); // Client is ready to receive the image
-                        output.writeInt((int) imageEnc.length());
-                        sendFile(imageEnc.getPath(), (int) imageEnc.length());
-
-                        input.readObject(); // Client is ready to receive the image encryption params
-
-                        output.writeObject("OK");
-                        return;
+                                input.readObject(); // Receive confirmation
+                                output.writeObject(Codes.OK.toString());
+                                System.out.println("Success: Image from " + device + " sent successfully");
+                                return;
+                            }
+                        }
                     }
                 }
+                System.out.println("Error: No data found for this device!");
                 output.writeObject(Codes.NODATA.toString());
             }
         } catch (Exception e) {

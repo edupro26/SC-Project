@@ -31,7 +31,6 @@ public class SecurityUtils {
     private static final String ENC_ALGORITHM = "PBEWithHmacSHA256AndAES_128";
     private static final String SIG_ALGORITHM = "SHA256withRSA";
 
-    // TODO: Make salt secure
     private static final byte[] salt = { (byte) 0xc9, (byte) 0x36, (byte) 0x78,
                                         (byte) 0x99, (byte) 0x52, (byte) 0x3e,
                                         (byte) 0xea, (byte) 0xf2 };
@@ -228,7 +227,6 @@ public class SecurityUtils {
             signature.initVerify(publicKey);
             return signedObject.verify(publicKey, signature);
         } catch (Exception e) {
-            System.out.println(e.getMessage());
             return false;
         }
     }
@@ -242,12 +240,11 @@ public class SecurityUtils {
         }
     }
 
-    public static PublicKey readPublicKeyFromFile(File file) {
+    public static PublicKey getUserPubKey(File file) {
         try (FileInputStream fis = new FileInputStream(file);
              ObjectInputStream ois = new ObjectInputStream(fis)) {
             return (PublicKey) ois.readObject();
         } catch (Exception e) {
-            System.out.println(e.getMessage());
             return null;
         }
     }
