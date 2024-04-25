@@ -80,7 +80,7 @@ public class DeviceManager {
         for (Map.Entry<Device, List<Domain>> entry : devices.entrySet()) {
             if (entry.getKey().equals(device)) {
                 for (Domain domain : entry.getValue()) {
-                    if (domain.getUsers().contains(user) || domain.getOwner().equals(user))
+                    if (domain.getUsers().contains(user))
                         return true;
                 }
             }
