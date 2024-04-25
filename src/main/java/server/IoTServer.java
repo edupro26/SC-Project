@@ -148,18 +148,18 @@ public class IoTServer {
                     cliSocket.close();
                     return;
                 }
+                System.out.println("User from " + deviceIP + " authenticated!");
 
-                System.out.print("Validating device... ");
                 boolean isValid = connection.validateDevice();
                 if (isValid) {
-                    System.out.println("Device validated!");
+                    System.out.println("Device from " + deviceIP + " validated!");
                     System.out.println("Device connected " + connection.getDevice());
                     System.out.println("Active connections: " + ++counter);
                     connection.handleRequests();
                     System.out.println("Device disconnected " + connection.getDevice());
                     System.out.println("Active connections: " + --counter);
                 } else {
-                    System.out.println("Device not validated!");
+                    System.out.println("Device from " + deviceIP + " not validated!");
                 }
 
                 output.close();

@@ -102,7 +102,7 @@ class EncryptionTest {
 
     @Test
     void findPrivateKeyOnKeyStore() {
-        PrivateKey privateKey = SecurityUtils.findPrivateKeyOnKeyStore(PUBLIC_KEY_ALIAS);
+        PrivateKey privateKey = SecurityUtils.getPrivateKey(PUBLIC_KEY_ALIAS);
         assertNotNull(privateKey);
     }
 
@@ -120,7 +120,7 @@ class EncryptionTest {
         PublicKey pubKey = SecurityUtils.findPublicKeyOnTrustStore(PUBLIC_KEY_ALIAS);
         System.out.println(pubKey);
         SecurityUtils.encryptKeyWithRSA(key, pubKey, KEY_ENCRYPTED_FILE);
-        PrivateKey privateKey = SecurityUtils.findPrivateKeyOnKeyStore(PUBLIC_KEY_ALIAS);
+        PrivateKey privateKey = SecurityUtils.getPrivateKey(PUBLIC_KEY_ALIAS);
         System.out.println(privateKey);
         Key decryptedKey = SecurityUtils.decryptKeyWithRSA(new File(KEY_ENCRYPTED_FILE), privateKey);
         assertEquals(key, decryptedKey);
@@ -157,7 +157,7 @@ class EncryptionTest {
         File encryptedFile = new File("file_encrypted.txt");
         SecretKey key = SecurityUtils.generateKey(KEY_PASSWORD);
         SecurityUtils.encryptKeyWithRSA(key, SecurityUtils.findPublicKeyOnTrustStore(PUBLIC_KEY_ALIAS), KEY_ENCRYPTED_FILE);
-        SecretKey key2 = (SecretKey) SecurityUtils.decryptKeyWithRSA(new File(KEY_ENCRYPTED_FILE), SecurityUtils.findPrivateKeyOnKeyStore(PUBLIC_KEY_ALIAS));
+        SecretKey key2 = (SecretKey) SecurityUtils.decryptKeyWithRSA(new File(KEY_ENCRYPTED_FILE), SecurityUtils.getPrivateKey(PUBLIC_KEY_ALIAS));
         SecurityUtils.encryptFile(fileToEncrypt, encryptedFile, key2);
         assertTrue(encryptedFile.exists());
 
@@ -169,7 +169,7 @@ class EncryptionTest {
         File encryptedFile = new File("file_encrypted.txt");
         SecretKey key = SecurityUtils.generateKey(KEY_PASSWORD);
         SecurityUtils.encryptKeyWithRSA(key, SecurityUtils.findPublicKeyOnTrustStore(PUBLIC_KEY_ALIAS), KEY_ENCRYPTED_FILE);
-        SecretKey key2 = (SecretKey) SecurityUtils.decryptKeyWithRSA(new File(KEY_ENCRYPTED_FILE), SecurityUtils.findPrivateKeyOnKeyStore(PUBLIC_KEY_ALIAS));
+        SecretKey key2 = (SecretKey) SecurityUtils.decryptKeyWithRSA(new File(KEY_ENCRYPTED_FILE), SecurityUtils.getPrivateKey(PUBLIC_KEY_ALIAS));
         SecurityUtils.encryptFile(fileToEncrypt, encryptedFile, key2);
         File decryptedFile = new File("file_decrypted.txt");
         SecurityUtils.decryptFile(encryptedFile, decryptedFile, key2);

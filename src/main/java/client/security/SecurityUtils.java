@@ -79,7 +79,7 @@ public class SecurityUtils {
         }
     }
 
-    public static Certificate getOwnCertificate(String alias) {
+    public static Certificate getCertificate(String alias) {
         try {
             KeyStore ks = KeyStore.getInstance("JKS");
             ks.load(new FileInputStream(
@@ -104,12 +104,11 @@ public class SecurityUtils {
 
             return ks.getCertificate(alias).getPublicKey();
         } catch (Exception e) {
-            System.out.println(e.getMessage());
             return null;
         }
     }
 
-    public static PrivateKey findPrivateKeyOnKeyStore(String alias) {
+    public static PrivateKey getPrivateKey(String alias) {
         try {
             KeyStore ks = KeyStore.getInstance("JKS");
             ks.load(new FileInputStream(
@@ -170,11 +169,10 @@ public class SecurityUtils {
 
     }
 
-    public static void decryptFile(File encryptedFile, File decryptedFile, SecretKey key) {
+    public static int decryptFile(File encryptedFile, File decryptedFile, SecretKey key) {
         try {
             Cipher cipher = Cipher.getInstance("AES");
             cipher.init(Cipher.DECRYPT_MODE, key);
-
             try (FileInputStream fis = new FileInputStream(encryptedFile);
                  FileOutputStream fos = new FileOutputStream(decryptedFile);
                  CipherOutputStream cos = new CipherOutputStream(fos, cipher)) {
@@ -184,8 +182,9 @@ public class SecurityUtils {
                     cos.write(buffer, 0, read);
                 }
             }
+            return (int) decryptedFile.length();
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            return -1;
         }
     }
 

@@ -133,22 +133,16 @@ public class DomainManager {
     /**
      * Adds a given {@code User} to a given {@code Domain} of the list {@link #domains}.
      * It also updates the content of the {@code Domain} in the domains.txt file located
-     * in the server-files folder. Returns "NODM" if the {@code domain} does not exist,
-     * "NOUSER" if the {@code userToAdd} does not exist, "NOPERM" if the {@code user}
-     * does not have permission, "NOK" if there was an error writing to the file, "OK"
-     * if the method concluded with success.
+     * in the server-files folder. Returns "NOK" if there was an error writing to the file
+     * or "OK" if the method concluded with success.
      *
-     * @param user the {@code User} of the current {@code Device}
      * @param userToAdd the {@code User} to add to the {@code Domain}
      * @param domain the {@code Domain}
      * @param verifier the file {@code IntegrityVerifier}
      * @return status code
      * @see Codes
      */
-    public String addUserToDomain(User user, User userToAdd, Domain domain, IntegrityVerifier verifier) {
-        if (domain == null) return Codes.NODM.toString();
-        if (userToAdd == null) return Codes.NOUSER.toString();
-        if (!domain.getOwner().equals(user)) return Codes.NOPERM.toString();
+    public String addUserToDomain(User userToAdd, Domain domain, IntegrityVerifier verifier) {
         List<User> domainUsers = domain.getUsers();
         if (domainUsers.contains(userToAdd)) return Codes.NOK.toString();
         synchronized (domainsLock) {
