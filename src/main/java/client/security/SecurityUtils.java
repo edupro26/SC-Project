@@ -13,10 +13,20 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.util.Base64;
 
+/**
+ * Utility class with security
+ * methods used by the client
+ */
 public class SecurityUtils {
 
+    /**
+     * Encryption algorithm
+     */
     private static final String ENC_ALGORITHM = "PBKDF2WithHmacSHA256";
 
+    /**
+     * Parameters for SecretKey generation
+     */
     private static final byte[] salt = { (byte) 0xc9, (byte) 0x36, (byte) 0x78,
                                         (byte) 0x99, (byte) 0x52, (byte) 0x3e,
                                         (byte) 0xea, (byte) 0xf2 };
@@ -25,6 +35,12 @@ public class SecurityUtils {
 
     private static final int KEY_LENGTH = 128;
 
+    /**
+     * Generates a symmetric key given a cipher-password.
+     *
+     * @param cipherPassword the password to be used to generate the key
+     * @return the generated key
+     */
     public static SecretKey generateKey(String cipherPassword) {
         KeySpec keySpec = new PBEKeySpec(
                 cipherPassword.toCharArray(), salt, ITERATION_COUNT, KEY_LENGTH);
@@ -38,6 +54,14 @@ public class SecurityUtils {
         }
     }
 
+    /**
+     * Encrypts a {@code SecretKey} with the given {@code PublicKey}
+     * and saves it to a file
+     *
+     * @param key the secret key to be encrypted
+     * @param pubKey the public key used for encryption
+     * @param filenameToSave the file path
+     */
     public static void encryptKeyWithRSA(SecretKey key, PublicKey pubKey, String filenameToSave) {
         try {
             Cipher cipher = Cipher.getInstance("RSA");
@@ -53,6 +77,13 @@ public class SecurityUtils {
         }
     }
 
+    /**
+     * Decrypts a key stored in a file using a {@code PrivateKey}
+     *
+     * @param keyFile the file holding the encrypted key
+     * @param privateKey the private key used for decryption
+     * @return a key if it was successfulley decrypted, null otherwise
+     */
     public static Key decryptKeyWithRSA(File keyFile, PrivateKey privateKey) {
         try {
             Cipher cipher = Cipher.getInstance("RSA");
@@ -70,6 +101,12 @@ public class SecurityUtils {
         }
     }
 
+    /**
+     * Returns the {@code Certificate} of a given alias
+     *
+     * @param alias the alias used to search
+     * @return the certificate if found, null otherwise
+     */
     public static Certificate getCertificate(String alias) {
         try {
             KeyStore ks = KeyStore.getInstance("JKS");
@@ -85,6 +122,12 @@ public class SecurityUtils {
         }
     }
 
+    /**
+     * Returns the {@code PublicKey} of a given alias in a truststore
+     *
+     * @param alias the alias used to search
+     * @return the public key if found, null otherwise
+     */
     public static PublicKey findPublicKeyOnTrustStore(String alias) {
         try {
             KeyStore ks = KeyStore.getInstance("JKS");
@@ -99,6 +142,12 @@ public class SecurityUtils {
         }
     }
 
+    /**
+     * Returns the {@code PrivateKey} of a given alias
+     *
+     * @param alias the alias used to search
+     * @return the private key if found, null otherwise
+     */
     public static PrivateKey getPrivateKey(String alias) {
         try {
             KeyStore ks = KeyStore.getInstance("JKS");
@@ -116,6 +165,13 @@ public class SecurityUtils {
         }
     }
 
+    /**
+     * Encrypts the content of a file to another file
+     *
+     * @param fileToEncrypt the file with the content to encrypt
+     * @param encryptedFile the file to save the encrypted content
+     * @param key the secret key used for encryption
+     */
     public static void encryptFile(File fileToEncrypt, File encryptedFile, SecretKey key) {
         try {
 
@@ -137,6 +193,14 @@ public class SecurityUtils {
 
     }
 
+    /**
+     * Decrypts the content of a file to another file
+     *
+     * @param encryptedFile the file with the encrypted content
+     * @param decryptedFile the file to save the decrypted content
+     * @param key the secret key used for decryption
+     * @return the length of the decrypted file or -1 in case of error
+     */
     public static int decryptFile(File encryptedFile, File decryptedFile, SecretKey key) {
         try {
             Cipher cipher = Cipher.getInstance("AES");
@@ -156,6 +220,13 @@ public class SecurityUtils {
         }
     }
 
+    /**
+     * Encrypts a temperature value
+     *
+     * @param temperature the temperature value to be encrypted
+     * @param key the secret key used for encryption
+     * @return the encrypted temperature or null in case of error
+     */
     public static String encryptTemperature(String temperature, SecretKey key) {
         try {
             Cipher cipher = Cipher.getInstance("AES");
@@ -167,6 +238,13 @@ public class SecurityUtils {
         }
     }
 
+    /**
+     * Decrypts the file with the saved temperatures
+     *
+     * @param temperaturesFile the encrypted file
+     * @param key the secret key used for decryption
+     * @return the length of the decrypted file or -1 in case of error
+     */
     public static int decryptTemperatures(File temperaturesFile, SecretKey key) {
         try {
             BufferedReader br = new BufferedReader(new FileReader(temperaturesFile));
@@ -188,6 +266,13 @@ public class SecurityUtils {
         }
     }
 
+    /**
+     * Decrypts a temperature value
+     *
+     * @param temperature the temperature value to be decrypted
+     * @param key the secret key used for decryption
+     * @return the decrypted temperature or null in case of error
+     */
     private static String decryptTemperature(String temperature, SecretKey key) {
         try {
             Cipher cipher = Cipher.getInstance("AES");
