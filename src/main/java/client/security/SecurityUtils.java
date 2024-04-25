@@ -9,7 +9,6 @@ import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.security.*;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.util.Base64;
@@ -36,14 +35,6 @@ public class SecurityUtils {
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
             System.out.println(e.getMessage());
             return null;
-        }
-    }
-
-    public static void saveKeyIntoFile(SecretKey key, File keyFile) {
-        try (FileOutputStream fos = new FileOutputStream(keyFile)) {
-            fos.write(key.getEncoded());
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
         }
     }
 
@@ -122,29 +113,6 @@ public class SecurityUtils {
         } catch (Exception e) {
             System.out.println(e.getMessage());
             return null;
-        }
-    }
-
-    public static void storePubKeyOnTrustStore(File pubKeyFile, String alias) {
-        try {
-            KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
-            FileInputStream tsFis = new FileInputStream(System.getProperty("javax.net.ssl.trustStore"));
-            trustStore.load(tsFis, System.getProperty("javax.net.ssl.trustStorePassword").toCharArray());
-            tsFis.close();
-
-            CertificateFactory cf = CertificateFactory.getInstance("X.509");
-            InputStream certStream = new FileInputStream(pubKeyFile);
-            Certificate cert = cf.generateCertificate(certStream);
-            certStream.close();
-
-            trustStore.setCertificateEntry(alias, cert);
-
-            FileOutputStream tsFos = new FileOutputStream(System.getProperty("javax.net.ssl.trustStore"));
-            trustStore.store(tsFos, System.getProperty("javax.net.ssl.trustStorePassword").toCharArray());
-            tsFos.close();
-
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
         }
     }
 

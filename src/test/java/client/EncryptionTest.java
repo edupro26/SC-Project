@@ -85,13 +85,6 @@ class EncryptionTest {
         assertNotNull(key);
     }
 
-    @org.junit.jupiter.api.Test
-    void saveKeyIntoFile() {
-        SecretKey key = SecurityUtils.generateKey(KEY_PASSWORD);
-        SecurityUtils.saveKeyIntoFile(key, new File(KEY_FILE));
-        assertTrue(new File(KEY_FILE).exists());
-    }
-
 
 
     @org.junit.jupiter.api.Test
@@ -125,13 +118,6 @@ class EncryptionTest {
         Key decryptedKey = SecurityUtils.decryptKeyWithRSA(new File(KEY_ENCRYPTED_FILE), privateKey);
         assertEquals(key, decryptedKey);
     }
-
-    @Test
-    void storePubKeyOnTrustStore() {
-        SecurityUtils.storePubKeyOnTrustStore(new File(PK_FILE), NEW_PUBLIC_KEY_ALIAS);
-        assertNotNull(SecurityUtils.findPublicKeyOnTrustStore(NEW_PUBLIC_KEY_ALIAS));
-    }
-
 
 
     @AfterAll
