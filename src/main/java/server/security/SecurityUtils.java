@@ -57,7 +57,7 @@ public class SecurityUtils {
     /**
      * File to store encryption parameters
      */
-    private static final File PARAMS_FILE = new File("params.txt");
+    private static final File PARAMS_FILE = new File("server/params.txt");
 
     /**
      * A {@code HttpClient}

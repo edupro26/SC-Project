@@ -33,7 +33,7 @@ public class DeviceHandler {
     /**
      * Folder used as an output for files sent by the {@code IoTServer}
      */
-    private static final String SERVER_OUT = "server-output/";
+    private static final String CLIENT = "client/";
 
     /**
      * Communication channels
@@ -464,7 +464,7 @@ public class DeviceHandler {
         }
         String msg = parseCommandToSend(command, args);
         String res = this.sendReceive(msg);
-        String outputPath = SERVER_OUT + args[0] + ".txt";
+        String outputPath = CLIENT + args[0] + ".txt";
         if (res.equals(Codes.OK.toString())) {
             try {
                 int keySize = input.readInt();
@@ -527,8 +527,8 @@ public class DeviceHandler {
         if (res.equals(Codes.OK.toString())) {
             try {
                 String domain = (String) input.readObject();
-                File domainKeyENc = new File(SERVER_OUT + domain + ".key.enc");
-                File imageEnc = new File(SERVER_OUT + temp[0] + "_" + temp[1] + ".jpg.cif");
+                File domainKeyENc = new File(CLIENT + domain + ".key.enc");
+                File imageEnc = new File(CLIENT + temp[0] + "_" + temp[1] + ".jpg.cif");
 
                 // Receive the domain key
                 int domainKeyEncSize = input.readInt();
@@ -549,7 +549,7 @@ public class DeviceHandler {
                 // Decrypt the domain key and the image
                 SecretKey key = (SecretKey) SecurityUtils.decryptKeyWithRSA(
                         domainKeyENc, SecurityUtils.getPrivateKey(userId));
-                File image = new File(SERVER_OUT + temp[0] + "_" + temp[1] + ".jpg");
+                File image = new File(CLIENT + temp[0] + "_" + temp[1] + ".jpg");
                 int received = SecurityUtils.decryptFile(imageEnc, image, key);
                 domainKeyENc.delete(); // Delete the key
                 imageEnc.delete(); // Delete the encrypted image
@@ -610,7 +610,7 @@ public class DeviceHandler {
      * @requires {@code filePath != null}
      */
     private void receiveFile(String filePath, int size) {
-        File outputFolder = new File(SERVER_OUT);
+        File outputFolder = new File(CLIENT);
         if (!outputFolder.isDirectory()) outputFolder.mkdir();
         try {
             FileOutputStream out = new FileOutputStream(filePath);

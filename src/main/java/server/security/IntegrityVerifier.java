@@ -29,8 +29,8 @@ public class IntegrityVerifier {
     /**
      * File paths
      */
-    private static final String CLIENT_COPY = "classes/device_info.csv";
-    private static final String DOMAINS = "server-files/domains.txt";
+    private static final String CLIENT_COPY = "classes/IoTServer/device_info.csv";
+    private static final String DOMAINS = "server/domains.txt";
 
     /**
      * Pointer to the hmacs.txt file

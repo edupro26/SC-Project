@@ -38,10 +38,10 @@ public class Storage {
     /**
      * File paths
      */
-    private static final String CLIENT_COPY = "classes/device_info.csv";
-    private static final String USERS = "server-files/users.txt";
-    private static final String DOMAINS = "server-files/domains.txt";
-    private static final String HMACS = "server-files/hmacs.txt";
+    private static final String CLIENT_COPY = "classes/IoTServer/device_info.csv";
+    private static final String USERS = "server/users.txt";
+    private static final String DOMAINS = "server/domains.txt";
+    private static final String HMACS = "server/hmacs.txt";
 
     /**
      * Storage managers
@@ -274,11 +274,11 @@ public class Storage {
         /**
          * Folder names
          */
-        private static final String SERVER_FILES = "server-files";
-        private static final String TEMPERATURES = "server-files/temperatures";
-        private static final String IMAGES = "server-files/images";
-        private static final String USERS_PUB_KEYS_DIR = "server-files/users_pub_keys";
-        private static final String DOMAIN_KEYS_DIR = "server-files/domain_keys";
+        private static final String SERVER_FILES = "server";
+        private static final String TEMPERATURES =  SERVER_FILES + "/temperatures";
+        private static final String IMAGES = SERVER_FILES + "/images";
+        private static final String USERS_PUB_KEYS_DIR =  SERVER_FILES + "/users_pub_keys";
+        private static final String DOMAIN_KEYS_DIR =  SERVER_FILES + "/domain_keys";
 
         /**
          * Constructs a new {@code FileLoader}.

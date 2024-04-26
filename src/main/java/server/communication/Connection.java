@@ -86,7 +86,7 @@ public class Connection {
                 if (user == null) {
                     output.writeObject(Codes.OKNEWUSER.toString());
                     if (!authentication2FA(apiKey, userId)) return false;
-                    String keyPath = "server-files/users_pub_keys/" + userId + ".cer";
+                    String keyPath = "server/users_pub_keys/" + userId + ".cer";
                     File pubKeyFile = new File(keyPath);
                     SecurityUtils.savePublicKeyToFile(msg.getCertificate().getPublicKey(), pubKeyFile);
                     devUser = new User(userId, keyPath);
@@ -259,7 +259,7 @@ public class Connection {
 
             if (res.equals(Codes.OK.toString())) {
                 int size = input.readInt();
-                String parent = "server-files/domain_keys/" + d;
+                String parent = "server/domain_keys/" + d;
                 File domainDir = new File(parent);
                 if (!domainDir.exists()) domainDir.mkdirs();
                 String path = parent + "/" + u + ".key.cif";
@@ -345,7 +345,7 @@ public class Connection {
             input.readObject(); // Receive confirmation of receiving the domains
 
             for (Domain d : domains) {
-                String keyPath = "server-files/domain_keys/" + d.getName()
+                String keyPath = "server/domain_keys/" + d.getName()
                         + "/" + devUser.name() + ".key.cif";
                 File keyFile = new File(keyPath);
                 if (!keyFile.exists()) {
@@ -403,7 +403,7 @@ public class Connection {
             input.readObject(); // Receive confirmation of receiving the domains
 
             for (Domain d : domains) { // Receive one image per domain
-                String keyPath = "server-files/domain_keys/" + d.getName()
+                String keyPath = "server/domain_keys/" + d.getName()
                         + "/" + devUser.name() + ".key.cif";
                 File keyFile = new File(keyPath);
                 if (!keyFile.exists()) {
@@ -415,7 +415,7 @@ public class Connection {
                 sendFile(keyPath, (int) keyFile.length()); // Send key
 
                 int size = input.readInt(); // Receive image size
-                String imagePath = "server-files/images/" + device.getUser()
+                String imagePath = "server/images/" + device.getUser()
                         + "_" + device.getId() + "_" + d.getName() + ".jpg.cif";
                 receiveFile(imagePath, size); // Receive image
                 output.writeObject(Codes.OK.toString()); // Send confirmation
@@ -455,7 +455,7 @@ public class Connection {
         } else {
             String path = srvStorage.getDomainTemperatures(domain);
             if (path != null) {
-                String keyPath = "server-files/domain_keys/" + domain.getName()
+                String keyPath = "server/domain_keys/" + domain.getName()
                         + "/" + devUser.name() + ".key.cif";
                 File keyFile = new File(keyPath);
                 if (!keyFile.exists()) { // Find domain key
@@ -507,10 +507,10 @@ public class Connection {
                 List<Domain> domains = srvStorage.getDeviceDomains(device);
                 for (Domain d : domains) {
                     if (d.getUsers().contains(devUser)) {
-                        File domainKeyEnc = new File("server-files/domain_keys/" 
+                        File domainKeyEnc = new File("server/domain_keys/"
                                 + d.getName() + "/" + devUser.name() + ".key.cif");
                         if (domainKeyEnc.exists()) { // Domain key
-                            File imageEnc = new File("server-files/images/"
+                            File imageEnc = new File("server/images/"
                                     + device.getUser() + "_" + device.getId()
                                     + "_" + d.getName() + ".jpg.cif");
                             if (imageEnc.exists()) { // Image encrypted

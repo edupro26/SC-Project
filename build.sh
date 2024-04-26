@@ -1,14 +1,18 @@
-# Build Server
-javac -d server-app/classes -cp src/main/java src/main/java/common/*.java
-javac -d server-app/classes -cp src/main/java src/main/java/server/*.java
-cp -r src/main/resources/* server-app/classes
-jar cvfe server-app/IoTServer.jar server.IoTServer -C server-app/classes .
+# Compile Client
+javac -d out/classes/IoTDevice -cp src/main/java src/main/java/common/*.java
+javac -d out/classes/IoTDevice -cp src/main/java src/main/java/client/*.java
 
-# Build Client
-javac -d client-app/classes -cp src/main/java src/main/java/common/*.java
-javac -d client-app/classes -cp src/main/java src/main/java/client/*.java
-jar cvfe client-app/IoTDevice.jar client.IoTDevice -C client-app/classes .
+# Compile Server
+javac -d out/classes/IoTServer -cp src/main/java src/main/java/common/*.java
+javac -d out/classes/IoTServer -cp src/main/java src/main/java/server/*.java
+
+# Copy resources
+cp -r src/main/resources/* out/classes/IoTServer
+
+# Build Client and Server
+jar cvfe out/IoTServer.jar server.IoTServer -C out/classes/IoTServer .
+jar cvfe out/IoTDevice.jar client.IoTDevice -C out/classes/IoTDevice .
 
 # Store a client reference copy
-mkdir -p server-app/classes/client-copy
-cp client-app/IoTDevice.jar -d server-app/classes/client-copy
+mkdir -p out/classes/IoTServer/client-copy
+cp out/IoTDevice.jar -d out/classes/IoTServer/client-copy

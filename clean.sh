@@ -1,12 +1,11 @@
 # Remove build folders
-rm -rf client-app/
-rm -rf server-app/
+rm -rf out/
 
 # Remove server files
-rm -rf server-files/*
+rm -rf server/
 
 # Remove server output files
-rm -rf server-output/*
+rm -rf client/
 
 # Remove server keystore
 rm -f keystore.server

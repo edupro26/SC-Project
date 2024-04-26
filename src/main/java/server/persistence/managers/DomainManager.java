@@ -197,7 +197,7 @@ public class DomainManager {
      * @return status code
      */
     public String saveTemperature(Device device, String temp, Domain domain) {
-        String path = "server-files/temperatures/" + domain.getName() + ".txt";
+        String path = "server/temperatures/" + domain.getName() + ".txt";
         try {
             StringBuilder sb = new StringBuilder();
             boolean replaced = false;
@@ -237,7 +237,7 @@ public class DomainManager {
      * @requires {@code domain != null}
      */
     public String getDomainTemperatures(Domain domain) {
-        String path = "server-files/temperatures/" + domain.getName() + ".txt";
+        String path = "server/temperatures/" + domain.getName() + ".txt";
         if (new File(path).exists()) {
             return path;
         }
