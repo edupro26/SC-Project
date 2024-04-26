@@ -40,7 +40,7 @@ public class Storage {
     /**
      * File paths
      */
-    private static final String CLIENT_COPY = "server/device_info.csv";
+    private static final String CLIENT_COPY = "server/device_info.txt";
     private static final String USERS = "server/users.txt";
     private static final String DOMAINS = "server/domains.txt";
     private static final String HMACS = "server/hmacs.txt";

@@ -29,7 +29,7 @@ public class IntegrityVerifier {
     /**
      * File paths
      */
-    private static final String CLIENT_COPY = "server/device_info.csv";
+    private static final String CLIENT_COPY = "server/device_info.txt";
     private static final String DOMAINS = "server/domains.txt";
 
     /**
