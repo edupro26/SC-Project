@@ -18,7 +18,7 @@ Grupo 6:
 ## Descrição
  
 
-O projeto implementa um sistema de IoT, com uma arquitetura cliente-servidor. 
+O projeto implementa um sistema seguro de IoT, com uma arquitetura cliente-servidor. 
 Este é composto por dois programas que comunicam entre si, o programa cliente 
 `IoTDevice` e o programa servidor `IoTServer`.
 
@@ -26,24 +26,25 @@ Este é composto por dois programas que comunicam entre si, o programa cliente
 ### Estrutura do projeto
 
 
-O projeto encontra-se organizado com uma estrutura maven, composta por dois
-módulos, `IoTDevice` e `IoTServer`.
+O projeto encontra-se organizado em três packages principais `client`, `server` e `common`.
 
-> ##### Módulo *IoTDevice*:
-> - `src/main/java/client` contém código fonte do **IoTDevice**
-
-> ##### Módulo *IoTServer*:
-> - `src/main/java/server` contém código fonte do **IoTSever**
-> - `src/main/resources` contém recursos utilizados pelo servidor
+> ##### Packages:
+> - `client` contém código fonte do **IoTDevice**
+> - `client.security` contém código relacionado com segurança
+> - `server` contém código fonte do **IoTSever**
+> - `common` contém código utilizado pelo cliente e servidor
+> - `common` contém código utilizado pelo cliente e servidor, relacionado com segurança
+> - `server.communication` contém código relacionado com a comunicação com o servidor
+> - `server.components` contém código relacionado com os componentes do servidor
+> - `server.persistence` contém código relacionado com a persistência do servidor
+> - `server.security` contém código relacionado com segurança
 
 **Nota:**
 
 Durante a comunicação entre cliente e servidor serão criados os seguintes diretórios:
 
-- `server-output` contém ficheiros enviados do servidor para o cliente
-- `server-files` contém ficheiros com dados do servidor
-- `temperatures` contém ficheiros com as temperaturas dos dispositivos em cada domínio do servidor
-- `images` contém as imagens enviadas do cliente para o servidor 
+- `client` contém os ficheiros que o cliente pede ao servidor
+- `server` contém ficheiros com dados do servidor, assim como, dados que o cliente envia ao servidor
 
 
 
@@ -55,7 +56,7 @@ O programa `IoTDevice` disponibiliza ao utilizador a seguinte interface de coman
 
 > ##### Lista de comandos:
 > - `CREATE <dm>` - criar um novo domínio com o nome **dm** no servidor.
-> - `ADD <user> <dm>` -  adiciona um o **user** ao domínio **dm**
+> - `ADD <user> <dm> <password-domain>` -  adiciona o **user** ao domínio **dm** utilizando a password do domínio
 > - `RD <dm>` - regista o dispositivo atual no domínio **dm**
 > - `ET <float>` - envia ao servidor o valor de temperatura **float**
 > - `EI <filename.jpg>` - envia ao servidor a imagem **filename.jpg**
@@ -74,63 +75,29 @@ O programa `IoTDevice` disponibiliza ao utilizador a seguinte interface de coman
 
 Para compilar e executar o projeto, siga os passos abaixo:
 
+1. Dentro do diretório do projeto, abrir um terminal e executar o script `setup.sh`.
+   Verificar se foram criados dois diretórios, um contendo keystores e outro certificados
+   
+   ```bash
+   ./setup.sh
+   ```
 
-1. Dentro do diretório do projeto executar o script `build.sh`
+2. De seguida, continuando dentro do diretório do projeto, execute o script `build.sh`. 
+   Verifique se foi criado o diretório `out`
 
-         $ ./build.sh
-         
-         
-         Conteudo do script:
+   ```bash
+   ./build.sh
+   ```
 
-         # Build Server
-         javac -d out/server/classes -cp IoTServer/src/main/java IoTServer/src/main/java/server/*.java
-         cp -r IoTServer/src/main/resources/* out/server/classes
-         jar cvfe out/IoTServer.jar server.IoTServer -C out/server/classes .
-
-         # Build Client
-         javac -d out/client/classes -cp IoTDevice/src/main/java IoTDevice/src/main/java/client/*.java
-         jar cvfe out/IoTDevice.jar client.IoTDevice -C out/client/classes .
-
-2. Dentro do diretório `out`, executar o seguinte comando para iniciar o servidor
+3. Dentro do diretório `out`, executar o seguinte comando para iniciar o servidor
 
          $ java -jar IoTServer.jar <port> <password-cifra> <keystore> <password-keystore> <2FA-APIKey>
 
-3. Dentro do diretório `out`, executar o seguinte comando para iniciar o cliente
+4. Dentro do diretório `out`, executar o seguinte comando para iniciar um cliente
 
          $ java -jar IoTDevice.jar <IP/hostname>[:Port] <truststore> <keystore> <passwordkeystore> <dev-id> <user-id>
-
-Caso pertenda apagar a pasta `out` pode executar o script `clean.sh`.
 
 
 **Notas:** <br>
 
-- Para utilizar mais do que um cliente, execute o comando para iniciar o cliente em diferentes terminais
-- Pode também utilizar o maven como build tool, executando o comando `mvn package`. Note que, terá de 
-atualizar o ficheiro `device_info.csv` localizado dentro do diretório `src/main/resources` do módulo
-`IoTServer`, com o nome e tamanho corretos do arquivo .jar do cliente
-
-## Chaves
-
-Comando para gerar chave assimétrica e armazenar no keystore do servidor:
-
-```bash
-keytool -genkeypair -alias IoTServerKeyPair -keyalg RSA -keysize 2048 -keystore keystore.server
-```
-
-Comando para exportar chave pública do servidor:
-
-```bash
-keytool -exportcert -alias IoTServerKeyPair -file certServer.cer -keystore keystore.server
-```
-
-Comando para importar chave pública para truststore do cliente:
-
-```bash
-keytool -importcert -alias IoTServerKeyPair -file certServer.cer -keystore truststore.userId
-```
-
-Comando para gerar chave assimétrica e armazenar no keystore do cliente:
-
-```bash
-keytool -genkeypair -alias userId -keyalg RSA -keysize 2048 -keystore keystore.userId
-```
+- Deve alterar e configurar o script `setup.sh`, para gerar os utlizadores pertendidos
