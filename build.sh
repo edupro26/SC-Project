@@ -1,8 +1,10 @@
 # Compile Client
+mkdir -p out/classes/IoTDevice
 javac -d out/classes/IoTDevice -cp src/main/java src/main/java/common/*.java
 javac -d out/classes/IoTDevice -cp src/main/java src/main/java/client/*.java
 
 # Compile Server
+mkdir -p out/classes/IoTServer
 javac -d out/classes/IoTServer -cp src/main/java src/main/java/common/*.java
 javac -d out/classes/IoTServer -cp src/main/java src/main/java/server/*.java
 
