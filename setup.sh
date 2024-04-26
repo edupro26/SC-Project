@@ -1,7 +1,3 @@
-# Cleaning any existing building files
-chmod +x clean.sh
-./clean.sh
-
 # Create folders to keep stores and certificates
 mkdir -p stores
 mkdir -p certificates
