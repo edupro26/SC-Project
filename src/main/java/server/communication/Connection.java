@@ -126,7 +126,7 @@ public class Connection {
         long fiveDigitCode = secureRandom.nextInt(90000) + 10000;
         boolean mfaReq = SecurityUtils.send2FACode(String.valueOf(fiveDigitCode), userId, apiKey);
         if (!mfaReq) {
-            System.out.println("Error sending 2FA code");
+            ServerLogger.logError("Error sending 2FA code");
             output.writeObject(Codes.NOK.toString());
             return false;
         }
