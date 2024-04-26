@@ -179,12 +179,12 @@ public class SecurityUtils {
                 .uri(URI.create(API_URL + params))
                 .build();
         try {
-            client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> res = client.send(request, HttpResponse.BodyHandlers.ofString());
+            return res.statusCode() >= 200 && res.statusCode() < 300;
         } catch (Exception e) {
             System.out.println(e.getMessage());
             return false;
         }
-        return true;
     }
 
     /**

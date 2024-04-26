@@ -88,6 +88,13 @@ public class DeviceHandler {
 
             res = (String) input.readObject();
             if (res.equals(Codes.OKUSER.toString()) || res.equals(Codes.OKNEWUSER.toString())) {
+                output.writeObject(Codes.OK.toString()); // Signal server that client is waiting for 2FA
+                String sent2FA = (String) input.readObject(); // Servers indicates if the 2FA code was sent with success
+                if (!sent2FA.equals(Codes.OK.toString())) {
+                    System.out.println("Error sending 2FA code.");
+                    System.exit(1);
+                }
+
                 System.out.print("Enter 2FA Code: ");
                 String code2FA = new Scanner(System.in).nextLine();
                 output.writeObject(code2FA);

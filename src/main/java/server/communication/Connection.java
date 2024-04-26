@@ -121,9 +121,17 @@ public class Connection {
      */
     private boolean authentication2FA(String apiKey, String userId)
             throws IOException, ClassNotFoundException {
+        if (!input.readObject().equals(Codes.OK.toString())) return false;
         SecureRandom secureRandom = new SecureRandom();
         long fiveDigitCode = secureRandom.nextInt(90000) + 10000;
-        SecurityUtils.send2FACode(String.valueOf(fiveDigitCode), userId, apiKey);
+        boolean mfaReq = SecurityUtils.send2FACode(String.valueOf(fiveDigitCode), userId, apiKey);
+        if (!mfaReq) {
+            System.out.println("Error sending 2FA code");
+            output.writeObject(Codes.NOK.toString());
+            return false;
+        }
+        output.writeObject(Codes.OK.toString());
+
         String codeStr = (String) input.readObject();
         try {
             int code = Integer.parseInt(codeStr);
