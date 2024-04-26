@@ -415,6 +415,9 @@ public class DeviceHandler {
                 System.out.println("Response: NRD # Device not registered");
                 return;
             }
+            // Don't use the entire image path
+            args[0] = !args[0].contains("/") ? args[0]
+                    : args[0].split("/")[args[0].split("/").length - 1];
 
             String[] domains = res.split(";");
             output.writeObject(Codes.OK.toString());
