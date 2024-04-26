@@ -33,7 +33,7 @@ O projeto encontra-se organizado em três packages principais `client`, `server`
 > - `client.security` contém código relacionado com segurança
 > - `server` contém código fonte do **IoTSever**
 > - `common` contém código utilizado pelo cliente e servidor
-> - `common` contém código utilizado pelo cliente e servidor, relacionado com segurança
+> - `common.security` contém código utilizado pelo cliente e servidor, relacionado com segurança
 > - `server.communication` contém código relacionado com a comunicação com o servidor
 > - `server.components` contém código relacionado com os componentes do servidor
 > - `server.persistence` contém código relacionado com a persistência do servidor
@@ -91,11 +91,11 @@ Para compilar e executar o projeto, siga os passos abaixo:
 
 3. Dentro do diretório `out`, executar o seguinte comando para iniciar o servidor
 
-         $ java -jar IoTServer.jar <port> <password-cifra> <keystore> <password-keystore> <2FA-APIKey>
+         java -jar IoTServer.jar <port> <password-cifra> <keystore> <password-keystore> <2FA-APIKey>
 
 4. Dentro do diretório `out`, executar o seguinte comando para iniciar um cliente
 
-         $ java -jar IoTDevice.jar <IP/hostname>[:Port] <truststore> <keystore> <passwordkeystore> <dev-id> <user-id>
+         java -jar IoTDevice.jar <IP/hostname>[:Port] <truststore> <keystore> <passwordkeystore> <dev-id> <user-id>
 
 
 **Notas:** <br>
