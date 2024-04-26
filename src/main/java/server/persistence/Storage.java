@@ -9,8 +9,10 @@ import server.security.SecurityUtils;
 
 import javax.crypto.SecretKey;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,7 +40,7 @@ public class Storage {
     /**
      * File paths
      */
-    private static final String CLIENT_COPY = "classes/IoTServer/device_info.csv";
+    private static final String CLIENT_COPY = "server/device_info.csv";
     private static final String USERS = "server/users.txt";
     private static final String DOMAINS = "server/domains.txt";
     private static final String HMACS = "server/hmacs.txt";
@@ -301,6 +303,16 @@ public class Storage {
          */
         private void start(Storage srvStorage) {
             createFolders();
+            File client = new File(CLIENT_COPY);
+            if (!client.exists()) {
+                try {
+                    BufferedWriter writer = new BufferedWriter(new FileWriter(CLIENT_COPY, false));
+                    writer.write("IoTDevice.jar,client-copy/IoTDevice.jar\n");
+                    writer.close();
+                } catch (IOException e) {
+                    ServerLogger.logErrorAndExit("Unable to create client info text file");
+                }
+            }
             loadUsers(srvStorage);
 
             IntegrityVerifier verifier = srvStorage.integrityVerifier;
