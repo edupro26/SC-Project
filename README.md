@@ -1,5 +1,12 @@
 # SC | Projeto 1 - Fase 2 | 2023/24
 
+### Security and Dependability Project
+
+Teacher: António Casimiro Ferreira da Costa
+
+Grade: 20/20
+
+---
 
 <br> Projeto desenvolvido no âmbito da disciplina Seguranca e Confiabilidade
 da Faculdade de Ciências da Universidade de Lisboa.
